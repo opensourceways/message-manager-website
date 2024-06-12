@@ -1,0 +1,10 @@
+@use './mixin.scss' as *;
+
+.o-select-clear {
+  transform: none !important;
+}
+
+.o-select,
+.o-select-tag-popover {
+  --select-tag-radius: var(--o-radius_control-xs);
+}

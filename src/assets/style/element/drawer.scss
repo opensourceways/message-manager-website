@@ -1,0 +1,34 @@
+.space-log {
+  .el-drawer {
+    border-radius: 6px 6px 0 0;
+    .el-drawer__header {
+      padding: 12px 24px 0;
+      margin-bottom: 12px;
+      position: relative;
+      &::after {
+        content: '';
+        display: block;
+        width: calc(100% - 48px);
+        height: 1px;
+        background-color: var(--o-color-control4);
+        position: absolute;
+        bottom: -12px;
+      }
+    }
+    .el-drawer__body {
+      padding: 16px 24px;
+    }
+    // 动态改变el-drawer高度时，去掉过渡效果
+    &.slide-class {
+      --el-transition-duration: 0s;
+    }
+  }
+  .space-log-full {
+    border-radius: 0;
+  }
+}
+
+// 使用el-drawer，打开时会在body上加一个el-popup-parent--hidden，导致页面宽度有问题
+.el-popup-parent--hidden {
+  width: 100% !important;
+}

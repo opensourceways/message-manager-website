@@ -1,0 +1,9 @@
+.o-tag-normal {
+  --tag-color: var(--o-color-info1);
+  --tag-bg-color: var(--o-color-control3-light);
+  --tag-bd-color: var(--o-color-control3-light);
+
+  &.o-tag-outline {
+    --tag-bd-color: var(--o-color-control1);
+  }
+}

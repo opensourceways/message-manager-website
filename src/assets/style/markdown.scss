@@ -1,0 +1,143 @@
+@use 'github-markdown-css/github-markdown-light.css' as *;
+@use 'highlight.js/styles/github.css' as *;
+
+.markdown-body {
+  color: var(--o-color-info2);
+
+  details {
+    display: block !important;
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--o-color-info1);
+  }
+
+  a {
+    color: var(--o-color-link1);
+
+    @include hover {
+      color: var(--o-color-link2);
+    }
+  }
+
+  h1,
+  h2 {
+    border-bottom: 1px solid var(--o-color-control4);
+  }
+
+  hr {
+    background-color: var(--o-color-control4);
+  }
+
+  pre {
+    position: relative;
+    border-radius: var(--o-radius-s);
+    background-color: var(--o-color-fill3);
+    padding: 0;
+    overflow: hidden;
+
+    code {
+      display: block;
+      overflow-x: auto;
+      padding: 16px;
+    }
+  }
+
+  table {
+    --table-padding: 12px 24px;
+    --table-radius: var(--o-radius-m);
+
+    @include respond-to('<=laptop') {
+      --table-head-cell-padding: 8px 16px;
+    }
+
+    @include respond-to('<=pad') {
+      --table-head-cell-padding: 9px 12px;
+    }
+
+    @include respond-to('<=phone') {
+      --table-head-cell-padding: 7px 12px;
+      --table-radius: var(--o-radius-s);
+    }
+
+    border-radius: var(--table-radius);
+    border: 1px solid var(--o-color-control4);
+
+    tr {
+      border: none;
+    }
+
+    tr + tr {
+      border-top: 1px solid var(--o-color-control4);
+    }
+
+    th {
+      background-color: var(--o-color-control3-light);
+      padding: var(--table-padding);
+      text-align: left;
+      border: none;
+    }
+
+    td {
+      box-sizing: border-box;
+      padding: var(--table-padding);
+      border: none;
+    }
+  }
+
+  pre {
+    @include hover {
+      .pre-copy {
+        opacity: 1;
+      }
+    }
+  }
+  .pre-copy {
+    --copy-size: 24px;
+    --copy-gap: 12px;
+    --gradient: linear-gradient(to right, hsla(0, 0%, 100%, 0), rgb(242, 242, 242));
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0;
+    padding-top: var(--copy-gap);
+    padding-right: var(--copy-gap);
+    height: calc(var(--copy-size) + var(--copy-gap));
+    background-color: var(--o-color-fill3);
+    opacity: 0;
+    transition: all var(--o-duration-m1) var(--o-easing-standard-in);
+
+    .icon-copy {
+      display: block;
+      width: 24px;
+      height: 24px;
+      -webkit-mask-image: url(@/assets/svg-icons/icon-copy-text.svg);
+      mask-image: url(@/assets/svg-icons/icon-copy-text.svg);
+      -webkit-mask-size: cover;
+      background-color: var(--o-color-primary1);
+      --gradient: linear-gradient(to right, hsla(0, 0%, 100%, 0), var(--o-color-fill3));
+    }
+
+    .icon-copy {
+      background-color: var(--o-color-primary1);
+    }
+
+    @include respond-to('phone') {
+      top: 4px;
+    }
+  }
+}
