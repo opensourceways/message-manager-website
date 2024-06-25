@@ -1,5 +1,5 @@
 import type { AxiosError } from 'axios';
-import { reportAPIPerformance } from '@/shared/analytics'
+// import { reportAPIPerformance } from '@/shared/analytics'
 import i18n from '@/i18n';
 
 const { t } = i18n.global;
@@ -65,7 +65,7 @@ export default (err: AxiosError) => {
   }
 
   // 上报接口性能
-  reportAPIPerformance(response);
+  // reportAPIPerformance(response);
 
   return err;
 };

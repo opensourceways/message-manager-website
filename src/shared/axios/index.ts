@@ -12,7 +12,7 @@ import setConfig from './setConfig';
 import { isBoolean, useLoading, useMessage, isNull, isUndefined } from '@opensig/opendesign';
 import type { LoadingPropsT } from '@opensig/opendesign/lib/loading/types';
 
-import { clearUserAuth, doLogin } from '@/shared/login';
+// import { clearUserAuth, doLogin } from '@/shared/login';
 
 interface RequestConfig<D = any> extends AxiosRequestConfig {
   data?: D;
@@ -75,6 +75,7 @@ const getLoadingInstance = (showLoading: boolean | { opt?: Partial<LoadingPropsT
 const requestInterceptorId = request.interceptors.request.use(
   (config: InternalRequestConfig) => {
     const { showLoading } = config;
+    config.headers.set('ngrok-skip-browser-warning', 'true')
 
     if (loadingCount === 0 && config.showLoading) {
       if (showLoading) {
@@ -178,8 +179,8 @@ const responseInterceptorId = request.interceptors.response.use(
 
     // token过期，重新登录
     if (err.response?.status === 401) {
-      clearUserAuth();
-      doLogin();
+      // clearUserAuth();
+      // doLogin();
     }
 
     return Promise.reject(err);

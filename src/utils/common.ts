@@ -75,3 +75,20 @@ export function getUrlParams(url: string) {
     return list;
   }
 }
+
+/**
+ * 对象转URL参数
+ * @param queries 要转成query的键值对
+ * @returns query字符串，如?key1=value1&key2=value2
+ */
+export function generateQuery(queries: Record<string, any>): string {
+  const parseResultArr = Object.entries(queries).reduce((arr, [key, value]) => {
+    if (value === undefined || value === null || value === '') return arr;
+    arr.push(`${key}=${value}`);
+    return arr;
+  }, [] as string[]);
+  if (parseResultArr && parseResultArr.length) {
+    return `?${parseResultArr.join("&")}`;
+  }
+  return '';
+}

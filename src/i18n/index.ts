@@ -2,6 +2,9 @@ import { createI18n, type I18nOptions } from 'vue-i18n';
 
 // 操作&反馈提示
 import response from './response';
+import header from './header';
+import msg from './messages';
+import config from './config';
 
 const datetimeFormats: I18nOptions['datetimeFormats'] = {
   zh: {
@@ -40,10 +43,16 @@ const messages = {
   zh: {
     // 操作&反馈提示
     response: response.zh,
+    header: header.zh,
+    msg: msg.zh,
+    config: config.zh,
   },
   en: {
     // 操作&反馈提示
     response: response.en,
+    header: header.en,
+    msg: msg.en,
+    config: config.en,
   },
 };
 

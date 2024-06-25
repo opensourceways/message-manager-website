@@ -39,5 +39,8 @@ export default defineConfig({
   server: {
     https: true,
     port: 8888,
+    proxy: {
+      '/message_center': 'https://9df2-119-8-52-77.ngrok-free.app'
+    }
   },
 });

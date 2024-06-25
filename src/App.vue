@@ -1,22 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-
-import { OScroller, OConfigProvider } from '@opensig/opendesign';
-import zhCN from '@opensig/opendesign/es/locale/lang/zh-cn';
-import enUS from '@opensig/opendesign/es/locale/lang/en-us';
-
-import { useLocale } from '@/composables/useLocale';
+import AppHeader from '@/components/AppHeader.vue';
 </script>
 
 <template>
-  <!-- <AppHeader class="ly-header" /> -->
-  <OScroller show-type="hover">
-    <main class="ly-main">
-      <RouterView />
-    </main>
-    <AppFooter class="ly-footer" />
-  </OScroller>
+  <AppHeader class="ly-header"/>
+  <div class="container">
+    <RouterView />
+  </div>
 </template>
 
 <style lang="scss">
@@ -65,6 +55,14 @@ import { useLocale } from '@/composables/useLocale';
 </style>
 
 <style lang="scss" scoped>
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .ly-header {
   position: fixed;
   top: 0;

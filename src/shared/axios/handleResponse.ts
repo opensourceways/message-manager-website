@@ -1,9 +1,9 @@
 import type { AxiosResponse } from 'axios';
-import { reportAPIPerformance } from '@/shared/analytics'
+// import { reportAPIPerformance } from '@/shared/analytics'
 
 export default (response: AxiosResponse) => {
   // 上报接口性能
-  reportAPIPerformance(response);
+  // reportAPIPerformance(response);
 
   return response;
 };

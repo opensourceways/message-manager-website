@@ -9,7 +9,14 @@ const routes = [
     path: '/',
     name: 'home',
     component: () => {
-      return import('@/views/home/TheHome.vue');
+      return import('@/views/TheHome.vue');
+    },
+  },
+  {
+    path: '/config',
+    name: 'config',
+    component: () => {
+      return import('@/views/TheConfig.vue');
     },
   },
   // 默认路由
