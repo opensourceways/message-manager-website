@@ -1,11 +1,38 @@
 <script setup lang="ts">
 import AppHeader from '@/components/AppHeader.vue';
+import { OBreadcrumb, OBreadcrumbItem } from '@opensig/opendesign';
+import useBreadcrumbStore from './stores/breadcrumb';
+import { useRoute } from 'vue-router';
+import { watch } from 'vue';
+
+const bcStore = useBreadcrumbStore();
+const route = useRoute();
+
+watch(() => route.name, name => {
+  const index = bcStore.breadcrumbs.findIndex(item => item.name === name)
+  if (index > -1) {
+    if (index < bcStore.breadcrumbs.length - 1) {
+      if (index === 0) {
+        bcStore.clear();
+        return;
+      }
+      bcStore.breadcrumbs.splice(index + 1);
+    }
+  }
+})
 </script>
 
 <template>
   <AppHeader class="ly-header"/>
   <div class="container">
-    <RouterView />
+    <div class="inner-container">
+      <OBreadcrumb>
+        <OBreadcrumbItem v-for="(item, index) in bcStore.breadcrumbs" :key="index" :to="{ name: item.name }" >
+          {{ item.text }}
+        </OBreadcrumbItem>
+      </OBreadcrumb>
+      <RouterView />
+    </div>
   </div>
 </template>
 
@@ -59,8 +86,14 @@ import AppHeader from '@/components/AppHeader.vue';
   height: 100vh;
   width: 100vw;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+.inner-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
 }
 
 .ly-header {

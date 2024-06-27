@@ -7,13 +7,15 @@ import type { MessageT } from '@/@types/type-messages';
 import dayjs from 'dayjs';
 import { useRouter } from 'vue-router';
 import type { Pagination } from '@/@types/types-common';
+import useBreadcrumbStore from '@/stores/breadcrumb';
 
+const { push } = useBreadcrumbStore();
 const router = useRouter();
 const IsCheckAll = {
   TRUE: [1] as [1],
   FALSE: [] as [],
 }
-const searchText = ref<string>();
+// const searchText = ref<string>();
 const currentMenu = ref<string>('https://eur.openeuler.openatom.cn_');
 const expandedMenus = ref<string[]>(['1']);
 const messages = ref<MessageT[]>([]);
@@ -158,6 +160,35 @@ function onclickMsg(msg: MessageT) {
 
 function toConfig() {
   router.push('/config');
+  push({ text: '消息中心', name: 'home' }, { text: '消息订阅设置', name: 'config' });
+}
+
+function onHoverMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mark-read') {
+  if (event.target) {
+    if (checkedMsgIds.value.length) {
+      (event.target as HTMLImageElement).src = `/src/assets/svg-icons/icon-${type}-active.svg`;
+    }
+  }
+}
+
+function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mark-read') {
+  if (event.target) {
+    if (checkedMsgIds.value.length) {
+      (event.target as HTMLImageElement).src = `/src/assets/svg-icons/icon-${type}.svg`;
+    }
+  }
+}
+
+function onHoverSingleOperationIcon(event: MouseEvent, type: 'delete' | 'mark-read') {
+  if (event.target) {
+    (event.target as HTMLImageElement).src = `/src/assets/svg-icons/icon-${type}-active.svg`;
+  }
+}
+
+function onMouseLeaveSingleOperationIcon(event: MouseEvent, type: 'delete' | 'mark-read') {
+  if (event.target) {
+    (event.target as HTMLImageElement).src = `/src/assets/svg-icons/icon-${type}.svg`;
+  }
 }
 </script>
 
@@ -166,12 +197,13 @@ function toConfig() {
     <header>
       <p class="title_">{{ $t('msg.msgCenter') }}</p>
       <div class="header-right">
-        <div class="search-input">
+        <!-- <div class="search-input">
           <OIconSearch style="width: 24px; height: 24px;"/>
           <input type="text" v-model="searchText" :placeholder="$t('msg.search')" />
-        </div>
+        </div> -->
         <p @click="toConfig">
-          <img src="" alt="" style="width: 24px; height: 24px;">
+          <img class="active" src="@/assets/svg-icons/icon-setting-active.svg" alt="" style="width: 24px; height: 24px;">
+          <img class="inactive" src="@/assets/svg-icons/icon-setting.svg" alt="" style="width: 24px; height: 24px;">
           {{ $t('msg.subscribeConfig') }}
         </p>
       </div>
@@ -180,7 +212,12 @@ function toConfig() {
       <div class="menu-part">
         <OMenu v-model="currentMenu" v-model:expanded="expandedMenus">
           <OSubMenu value="1">
-            <template #title>消息类型</template>
+            <template #title>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <img src="@/assets/svg-icons/icon-message-type.svg" style="width: 24px; height: 24px;">
+                消息类型
+              </div>
+            </template>
             <OMenuItem value="https://eur.openeuler.openatom.cn_">EUR消息</OMenuItem>
             <OSubMenu value="https://gitee.com">
               <template #title>Gitee</template>
@@ -191,7 +228,12 @@ function toConfig() {
             </OSubMenu>
           </OSubMenu>
           <OSubMenu value="2">
-            <template #title>{{ $t('msg.innerMessages') }}</template>
+            <template #title>
+              <div style="display: flex; align-items: center; gap: 8px">
+                <img src="@/assets/svg-icons/icon-inner-message.svg" style="width: 24px; height: 24px;">
+                {{ $t('msg.innerMessages') }}
+              </div>
+            </template>
             <OMenuItem value="all">{{ $t('msg.allMessages') }}</OMenuItem>
             <OMenuItem value="read">{{ $t('msg.readMessages') }}</OMenuItem>
             <OMenuItem value="unread">{{ $t('msg.unreadMessages') }}({{ unreadCount }})</OMenuItem>
@@ -206,17 +248,19 @@ function toConfig() {
       <div v-else style="display: flex; width: 82%">
         <div class="message-list">
           <div class="row space-between">
-            <OCheckbox class="check-all" :value="1" v-model="checkAllVal" :indeterminate="indeterminate" @change="handleCheckAll">全选</OCheckbox>
-            <div class="row">
-              <OPopover position="top" >
+            <OCheckbox class="check-all" :value="1" v-model="checkAllVal" :indeterminate="indeterminate" @change="handleCheckAll">
+              全选
+            </OCheckbox>
+            <div :class="['row', checkedMsgIds.length > 0 ? 'active' : 'inactive']">
+              <OPopover position="top">
                 <template #target>
-                  <img @click.capture="deleteMultiMsg" src="" style="width: 24px; height: 24px;">
+                  <img @click.capture="deleteMultiMsg" @mouseover="onHoverMultiOperationIcon($event, 'delete')" @mouseleave="onMouseLeaveMultiOperationIcon($event, 'delete')" src="@/assets/svg-icons/icon-delete.svg" style="width: 24px; height: 24px;">
                 </template>
                 删除
               </OPopover>
-              <OPopover position="top" >
+              <OPopover position="top">
                 <template #target>
-                  <img @click.capture="readMultiMsg" src="" style="width: 24px; height: 24px; margin-left: 10px">
+                  <img @click.capture="readMultiMsg" @mouseover="onHoverMultiOperationIcon($event, 'mark-read')" @mouseleave="onMouseLeaveMultiOperationIcon($event, 'mark-read')" src="@/assets/svg-icons/icon-mark-read.svg" style="width: 24px; height: 24px; margin-left: 10px">
                 </template>
                 标为已读
               </OPopover>
@@ -231,13 +275,13 @@ function toConfig() {
             <div class="more-options">
               <OPopover position="top" >
                 <template #target>
-                  <img @click.capture.stop="deleteMsg(index)" src="" style="width: 24px; height: 24px;">
+                  <img @click.capture.stop="deleteMsg(index)" @mouseover="onHoverSingleOperationIcon($event, 'delete')" @mouseleave="onMouseLeaveSingleOperationIcon($event, 'delete')" src="@/assets/svg-icons/icon-delete.svg" style="width: 24px; height: 24px;">
                 </template>
                 删除
               </OPopover>
               <OPopover position="top" >
                 <template #target>
-                  <img @click.capture.stop="readMsg(index)" src="" style="width: 24px; height: 24px; margin-left: 10px">
+                  <img @click.capture.stop="readMsg(index)" @mouseover="onHoverSingleOperationIcon($event, 'mark-read')" @mouseleave="onMouseLeaveSingleOperationIcon($event, 'mark-read')" src="@/assets/svg-icons/icon-mark-read.svg" style="width: 24px; height: 24px; margin-left: 10px">
                 </template>
                 标为已读
               </OPopover>
@@ -279,6 +323,14 @@ function toConfig() {
 <style scoped lang="scss">
 $default-page-body-width: 1416px;
 $default-page-body-height: 900px;
+
+.active {
+  opacity: 1;
+}
+
+.inactive {
+  opacity: 0.3;
+}
 
 .dlg-action {
   display: flex;
@@ -373,7 +425,7 @@ $default-page-body-height: 900px;
 }
 
 .message-list-item {
-  width: 140px;
+  width: 70%;
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -435,6 +487,26 @@ $default-page-body-height: 900px;
     font-size: 16px;
     white-space: nowrap;
     cursor: pointer;
+
+    .active {
+      display: none;
+    }
+
+    .inactive {
+      display: inline;
+    }
+
+    &:hover {
+      color: #002ea7;
+
+      .active {
+        display: inline
+      }
+
+      .inactive {
+        display: none;
+      }
+    }
   }
 }
 

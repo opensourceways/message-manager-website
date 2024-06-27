@@ -18,24 +18,24 @@ function changeLocale(arg: string) {
 <template>
   <div class="header">
     <div class="header-component">
-      <img src="" alt="openEuler logo">
-      <a href="">{{ $t('header.user') }}</a>
+      <img src="@/assets/svg-icons/logo.svg" alt="openEuler logo">
+      <!-- <a href="">{{ $t('header.user') }}</a>
       <a href="">{{ $t('header.developer') }}</a>
       <a href="">{{ $t('header.community') }}</a>
-      <a href="">{{ $t('header.download') }}</a>
+      <a href="">{{ $t('header.download') }}</a> -->
     </div>
 
-    <div class="header-component" right>
+    <!-- <div class="header-component" right>
       <ODropdown>
         {{ currentLocale }}
         <template #dropdown>
           <ODropdownItem v-for="(value, key) in locales" :key="value" :label="value" :value="key" @click="changeLocale(key as string)" />
         </template>
       </ODropdown>
-      <!-- <div class="theme-icon"></div>
-      <div class="avatar"></div> -->
+      <div class="theme-icon"></div>
+      <div class="avatar"></div>
       <span>user name</span>
-    </div>
+    </div> -->
   </div>
 </template>
 
