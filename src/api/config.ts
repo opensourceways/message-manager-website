@@ -21,3 +21,15 @@ export function getRecipients(offset_page = 1, count_per_page = 10): Promise<Pag
         return { total: 0, data: [] }
       });
 }
+
+export function addRecipient(data: Partial<Recipient>) {
+  return request.post('/message_center/config/recipient', data);
+}
+
+export function deleteRecipient(recipient_id: string) {
+  return request.delete('/message_center/config/recipient/', { data: { recipient_id } });
+}
+
+export function editRecipient(data: Partial<Recipient>) {
+  return request.put('/message_center/config/recipient', data);
+}

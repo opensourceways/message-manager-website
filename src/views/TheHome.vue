@@ -29,7 +29,8 @@ const showDelDialog = ref(false);
 const deleteCount = ref(0);
 const deleteMsgIndex = ref<number>(-1);
 
-getUnreadCount().then(data => unreadCount.value = data);
+const updateUnreadCount = () => getUnreadCount().then(data => unreadCount.value = data);
+updateUnreadCount();
 
 watch(checkedMsgIds, val => {
   if (messages.value.length === 0) {
@@ -94,9 +95,6 @@ function deleteMsg(index: number) {
   showDelDialog.value = true;
   deleteCount.value = 1;
   deleteMsgIndex.value = index;
-  /* deleteMessages(messages.value[index]).then(() => {
-    messages.value.splice(index, 1);
-  }); */
 }
 
 function deleteMultiMsg() {
@@ -127,6 +125,7 @@ function readMsg(index: number) {
   if (msg.is_read) return;
   readMessages(msg).then(() => {
     msg.is_read = true;
+    updateUnreadCount();
   });
 }
 
@@ -136,12 +135,12 @@ function readMultiMsg() {
   readMessages(...checkedMsgIds.value.map(id => map.get(id as string)) as MessageT[])
       .then(() => {
         const set = new Set(checkedMsgIds.value);
-        messages.value = messages.value.map(msg => {
+        for (const msg of messages.value) {
           if (set.has(msg.id)) {
             msg.is_read = true;
           }
-          return msg;
-        })
+        }
+        updateUnreadCount();
       })
       .finally(() => checkedMsgIds.value = []);
 }
@@ -149,6 +148,10 @@ function readMultiMsg() {
 function onclickMsg(msg: MessageT) {
   if (currentMsg.value && currentMsg.value.id === msg.id) {
     return;
+  }
+  if (!msg.is_read) {
+    msg.is_read = true;
+    readMessages(msg).then(updateUnreadCount);
   }
   currentMsg.value = msg;
 }
@@ -200,60 +203,62 @@ function toConfig() {
         <img src="" alt="" style="width: 319px; height: 279px;">
         <p>{{ $t('msg.noMessages') }}</p>
       </div>
-      <div v-if="!noMessages" class="message-list">
-        <div class="row space-between">
-          <OCheckbox class="check-all" :value="1" v-model="checkAllVal" :indeterminate="indeterminate" @change="handleCheckAll">全选</OCheckbox>
-          <div class="row">
-            <OPopover position="top" >
-              <template #target>
-                <img @click.capture="deleteMultiMsg" src="" style="width: 24px; height: 24px;">
-              </template>
-              删除
-            </OPopover>
-            <OPopover position="top" >
-              <template #target>
-                <img @click.capture="readMultiMsg" src="" style="width: 24px; height: 24px; margin-left: 10px">
-              </template>
-              标为已读
-            </OPopover>
+      <div v-else style="display: flex; width: 82%">
+        <div class="message-list">
+          <div class="row space-between">
+            <OCheckbox class="check-all" :value="1" v-model="checkAllVal" :indeterminate="indeterminate" @change="handleCheckAll">全选</OCheckbox>
+            <div class="row">
+              <OPopover position="top" >
+                <template #target>
+                  <img @click.capture="deleteMultiMsg" src="" style="width: 24px; height: 24px;">
+                </template>
+                删除
+              </OPopover>
+              <OPopover position="top" >
+                <template #target>
+                  <img @click.capture="readMultiMsg" src="" style="width: 24px; height: 24px; margin-left: 10px">
+                </template>
+                标为已读
+              </OPopover>
+            </div>
+          </div>
+          <div v-for="(msg, index) in messages" :key="msg.id" class="checkbox" :checked="checkedMsgIds.includes(msg.id)" @click="onclickMsg(msg)">
+            <OCheckbox :value="msg.id" v-model="checkedMsgIds" />
+            <div class="message-list-item" :unread="msg.is_read">
+              <p>{{ msg.title }}</p>
+              <span>{{ msg.formattedTime }}</span>
+            </div>
+            <div class="more-options">
+              <OPopover position="top" >
+                <template #target>
+                  <img @click.capture.stop="deleteMsg(index)" src="" style="width: 24px; height: 24px;">
+                </template>
+                删除
+              </OPopover>
+              <OPopover position="top" >
+                <template #target>
+                  <img @click.capture.stop="readMsg(index)" src="" style="width: 24px; height: 24px; margin-left: 10px">
+                </template>
+                标为已读
+              </OPopover>
+            </div>
+            <div class="line"></div>
+          </div>
+  
+          <div class="pagination-wrapper" >
+            <OPagination v-model:page="currentPage" :total="total" :page-size="10" simple @change="requestByPage" />
           </div>
         </div>
-        <div v-for="(msg, index) in messages" :key="msg.id" class="checkbox" :checked="checkedMsgIds.includes(msg.id)" @click="onclickMsg(msg)">
-          <OCheckbox :value="msg.id" v-model="checkedMsgIds" />
-          <div class="message-list-item" :unread="msg.is_read">
-            <p>{{ msg.title }}</p>
-            <span>{{ msg.formattedTime }}</span>
-          </div>
-          <div class="more-options">
-            <OPopover position="top" >
-              <template #target>
-                <img @click.capture.stop="deleteMsg(index)" src="" style="width: 24px; height: 24px;">
-              </template>
-              删除
-            </OPopover>
-            <OPopover position="top" >
-              <template #target>
-                <img @click.capture.stop="readMsg(index)" src="" style="width: 24px; height: 24px; margin-left: 10px">
-              </template>
-              标为已读
-            </OPopover>
-          </div>
-          <div class="line"></div>
+        <SeparateLine direction="vertical" style="margin-left: 6px;"/>
+        <div v-if="!noMessages && currentMsg" class="message-content">
+          <p class="title">{{ currentMsg?.title }}</p>
+          <p class="desc">
+            发送时间：{{ dayjs(currentMsg?.time).format('YYYY/MM/DD HH:mm:ss') }} | {{ currentMsg?.source }} | {{ currentMsg?.type }}
+          </p>
+          <p class="body">
+            {{ currentMsg?.summary }}
+          </p>
         </div>
-
-        <div class="pagination-wrapper" >
-          <OPagination v-model:page="currentPage" :total="total" :page-size="10" simple @change="requestByPage" />
-        </div>
-      </div>
-      <SeparateLine v-if="!noMessages" direction="vertical" style="margin-left: 6px;"/>
-      <div v-if="!noMessages && currentMsg" class="message-content">
-        <p class="title">{{ currentMsg?.title }}</p>
-        <p class="desc">
-          发送时间：{{ dayjs(currentMsg?.time).format('YYYY/MM/DD HH:mm:ss') }} | {{ currentMsg?.source }} | {{ currentMsg?.type }}
-        </p>
-        <p class="body">
-          {{ currentMsg?.summary }}
-        </p>
       </div>
     </div>
     <ODialog v-model:visible="showDelDialog" :wrapper="null">
@@ -296,7 +301,7 @@ $default-page-body-height: 900px;
   box-sizing: border-box;
   flex-direction: column;
   height: 100%;
-  width: 60%;
+  width: 62%;
   padding-left: 47px;
   padding-top: 47px;
 
@@ -463,7 +468,7 @@ $default-page-body-height: 900px;
 
 .message-list {
   height: 100%;
-  width: 22%;
+  width: 28%;
   overflow-y: auto;
   position: relative;
 

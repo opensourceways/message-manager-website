@@ -16,7 +16,7 @@ const routes = [
     path: '/config',
     name: 'config',
     component: () => {
-      return import('@/views/TheConfig.vue');
+      return import('@/views/config/TheConfig.vue');
     },
   },
   // 默认路由

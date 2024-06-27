@@ -69,13 +69,32 @@ const getLoadingInstance = (showLoading: boolean | { opt?: Partial<LoadingPropsT
   }
 };
 
+const USER_TOKEN = '_U_T_';
+
+function getCookie(cname: string) {
+  const name = `${cname}=`;
+  let ca: any = [];
+  try {
+    ca = document.cookie.split(';');
+  } catch {
+    ca = [];
+  }
+  for (let i = 0; i < ca.length; i++) {
+    const c = ca[i].trim();
+    if (c.indexOf(name) === 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return '';
+}
+
 /**
  * 请求拦截
  */
 const requestInterceptorId = request.interceptors.request.use(
   (config: InternalRequestConfig) => {
     const { showLoading } = config;
-    config.headers.set('ngrok-skip-browser-warning', 'true')
+    config.headers.set('Token', getCookie(USER_TOKEN));
 
     if (loadingCount === 0 && config.showLoading) {
       if (showLoading) {
