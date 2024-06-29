@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import AppHeader from '@/components/AppHeader.vue';
 import { OBreadcrumb, OBreadcrumbItem } from '@opensig/opendesign';
-import useBreadcrumbStore from './stores/breadcrumb';
 import { useRoute } from 'vue-router';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 
-const bcStore = useBreadcrumbStore();
 const route = useRoute();
 
+const breadcrumbs = ref<{ text: string; name: string }[]>([])
+
 watch(() => route.name, name => {
-  const index = bcStore.breadcrumbs.findIndex(item => item.name === name)
-  if (index > -1) {
-    if (index < bcStore.breadcrumbs.length - 1) {
-      if (index === 0) {
-        bcStore.clear();
-        return;
-      }
-      bcStore.breadcrumbs.splice(index + 1);
-    }
+  switch (name) {
+    case 'config':
+      breadcrumbs.value = [
+        { text: '消息中心', name: 'home' },
+        { text: '消息订阅设置', name: 'config' },
+      ];
+      break;
+    case 'home':
+      breadcrumbs.value = [];
+      break;
   }
 })
 </script>
@@ -27,16 +28,27 @@ watch(() => route.name, name => {
   <div class="container">
     <div class="inner-container">
       <OBreadcrumb>
-        <OBreadcrumbItem v-for="(item, index) in bcStore.breadcrumbs" :key="index" :to="{ name: item.name }" >
+        <OBreadcrumbItem v-for="(item, index) in breadcrumbs" :key="index" :to="{ name: item.name }" >
           {{ item.text }}
         </OBreadcrumbItem>
       </OBreadcrumb>
-      <RouterView />
+      <div class="page-body">
+        <RouterView />
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss">
+$default-page-body-width: 1416px;
+$default-page-body-height: 900px;
+.page-body {
+  width: $default-page-body-width;
+  height: $default-page-body-height;
+  background-color: #FFF;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+  padding: calc($default-page-body-height * 0.04) calc($default-page-body-width * 0.02);
+}
 #app {
   --color-primary: #027ef2;
 

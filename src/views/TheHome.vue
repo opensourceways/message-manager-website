@@ -7,9 +7,7 @@ import type { MessageT } from '@/@types/type-messages';
 import dayjs from 'dayjs';
 import { useRouter } from 'vue-router';
 import type { Pagination } from '@/@types/types-common';
-import useBreadcrumbStore from '@/stores/breadcrumb';
 
-const { push } = useBreadcrumbStore();
 const router = useRouter();
 const IsCheckAll = {
   TRUE: [1] as [1],
@@ -160,7 +158,6 @@ function onclickMsg(msg: MessageT) {
 
 function toConfig() {
   router.push('/config');
-  push({ text: '消息中心', name: 'home' }, { text: '消息订阅设置', name: 'config' });
 }
 
 function onHoverMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mark-read') {
@@ -193,137 +190,132 @@ function onMouseLeaveSingleOperationIcon(event: MouseEvent, type: 'delete' | 'ma
 </script>
 
 <template>
-  <div class="page-body">
-    <header>
-      <p class="title_">{{ $t('msg.msgCenter') }}</p>
-      <div class="header-right">
-        <!-- <div class="search-input">
-          <OIconSearch style="width: 24px; height: 24px;"/>
-          <input type="text" v-model="searchText" :placeholder="$t('msg.search')" />
-        </div> -->
-        <p @click="toConfig">
-          <img class="active" src="@/assets/svg-icons/icon-setting-active.svg" alt="" style="width: 24px; height: 24px;">
-          <img class="inactive" src="@/assets/svg-icons/icon-setting.svg" alt="" style="width: 24px; height: 24px;">
-          {{ $t('msg.subscribeConfig') }}
+  <header>
+    <p class="title_">{{ $t('msg.msgCenter') }}</p>
+    <div class="header-right">
+      <!-- <div class="search-input">
+        <OIconSearch style="width: 24px; height: 24px;"/>
+        <input type="text" v-model="searchText" :placeholder="$t('msg.search')" />
+      </div> -->
+      <p @click="toConfig">
+        <img class="active" src="@/assets/svg-icons/icon-setting-active.svg" alt="" style="width: 24px; height: 24px;">
+        <img class="inactive" src="@/assets/svg-icons/icon-setting.svg" alt="" style="width: 24px; height: 24px;">
+        {{ $t('msg.subscribeConfig') }}
+      </p>
+    </div>
+  </header>
+  <div class="content">
+    <div class="menu-part">
+      <OMenu v-model="currentMenu" v-model:expanded="expandedMenus">
+        <OSubMenu value="1">
+          <template #title>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <img src="@/assets/svg-icons/icon-message-type.svg" style="width: 24px; height: 24px;">
+              消息类型
+            </div>
+          </template>
+          <OMenuItem value="https://eur.openeuler.openatom.cn_">EUR消息</OMenuItem>
+          <OSubMenu value="https://gitee.com">
+            <template #title>Gitee</template>
+            <OMenuItem value="https://gitee.com_issue">{{ $t('msg.giteeIssue') }}</OMenuItem>
+            <OMenuItem value="https://gitee.com_pr">{{ $t('msg.giteePullRequest') }}</OMenuItem>
+            <OMenuItem value="https://gitee.com_push">{{ $t('msg.giteePush') }}</OMenuItem>
+            <OMenuItem value="https://gitee.com_note">{{ $t('msg.giteeComment') }}</OMenuItem>
+          </OSubMenu>
+        </OSubMenu>
+        <OSubMenu value="2">
+          <template #title>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <img src="@/assets/svg-icons/icon-inner-message.svg" style="width: 24px; height: 24px;">
+              {{ $t('msg.innerMessages') }}
+            </div>
+          </template>
+          <OMenuItem value="all">{{ $t('msg.allMessages') }}</OMenuItem>
+          <OMenuItem value="read">{{ $t('msg.readMessages') }}</OMenuItem>
+          <OMenuItem value="unread">{{ $t('msg.unreadMessages') }}({{ unreadCount }})</OMenuItem>
+        </OSubMenu>
+      </OMenu>
+    </div>
+    <SeparateLine direction="vertical"/>
+    <div v-if="noMessages" class="no-messages">
+      <img src="" alt="" style="width: 319px; height: 279px;">
+      <p>{{ $t('msg.noMessages') }}</p>
+    </div>
+    <div v-else style="display: flex; width: 82%">
+      <div class="message-list">
+        <div class="row space-between">
+          <OCheckbox class="check-all" :value="1" v-model="checkAllVal" :indeterminate="indeterminate" @change="handleCheckAll">
+            全选
+          </OCheckbox>
+          <div :class="['row', checkedMsgIds.length > 0 ? 'active' : 'inactive']">
+            <OPopover position="top">
+              <template #target>
+                <img @click.capture="deleteMultiMsg" @mouseover="onHoverMultiOperationIcon($event, 'delete')" @mouseleave="onMouseLeaveMultiOperationIcon($event, 'delete')" src="@/assets/svg-icons/icon-delete.svg" style="width: 24px; height: 24px;">
+              </template>
+              删除
+            </OPopover>
+            <OPopover position="top">
+              <template #target>
+                <img @click.capture="readMultiMsg" @mouseover="onHoverMultiOperationIcon($event, 'mark-read')" @mouseleave="onMouseLeaveMultiOperationIcon($event, 'mark-read')" src="@/assets/svg-icons/icon-mark-read.svg" style="width: 24px; height: 24px; margin-left: 10px">
+              </template>
+              标为已读
+            </OPopover>
+          </div>
+        </div>
+        <div v-for="(msg, index) in messages" :key="msg.id" class="checkbox" :checked="checkedMsgIds.includes(msg.id)" @click="onclickMsg(msg)">
+          <OCheckbox :value="msg.id" v-model="checkedMsgIds" />
+          <div class="message-list-item" :unread="msg.is_read">
+            <p>{{ msg.title }}</p>
+            <span>{{ msg.formattedTime }}</span>
+          </div>
+          <div class="more-options">
+            <OPopover position="top" >
+              <template #target>
+                <img @click.capture.stop="deleteMsg(index)" @mouseover="onHoverSingleOperationIcon($event, 'delete')" @mouseleave="onMouseLeaveSingleOperationIcon($event, 'delete')" src="@/assets/svg-icons/icon-delete.svg" style="width: 24px; height: 24px;">
+              </template>
+              删除
+            </OPopover>
+            <OPopover position="top" >
+              <template #target>
+                <img @click.capture.stop="readMsg(index)" @mouseover="onHoverSingleOperationIcon($event, 'mark-read')" @mouseleave="onMouseLeaveSingleOperationIcon($event, 'mark-read')" src="@/assets/svg-icons/icon-mark-read.svg" style="width: 24px; height: 24px; margin-left: 10px">
+              </template>
+              标为已读
+            </OPopover>
+          </div>
+          <div class="line"></div>
+        </div>
+
+        <div class="pagination-wrapper" >
+          <OPagination v-model:page="currentPage" :total="total" :page-size="10" simple @change="requestByPage" />
+        </div>
+      </div>
+      <SeparateLine direction="vertical" style="margin-left: 6px;"/>
+      <div v-if="!noMessages && currentMsg" class="message-content">
+        <p class="title">{{ currentMsg?.title }}</p>
+        <p class="desc">
+          发送时间：{{ dayjs(currentMsg?.time).format('YYYY/MM/DD HH:mm:ss') }} | {{ currentMsg?.source }} | {{ currentMsg?.type }}
+        </p>
+        <p class="body">
+          {{ currentMsg?.summary }}
         </p>
       </div>
-    </header>
-    <div class="content">
-      <div class="menu-part">
-        <OMenu v-model="currentMenu" v-model:expanded="expandedMenus">
-          <OSubMenu value="1">
-            <template #title>
-              <div style="display: flex; align-items: center; gap: 8px">
-                <img src="@/assets/svg-icons/icon-message-type.svg" style="width: 24px; height: 24px;">
-                消息类型
-              </div>
-            </template>
-            <OMenuItem value="https://eur.openeuler.openatom.cn_">EUR消息</OMenuItem>
-            <OSubMenu value="https://gitee.com">
-              <template #title>Gitee</template>
-              <OMenuItem value="https://gitee.com_issue">{{ $t('msg.giteeIssue') }}</OMenuItem>
-              <OMenuItem value="https://gitee.com_pr">{{ $t('msg.giteePullRequest') }}</OMenuItem>
-              <OMenuItem value="https://gitee.com_push">{{ $t('msg.giteePush') }}</OMenuItem>
-              <OMenuItem value="https://gitee.com_note">{{ $t('msg.giteeComment') }}</OMenuItem>
-            </OSubMenu>
-          </OSubMenu>
-          <OSubMenu value="2">
-            <template #title>
-              <div style="display: flex; align-items: center; gap: 8px">
-                <img src="@/assets/svg-icons/icon-inner-message.svg" style="width: 24px; height: 24px;">
-                {{ $t('msg.innerMessages') }}
-              </div>
-            </template>
-            <OMenuItem value="all">{{ $t('msg.allMessages') }}</OMenuItem>
-            <OMenuItem value="read">{{ $t('msg.readMessages') }}</OMenuItem>
-            <OMenuItem value="unread">{{ $t('msg.unreadMessages') }}({{ unreadCount }})</OMenuItem>
-          </OSubMenu>
-        </OMenu>
-      </div>
-      <SeparateLine direction="vertical"/>
-      <div v-if="noMessages" class="no-messages">
-        <img src="" alt="" style="width: 319px; height: 279px;">
-        <p>{{ $t('msg.noMessages') }}</p>
-      </div>
-      <div v-else style="display: flex; width: 82%">
-        <div class="message-list">
-          <div class="row space-between">
-            <OCheckbox class="check-all" :value="1" v-model="checkAllVal" :indeterminate="indeterminate" @change="handleCheckAll">
-              全选
-            </OCheckbox>
-            <div :class="['row', checkedMsgIds.length > 0 ? 'active' : 'inactive']">
-              <OPopover position="top">
-                <template #target>
-                  <img @click.capture="deleteMultiMsg" @mouseover="onHoverMultiOperationIcon($event, 'delete')" @mouseleave="onMouseLeaveMultiOperationIcon($event, 'delete')" src="@/assets/svg-icons/icon-delete.svg" style="width: 24px; height: 24px;">
-                </template>
-                删除
-              </OPopover>
-              <OPopover position="top">
-                <template #target>
-                  <img @click.capture="readMultiMsg" @mouseover="onHoverMultiOperationIcon($event, 'mark-read')" @mouseleave="onMouseLeaveMultiOperationIcon($event, 'mark-read')" src="@/assets/svg-icons/icon-mark-read.svg" style="width: 24px; height: 24px; margin-left: 10px">
-                </template>
-                标为已读
-              </OPopover>
-            </div>
-          </div>
-          <div v-for="(msg, index) in messages" :key="msg.id" class="checkbox" :checked="checkedMsgIds.includes(msg.id)" @click="onclickMsg(msg)">
-            <OCheckbox :value="msg.id" v-model="checkedMsgIds" />
-            <div class="message-list-item" :unread="msg.is_read">
-              <p>{{ msg.title }}</p>
-              <span>{{ msg.formattedTime }}</span>
-            </div>
-            <div class="more-options">
-              <OPopover position="top" >
-                <template #target>
-                  <img @click.capture.stop="deleteMsg(index)" @mouseover="onHoverSingleOperationIcon($event, 'delete')" @mouseleave="onMouseLeaveSingleOperationIcon($event, 'delete')" src="@/assets/svg-icons/icon-delete.svg" style="width: 24px; height: 24px;">
-                </template>
-                删除
-              </OPopover>
-              <OPopover position="top" >
-                <template #target>
-                  <img @click.capture.stop="readMsg(index)" @mouseover="onHoverSingleOperationIcon($event, 'mark-read')" @mouseleave="onMouseLeaveSingleOperationIcon($event, 'mark-read')" src="@/assets/svg-icons/icon-mark-read.svg" style="width: 24px; height: 24px; margin-left: 10px">
-                </template>
-                标为已读
-              </OPopover>
-            </div>
-            <div class="line"></div>
-          </div>
-  
-          <div class="pagination-wrapper" >
-            <OPagination v-model:page="currentPage" :total="total" :page-size="10" simple @change="requestByPage" />
-          </div>
-        </div>
-        <SeparateLine direction="vertical" style="margin-left: 6px;"/>
-        <div v-if="!noMessages && currentMsg" class="message-content">
-          <p class="title">{{ currentMsg?.title }}</p>
-          <p class="desc">
-            发送时间：{{ dayjs(currentMsg?.time).format('YYYY/MM/DD HH:mm:ss') }} | {{ currentMsg?.source }} | {{ currentMsg?.type }}
-          </p>
-          <p class="body">
-            {{ currentMsg?.summary }}
-          </p>
-        </div>
-      </div>
     </div>
-    <ODialog v-model:visible="showDelDialog" :wrapper="null">
-      <template #header>删除消息</template>
-      <div style="display: flex; justify-content: center; align-items: center;">
-        是否删除{{ deleteCount || checkedMsgIds.length }}条消息？
-      </div>
-      <template #footer>
-        <div class="dlg-action">
-          <OButton @click="confirmDelete" variant="solid" color="primary" round="pill">确定</OButton>
-          <OButton @click="cancelDelete" variant="outline" color="primary" round="pill">取消</OButton>
-        </div>
-      </template>
-    </ODialog>
   </div>
+  <ODialog v-model:visible="showDelDialog" :wrapper="null">
+    <template #header>删除消息</template>
+    <div style="display: flex; justify-content: center; align-items: center;">
+      是否删除{{ deleteCount || checkedMsgIds.length }}条消息？
+    </div>
+    <template #footer>
+      <div class="dlg-action">
+        <OButton @click="confirmDelete" variant="solid" color="primary" round="pill">确定</OButton>
+        <OButton @click="cancelDelete" variant="outline" color="primary" round="pill">取消</OButton>
+      </div>
+    </template>
+  </ODialog>
 </template>
 
 <style scoped lang="scss">
-$default-page-body-width: 1416px;
-$default-page-body-height: 900px;
-
 .active {
   opacity: 1;
 }
@@ -457,20 +449,12 @@ $default-page-body-height: 900px;
   height: 60px;
 }
 
-.page-body {
-  width: $default-page-body-width;
-  height: $default-page-body-height;
-  background-color: #FFF;
-  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
-  padding: calc($default-page-body-height * 0.04) calc($default-page-body-width * 0.02);
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: calc($default-page-body-height * 0.02);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
   .title_ {
     font-size: 40px;

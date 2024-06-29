@@ -8,3 +8,17 @@ export type Recipient = {
   created_at?: string;
   formattedCreateTime?: string;
 }
+
+export type Subscribe = {
+  id: number;
+  source: string;
+  event_type: string;
+  mode_name: string;
+  spec_version: string;
+  mode_filter: Record<string, any>;
+  recipient_id: string;
+  need_message: boolean;
+  need_phone: boolean;
+  need_mail: boolean;
+  need_inner_message: boolean;
+}
