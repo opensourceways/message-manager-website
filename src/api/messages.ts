@@ -27,8 +27,7 @@ function setMsgIdAndFormatTime(res: AxiosResponse<PagedResponse<MessageT>>): Pag
  * @returns { Promise<MessageT[]> } 所有消息
  */
 export function getMessages(source?: string, event_type?: string, is_read?: 1 | 0, offset_page = 1, count_per_page = 10): Promise<Pagination<MessageT>> {
-  offset_page--;
-  const query = generateQuery({ source, event_type, is_read, count_per_page, offset_page });
+  const query = generateQuery({ source, event_type, is_read, count_per_page, page: offset_page });
   return request.get<PagedResponse<MessageT>>(`/message_center/inner${query}`).then(setMsgIdAndFormatTime);
 }
 

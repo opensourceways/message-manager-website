@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
+import { useTable } from '@/composables/useTable';
 import { OButton, OInput, OLink, OPagination, OTable } from '@opensig/opendesign';
 import { reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
-const pageSizes = ref([10, 20, 50]);
-const pageSize = ref(pageSizes.value[0]);
-const currentPage = ref(1);
-const tableTotal = ref(0);
 const tableColumns = [
   { label: t('config.table.recipient_id'), key: 'recipient_id' },
   { label: t('config.table.mail'), key: 'mail' },
@@ -22,9 +19,16 @@ const tableData = ref<Recipient[]>([]);
 const tableLoading = ref(false);
 let addRecipientGenerator: Generator | undefined;
 
-function getData(page?: number, pageSize?: number) {
+const {
+  pageSizes,
+  pageSize,
+  currentPage,
+  tableTotal,
+} = useTable(undefined, getData);
+
+function getData(page?: number, pageSize?: number, currentPage?: number) {
   tableLoading.value = true;
-  getRecipients(page, pageSize).then(({ total, data }) => {
+  getRecipients(page, pageSize, currentPage).then(({ total, data }) => {
     tableData.value = data;
     tableTotal.value = total;
     if (addRecipientGenerator) {
@@ -41,12 +45,6 @@ function getData(page?: number, pageSize?: number) {
     }
   });
 }
-
-watch(
-  [currentPage, pageSize],
-  ([page, pageSize]) => getData(page, pageSize),
-  { immediate: true }
-);
 
 // ----------------新增接收人-------------------
 const isAddingRecipient = ref(false);
