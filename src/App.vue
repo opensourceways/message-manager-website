@@ -40,7 +40,7 @@ watch(() => route.name, name => {
 </template>
 
 <style lang="scss">
-$default-page-body-width: 1416px;
+$default-page-body-width: 74vw;
 $default-page-body-height: 900px;
 .page-body {
   width: $default-page-body-width;

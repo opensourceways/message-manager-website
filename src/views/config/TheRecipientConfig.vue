@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
-import { OInput, OLink, OPagination, OTable } from '@opensig/opendesign';
+import { OButton, OInput, OLink, OPagination, OTable } from '@opensig/opendesign';
 import { reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -128,7 +128,7 @@ async function deleteRow(recipient_id: string) {
 
 <template>
   <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
-    <button class="add-receiver" @click="handleAddRecipient">新建接收人</button>
+    <OButton variant="outline" round="pill" color="primary" @click="handleAddRecipient">新建接收人</OButton>
     <p v-html="$t('config.desc')"></p>
   </div>
 

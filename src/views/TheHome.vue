@@ -238,7 +238,7 @@ function onMouseLeaveSingleOperationIcon(event: MouseEvent, type: 'delete' | 'ma
     </div>
     <SeparateLine direction="vertical"/>
     <div v-if="noMessages" class="no-messages">
-      <img src="" alt="" style="width: 319px; height: 279px;">
+      <!-- <img src="" alt="" style="width: 319px; height: 279px;"> -->
       <p>{{ $t('msg.noMessages') }}</p>
     </div>
     <div v-else style="display: flex; width: 82%">
