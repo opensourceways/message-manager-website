@@ -26,9 +26,9 @@ const {
   tableTotal,
 } = useTable(undefined, getData);
 
-function getData(page?: number, pageSize?: number, currentPage?: number) {
+function getData(page?: number, pageSize?: number) {
   tableLoading.value = true;
-  getRecipients(page, pageSize, currentPage).then(({ total, data }) => {
+  getRecipients(page, pageSize).then(({ total, data }) => {
     tableData.value = data;
     tableTotal.value = total;
     if (addRecipientGenerator) {

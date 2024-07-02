@@ -5,8 +5,8 @@ import dayjs from "dayjs";
 import { isArray } from "@opensig/opendesign";
 import { generateQuery } from "@/utils/common";
 
-export function getRecipients(offset_page = 1, count_per_page = 10): Promise<Pagination<Recipient>> {
-  const query = generateQuery({ offset_page, count_per_page, page: offset_page });
+export function getRecipients(page = 1, count_per_page = 10): Promise<Pagination<Recipient>> {
+  const query = generateQuery({ count_per_page, page });
   return request.get<PagedResponse<Recipient>>(`message_center/config/recipient${query}`)
     .then(res => {
       const { count: total, query_info } = res.data;
@@ -33,8 +33,8 @@ export function editRecipient(data: Partial<Recipient>) {
   return request.put('/message_center/config/recipient', data);
 }
 
-export function getSubscribes(offset_page = 1, count_per_page = 10): Promise<Pagination<Subscribe>> {
-  const query = generateQuery({ offset_page, count_per_page, page: offset_page });
+export function getSubscribes(page = 1, count_per_page = 10): Promise<Pagination<Subscribe>> {
+  const query = generateQuery({ count_per_page, page });
   return request.get<PagedResponse<Subscribe>>(`message_center/config/subs${query}`)
     .then(res => {
       const { count: total, query_info } = res.data;
