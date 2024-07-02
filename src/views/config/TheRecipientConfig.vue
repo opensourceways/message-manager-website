@@ -59,11 +59,24 @@ const newData = reactive({
 
 function handleAddRecipient() {
   addRecipientGenerator = (function* () {
-    const lastPage = Math.ceil(tableTotal.value / pageSize.value);
-    if (currentPage.value < lastPage) {
-      // 跳到最后一页
-      currentPage.value = lastPage;
-      yield;
+    if (tableTotal.value > 0) {
+      const lastPage = Math.ceil(tableTotal.value / pageSize.value);
+      if (currentPage.value < lastPage) {
+        // 跳到最后一页
+        currentPage.value = lastPage;
+        yield;
+      }
+    } else {
+      tableData.value.push({
+        key: '',
+        recipient_id: '',
+        mail: '',
+        message: '',
+        phone: '',
+        remark: '',
+        created_at: '',
+        formattedCreateTime: '',
+      });
     }
     isAddingRecipient.value = true;
   })();
@@ -77,6 +90,9 @@ async function confirmAdd() {
 }
 
 function cancelAdd() {
+  if (tableTotal.value === 0) {
+    tableData.value.pop();
+  }
   isAddingRecipient.value = false;
   newData.recipient_id = '';
   newData.mail = '';
@@ -135,7 +151,7 @@ async function deleteRow(recipient_id: string) {
   <OTable :columns="tableColumns" :loading="tableLoading" :data="tableData" style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)">
     <template #body="{ body }">
       <template v-for="(row, rIdx) in body" :key="row.key || rIdx" >
-        <tr v-if="editingIndex === rIdx" :class="{ last: !isAddingRecipient && (rIdx + 1 === tableData.length) }">
+        <tr v-if="editingIndex === rIdx && row.key" :class="{ last: !isAddingRecipient && (rIdx + 1 === tableData.length) }">
           <td><OInput v-model="editingData.recipient_id" placeholder="请输入姓名" clearable style="width: 160px" /></td>
           <td><OInput v-model="editingData.mail" placeholder="请输入邮箱" clearable style="width: 160px" /></td>
           <td><OInput v-model="editingData.phone" placeholder="请输入手机" clearable style="width: 160px" /></td>
@@ -148,7 +164,7 @@ async function deleteRow(recipient_id: string) {
             </div>
           </td>
         </tr>
-        <tr v-else :class="{ last: !isAddingRecipient && (rIdx + 1 === tableData.length) }">
+        <tr v-else-if="row.key" :class="{ last: !isAddingRecipient && (rIdx + 1 === tableData.length) }">
           <td v-for="(col, idx) in row.data" :key="col.key || idx" :rowspan="col.rowspan" :colspan="col.colspan" :class="{ last: col.last }">
             <div v-if="col.key === 'operation'" class="row space-between" style="margin-right: 16px;">
               <OLink color="primary" @click="handleEditRecipient(rIdx)">修改接收人</OLink>
