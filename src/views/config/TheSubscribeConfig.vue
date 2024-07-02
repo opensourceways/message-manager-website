@@ -63,8 +63,8 @@ const {
   currentPage,
   tableTotal,
 } = useTable(undefined, requestData);
-const showAddEurDlg = ref(true);
-const showAddGiteeDlg = ref(true);
+const showAddEurDlg = ref(false);
+const showAddGiteeDlg = ref(false);
 
 function requestData(page?: number, pageSize?: number) {
   getSubscribes(page, pageSize).then(({ total, data }) => {
