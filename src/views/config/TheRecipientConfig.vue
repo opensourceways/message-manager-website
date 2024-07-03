@@ -3,6 +3,7 @@ import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
 import { useTable } from '@/composables/useTable';
 import { OButton, OInput, OLink, OPagination, OTable } from '@opensig/opendesign';
+import TheWarningInput from '@/components/TheWarningInput.vue';
 import { reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -18,7 +19,8 @@ const tableColumns = [
 const tableData = ref<Recipient[]>([]);
 const tableLoading = ref(false);
 let addRecipientGenerator: Generator | undefined;
-
+const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
+const PHONE_PATTERN = /^1[3-9]\d{9}$/;
 const {
   pageSizes,
   pageSize,
@@ -175,9 +177,36 @@ async function deleteRow(recipient_id: string) {
         </tr>
       </template>
       <tr v-if="isAddingRecipient">
-        <td><OInput v-model="newData.recipient_id" placeholder="请输入姓名" clearable style="width: 160px" /></td>
-        <td><OInput v-model="newData.mail" placeholder="请输入邮箱" clearable style="width: 160px" /></td>
-        <td><OInput v-model="newData.phone" placeholder="请输入手机" clearable style="width: 160px" /></td>
+        <td>
+          <TheWarningInput
+            :validator="val => !!val.trim()"
+            warningText="请输入姓名"
+            v-model="newData.recipient_id"
+            placeholder="请输入姓名"
+            clearable
+            style="width: 160px"
+          />
+        </td>
+        <td>
+          <TheWarningInput
+            :validator="val => !!val.trim() && EMAIL_PATTERN.test(val.trim())"
+            warningText="请输入正确的邮箱"
+            v-model="newData.mail"
+            placeholder="请输入邮箱"
+            clearable
+            style="width: 160px"
+          />
+        </td>
+        <td>
+          <TheWarningInput
+            :validator="val => !!val.trim() && PHONE_PATTERN.test(val.trim())"
+            warningText="请输入正确的手机号码"
+            v-model="newData.phone"
+            placeholder="请输入手机号码"
+            clearable
+            style="width: 160px"
+          />
+        </td>
         <td><OInput v-model="newData.remark" placeholder="请输入备注" clearable style="width: 160px" /></td>
         <td></td>
         <td>
