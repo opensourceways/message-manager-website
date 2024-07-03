@@ -45,6 +45,14 @@ export function getSubscribes(page = 1, count_per_page = 10): Promise<Pagination
     });
 }
 
-export function postEurCondition(data: any) {
+export function postSubsCondition(data: any) {
   return request.post('/message_center/config/subs', data);
+}
+
+export function putSubsCondition(data: any) {
+  return request.put('/message_center/config/subs', data);
+}
+
+export function deleteSubsCondition(id: string) {
+  
 }

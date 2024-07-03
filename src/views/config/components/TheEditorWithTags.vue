@@ -5,13 +5,13 @@ const emit = defineEmits(['update:modelValue']);
 const props = withDefaults(defineProps<{
   width?: string | number;
   height?: string | number;
-  modelValue: string[];
+  modelValue?: string[];
 }>(), {
-  modelValue: () => ([]),
+  // modelValue: () => ([]),
   width: 300,
   height: 126
 });
-const list = computed(() => props.modelValue);
+const list = computed(() => props.modelValue ?? []);
 const input = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 
 function add() {
@@ -46,6 +46,7 @@ function deleteItem(item: string) {
 
 <style scoped lang="scss">
 .outer {
+  // cursor: text;
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 4px;
   width: 300px;

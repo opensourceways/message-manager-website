@@ -25,6 +25,7 @@ watch(() => route.name, name => {
 
 <template>
   <AppHeader class="ly-header"/>
+  <div style="height: 144px;"></div>
   <div class="container">
     <div class="inner-container">
       <OBreadcrumb>
@@ -32,22 +33,18 @@ watch(() => route.name, name => {
           {{ item.text }}
         </OBreadcrumbItem>
       </OBreadcrumb>
-      <div class="page-body">
-        <RouterView />
-      </div>
+      <RouterView />
     </div>
   </div>
 </template>
 
 <style lang="scss">
-$default-page-body-width: 74vw;
-$default-page-body-height: 900px;
 .page-body {
-  width: $default-page-body-width;
-  height: $default-page-body-height;
+  width: 74vw;
+  min-height: 900px;
   background-color: #FFF;
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
-  padding: calc($default-page-body-height * 0.04) calc($default-page-body-width * 0.02);
+  padding: calc(900px * 0.04) calc(74vw * 0.02);
 }
 #app {
   --color-primary: #027ef2;
@@ -95,11 +92,8 @@ $default-page-body-height: 900px;
 
 <style lang="scss" scoped>
 .container {
-  height: 100vh;
   width: 100vw;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
 }
 .inner-container {

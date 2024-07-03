@@ -9,7 +9,7 @@ const routes = [
     path: '/',
     name: 'home',
     component: () => {
-      return import('@/views/TheHome.vue');
+      return import('@/views/message/TheMessages.vue');
     },
   },
   {

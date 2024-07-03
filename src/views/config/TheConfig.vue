@@ -1,30 +1,49 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import TheRecipientConfig from './TheRecipientConfig.vue'
-import TheSubscribeConfig from './TheSubscribeConfig.vue'
-import { OTab, OTabPane } from '@opensig/opendesign';
+import TheSubConfig from './TheSubConfig.vue'
+import { OButton, OTab, OTabPane } from '@opensig/opendesign';
 
 const activeTab = ref('a');
+const subConfig = ref<any>();
+const btnsDisabled = computed(() => subConfig.value && subConfig.value.btnsDisabled);
+
+function addRecipient() {
+  subConfig.value.addRecipient();
+}
 </script>
 
 <template>
-  <header>
-    <p class="title">{{ $t('config.subscribeConfig') }}</p>
-  </header>
-
-  <div class="tabs">
-    <OTab v-model="activeTab">
-      <OTabPane value="a" :label="$t('config.receiveConfig')">
-        <TheSubscribeConfig />
-      </OTabPane>
-      <OTabPane value="b" :label="$t('config.receiverManagement')">
-        <TheRecipientConfig />
-      </OTabPane>
-    </OTab>
+  <div class="page-body">
+    <header>
+      <p class="title">{{ $t('config.subscribeConfig') }}</p>
+    </header>
+  
+    <div class="tabs">
+      <OTab v-model="activeTab" :line="false">
+        <template #suffix>
+          <div v-if="activeTab === 'a'" class="subs-config-btn-group">
+            <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'" @click="addRecipient">添加接收人</OButton>
+            <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'">移除接收人</OButton>
+          </div>
+        </template>
+        <OTabPane value="a" :label="$t('config.receiveConfig')">
+          <TheSubConfig ref="subConfig" />
+        </OTabPane>
+        <OTabPane value="b" :label="$t('config.receiverManagement')">
+          <TheRecipientConfig />
+        </OTabPane>
+      </OTab>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
+.subs-config-btn-group {
+  display: flex;
+  gap: 24px;
+}
+
 .tabs {
   --tab-nav-justify: left;
   margin-top: 23px;

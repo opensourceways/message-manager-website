@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
-import { useTable } from '@/composables/useTable';
-import { OButton, OInput, OLink, OPagination, OTable } from '@opensig/opendesign';
+import { OButton, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import TheWarningInput from '@/components/TheWarningInput.vue';
-import { reactive, ref, watch } from 'vue';
+import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+const message = useMessage();
 const { t } = useI18n();
 const tableColumns = [
   { label: t('config.table.recipient_id'), key: 'recipient_id' },
@@ -21,16 +21,13 @@ const tableLoading = ref(false);
 let addRecipientGenerator: Generator | undefined;
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
-const {
-  pageSizes,
-  pageSize,
-  currentPage,
-  tableTotal,
-} = useTable(undefined, getData);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const tableTotal = ref(0);
 
-function getData(page?: number, pageSize?: number) {
+function getData(val = { page: 1, pageSize: 10 }) {
   tableLoading.value = true;
-  getRecipients(page, pageSize).then(({ total, data }) => {
+  getRecipients(val.page, val.pageSize).then(({ total, data }) => {
     tableData.value = data;
     tableTotal.value = total;
     if (addRecipientGenerator) {
@@ -84,9 +81,15 @@ function handleAddRecipient() {
 }
 
 async function confirmAdd() {
+  if (tableData.value.some(item => item.recipient_id === newData.recipient_id)) {
+    message.warning({
+      content: '接收人姓名不能相同'
+    });
+    return;
+  };
   await addRecipient(newData);
   cancelAdd();
-  getData(currentPage.value, pageSize.value);
+  getData({ page: currentPage.value, pageSize: pageSize.value });
 }
 
 function cancelAdd() {
@@ -124,7 +127,7 @@ function handleEditRecipient(index: number) {
 async function confirmEdit() {
   await editRecipient(editingData);
   cancelEdit();
-  getData(currentPage.value, pageSize.value);
+  getData({ page: currentPage.value, pageSize: pageSize.value });
 }
 
 function cancelEdit() {
@@ -138,7 +141,7 @@ function cancelEdit() {
 // ----------------删除接收人-------------------
 async function deleteRow(recipient_id: string) {
   await deleteRecipient(recipient_id);
-  getData(currentPage.value, pageSize.value);
+  getData({ page: currentPage.value, pageSize: pageSize.value });
 }
 </script>
 
@@ -218,7 +221,7 @@ async function deleteRow(recipient_id: string) {
       </tr>
     </template>
   </OTable>
-  <OPagination :total="tableTotal" v-model:page="currentPage" v-model:page-size="pageSize" :page-sizes="pageSizes" style="margin-top: 32px;"/>
+  <OPagination :total="tableTotal" v-model:page="currentPage" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px;"/>
 </template>
 
 <style scoped lang="scss">
