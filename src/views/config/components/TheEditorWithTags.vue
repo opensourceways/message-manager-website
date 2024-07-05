@@ -1,64 +1,169 @@
 <script setup lang="ts">
-import { ref, type Ref, computed } from 'vue';
+import { ref, type Ref, onMounted, watch } from 'vue';
 
-const emit = defineEmits(['update:modelValue']);
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   width?: string | number;
   height?: string | number;
-  modelValue?: string[];
+  placeholder?: string;
+  showAddButton?: boolean;
 }>(), {
-  // modelValue: () => ([]),
+  placeholder: '',
   width: 300,
   height: 126
 });
-const list = computed(() => props.modelValue ?? []);
 const input = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
+const tagSet = ref(new Set<string>());
 
-function add() {
-  const text = input.value.textContent?.trim();
-  if (text) {
-    const set = new Set(list.value);
-    set.add(text);
-    emit('update:modelValue', [...set]);
+const OBERVER_CONFIG = { childList: true };
+const tagsRemovedObserver = new MutationObserver(([mut]) => {
+  if (mut.removedNodes.length) {
+    mut.removedNodes.forEach(node => {
+      if (node instanceof HTMLSpanElement && node.classList.contains('tag')) {
+        tagSet.value.delete(node.textContent as string);
+      }
+    });
   }
-  input.value.innerHTML = '';
+});
+
+onMounted(() => tagsRemovedObserver.observe(input.value, OBERVER_CONFIG));
+const showPlaceHolder = ref(true);
+
+watch(() => tagSet.value.size, size => {
+  if (size === 0) {
+    showPlaceHolder.value = true;
+  } else {
+    showPlaceHolder.value = false;
+  }
+});
+
+function getTagValues() {
+  const result: string[] = [];
+  input.value.querySelectorAll('span.tag').forEach(tag => result.push(tag.textContent as string));
+  return result;
 }
 
-function deleteItem(item: string) {
-  const set = new Set(list.value);
-  set.delete(item);
-  emit('update:modelValue', [...set]);
+function deleteTag(event: MouseEvent) {
+  const tag = (event.target as HTMLImageElement).parentElement as HTMLSpanElement;
+  input.value.removeChild(tag);
 }
+
+function addTag() {
+  const last = input.value.lastChild;
+  let text;
+  if (last?.nodeType === Node.TEXT_NODE) {
+    text = last.textContent?.trim();
+  } else if (last instanceof HTMLSpanElement && last.className !== 'tag') {
+    text = last.textContent?.trim();
+  }
+  if (!text || tagSet.value.has(text)) {
+    return;
+  }
+  tagSet.value.add(text);
+  tagsRemovedObserver.disconnect()
+  input.value.innerHTML = '';
+  appenTags();
+}
+
+function appenTags() {
+  for (const text of tagSet.value) {
+    const tag = document.createElement('span');
+    tag.classList.add('tag');
+    tag.textContent = text;
+    tag.contentEditable = 'false';
+    const icon = document.createElement('img');
+    icon.src = '/src/assets/svg-icons/icon-close.svg';
+    icon.classList.add('close');
+    icon.addEventListener('click', deleteTag);
+    tag.appendChild(icon);
+    input.value.appendChild(tag);
+  }
+  input.value.appendChild(document.createElement('span'));
+  tagsRemovedObserver.observe(input.value, OBERVER_CONFIG);
+}
+
+function onClick() {
+  const sel = document.getSelection();
+  if (!sel || !sel.anchorNode) {
+    return;
+  }
+  const parent = sel.anchorNode.parentElement;
+  if (parent && parent.classList.contains('tag')) {
+    const range = document.createRange();
+    range.setStartAfter(parent);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
+function onFocus() {
+  showPlaceHolder.value = false;
+}
+
+function onBlur() {
+  if (tagSet.value.size === 0) {
+    showPlaceHolder.value = true;
+  }
+}
+
+defineExpose({
+  getTagValues,
+})
 </script>
 
 <template>
-  <div class="outer" >
-    <div class="upper" v-show="list.length">
-      <span v-for="item in list" :key="item">
-        {{ item }}
-        <img src="@/assets/svg-icons/icon-close.svg" @click="deleteItem(item)" />
-      </span>
-    </div>
-    <div ref="input" class="lower" contenteditable="true"></div>
-    <img src="@/assets/svg-icons/icon-add.svg" class="add-icon" @click="add">
+  <div class="outer">
+    <p v-if="showPlaceHolder" class="placeholder">{{ placeholder }}</p>
+    <img src="@/assets/svg-icons/icon-add.svg" class="add-icon" @click="addTag">
+    <div class="input" ref="input" contenteditable="true" @focus="onFocus" @blur="onBlur" @click="onClick"></div>
   </div>
 </template>
 
 <style scoped lang="scss">
+:deep(.tag) {
+  padding: 3px 12px;
+  padding-right: 32px;
+  max-width: 100%;
+  background-color: #DEDEE3;
+  border-radius: 4px;
+  height: fit-content;
+  font-size: 12px;
+  line-height: 18px;
+  position: relative;
+  width: fit-content;
+  margin-right: 10px;
+
+  img {
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+}
+
 .outer {
-  // cursor: text;
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 4px;
   width: 300px;
   min-height: 126px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   padding: 8px 16px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 
-  :deep(.o-textarea-textarea) {
-    border: none
+  .input {
+    width: 100%;
+    outline: none;
+    flex-grow: 1;
+  }
+
+  .placeholder {
+    position: absolute;
+    font-size: 16px;
+    color: rgba(0, 0, 0, 0.4);
   }
 
   .add-icon {
@@ -68,41 +173,6 @@ function deleteItem(item: string) {
     position: absolute;
     right: 16px;
     bottom: 8px;
-  }
-
-  .upper {
-    display: flex;
-    gap: 6px;
-    width: 100%;
-    flex-wrap: wrap;
-
-    span {
-      padding: 3px 12px;
-      padding-right: 32px;
-      max-width: 100%;
-      word-break: break-all;
-      background-color: #DEDEE3;
-      border-radius: 4px;
-      height: fit-content;
-      font-size: 12px;
-      line-height: 18px;
-      position: relative;
-
-      img {
-        width: 16px;
-        height: 16px;
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        cursor: pointer;
-      }
-    }
-  }
-
-  .lower {
-    width: 100%;
-    outline: none;
   }
 }
 </style>

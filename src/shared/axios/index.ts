@@ -94,7 +94,8 @@ function getCookie(cname: string) {
 const requestInterceptorId = request.interceptors.request.use(
   (config: InternalRequestConfig) => {
     const { showLoading } = config;
-    config.headers.set('Token', getCookie(USER_TOKEN));
+    config.headers.set('token', getCookie(USER_TOKEN));
+    config.headers.set('ngrok-skip-browser-warning', '69420');
 
     if (loadingCount === 0 && config.showLoading) {
       if (showLoading) {
@@ -166,7 +167,12 @@ const responseInterceptorId = request.interceptors.response.use(
       loadingInstance.toggle(false);
       loadingCount = 0;
     }
-
+    if (err.config?.method === 'post' &&
+      err.config.url?.endsWith('/config/subs') &&
+      (err.response?.data as any)?.exist ||
+      (err.response?.data as any)?.newId) {
+      return Promise.resolve(err.response);
+    }
     const config = err.config as InternalRequestConfig;
 
     // 非取消请求发生异常，同样将请求移除请求池

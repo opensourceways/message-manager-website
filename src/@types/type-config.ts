@@ -21,11 +21,4 @@ export type Subscribe = {
   need_phone: boolean;
   need_mail: boolean;
   need_inner_message: boolean;
-
-  checkboxes: (string | number)[];
-  recipient_ids: string[];
-  needMessageIndeterminate: boolean;
-  needPhoneIndeterminate: boolean;
-  needMailIndeterminate: boolean;
-  needInnerMessageIndeterminate: boolean;
 }

@@ -1,4 +1,4 @@
-import { request } from "@/shared/axios";
+import { request, type RequestConfig } from "@/shared/axios";
 import type { Recipient, Subscribe } from "@/@types/type-config";
 import type { PagedResponse, Pagination } from "@/@types/types-common";
 import dayjs from "dayjs";
@@ -45,14 +45,27 @@ export function getSubscribes(page = 1, count_per_page = 10): Promise<Pagination
     });
 }
 
-export function postSubsCondition(data: any) {
-  return request.post('/message_center/config/subs', data);
+export function postSubsCondition(data: any, config?: RequestConfig) {
+  return request.post('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config);
 }
 
 export function putSubsCondition(data: any) {
-  return request.put('/message_center/config/subs', data);
+  return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), data);
 }
 
 export function deleteSubsCondition(id: string) {
   
+}
+
+export function updateNeedStatus(needStatus: string[], recipient_id: string, subscribe_id: string) {
+  const data: any = {
+    'need_inner_message': false,
+    'need_mail': false,
+    'need_message': false,
+    'need_phone': false,
+    recipient_id,
+    subscribe_id
+  }
+  needStatus.forEach(item => data[item] = true);
+  return request.put('/message_center/config/push', data);
 }

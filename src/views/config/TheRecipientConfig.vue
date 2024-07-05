@@ -44,16 +44,18 @@ function getData(val = { page: 1, pageSize: 10 }) {
     }
   });
 }
+getData();
 
-// ----------------新增接收人-------------------
-const isAddingRecipient = ref(false);
-const newData = reactive({
+// ----------------新增/修改接收人-------------------
+const editingData = reactive({
   recipient_id: '',
   mail: '',
   phone: '',
   remark: ''
 });
 
+// ----------------新增接收人-------------------
+const isAddingRecipient = ref(false);
 function handleAddRecipient() {
   addRecipientGenerator = (function* () {
     if (tableTotal.value > 0) {
@@ -63,61 +65,36 @@ function handleAddRecipient() {
         currentPage.value = lastPage;
         yield;
       }
-    } else {
-      tableData.value.push({
-        key: '',
-        recipient_id: '',
-        mail: '',
-        message: '',
-        phone: '',
-        remark: '',
-        created_at: '',
-        formattedCreateTime: '',
-      });
     }
+    tableData.value.push({
+      key: '',
+      recipient_id: '',
+      mail: '',
+      message: '',
+      phone: '',
+      remark: '',
+      created_at: '',
+      formattedCreateTime: '',
+    });
     isAddingRecipient.value = true;
   })();
   addRecipientGenerator.next();
 }
 
 async function confirmAdd() {
-  if (tableData.value.some(item => item.recipient_id === newData.recipient_id)) {
-    message.warning({
-      content: '接收人姓名不能相同'
-    });
-    return;
-  };
-  await addRecipient(newData);
-  cancelAdd();
+  await addRecipient(editingData).catch(err => message.warning(err.response.data.error));
+  cancelAddOrEdit();
   getData({ page: currentPage.value, pageSize: pageSize.value });
 }
 
-function cancelAdd() {
-  if (tableTotal.value === 0) {
-    tableData.value.pop();
-  }
-  isAddingRecipient.value = false;
-  newData.recipient_id = '';
-  newData.mail = '';
-  newData.phone = '';
-  newData.remark = '';
-}
-
 // ----------------修改接收人-------------------
-const editingData = reactive({
-  recipient_id: '',
-  mail: '',
-  phone: '',
-  remark: ''
-});
-const editingIndex = ref<number>();
+const editingRecipientId = ref<number | string | undefined>();
 
-function handleEditRecipient(index: number) {
-  const recipient = tableData.value[index];
+function handleEditRecipient(recipient: Recipient) {
   if (!recipient) {
     return;
   }
-  editingIndex.value = index;
+  editingRecipientId.value = recipient.recipient_id;
   editingData.recipient_id = recipient.recipient_id;
   editingData.mail = recipient.mail;
   editingData.phone = recipient.phone;
@@ -126,12 +103,25 @@ function handleEditRecipient(index: number) {
 
 async function confirmEdit() {
   await editRecipient(editingData);
-  cancelEdit();
+  cancelAddOrEdit();
   getData({ page: currentPage.value, pageSize: pageSize.value });
 }
 
-function cancelEdit() {
-  editingIndex.value = -1;
+function confirmEditOrAdd() {
+  if (editingRecipientId.value) {
+    confirmEdit();
+  }
+  if (isAddingRecipient.value) {
+    confirmAdd();
+  }
+}
+
+function cancelAddOrEdit() {
+  if (isAddingRecipient.value) {
+    tableData.value.pop();
+    isAddingRecipient.value = false;
+  }
+  editingRecipientId.value = undefined;
   editingData.recipient_id = '';
   editingData.mail = '';
   editingData.phone = '';
@@ -152,73 +142,64 @@ async function deleteRow(recipient_id: string) {
   </div>
 
   <OTable :columns="tableColumns" :loading="tableLoading" :data="tableData" style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)">
-    <template #body="{ body }">
-      <template v-for="(row, rIdx) in body" :key="row.key || rIdx" >
-        <tr v-if="editingIndex === rIdx && row.key" :class="{ last: !isAddingRecipient && (rIdx + 1 === tableData.length) }">
-          <td><OInput v-model="editingData.recipient_id" placeholder="请输入姓名" clearable style="width: 160px" /></td>
-          <td><OInput v-model="editingData.mail" placeholder="请输入邮箱" clearable style="width: 160px" /></td>
-          <td><OInput v-model="editingData.phone" placeholder="请输入手机" clearable style="width: 160px" /></td>
-          <td><OInput v-model="editingData.remark" placeholder="请输入备注" clearable style="width: 160px" /></td>
-          <td></td>
-          <td>
-            <div class="row space-between" style="margin-right: 16px;">
-              <OLink color="primary" @click="confirmEdit">保存</OLink>
-              <OLink color="primary" @click="cancelEdit" style="margin-left: 16px;">取消</OLink>
-            </div>
-          </td>
-        </tr>
-        <tr v-else-if="row.key" :class="{ last: !isAddingRecipient && (rIdx + 1 === tableData.length) }">
-          <td v-for="(col, idx) in row.data" :key="col.key || idx" :rowspan="col.rowspan" :colspan="col.colspan" :class="{ last: col.last }">
-            <div v-if="col.key === 'operation'" class="row space-between" style="margin-right: 16px;">
-              <OLink color="primary" @click="handleEditRecipient(rIdx)">修改接收人</OLink>
-              <OLink color="danger" @click="deleteRow(row.key)" style="margin-left: 48px;">删除</OLink>
-            </div>
-            <span v-else>
-              {{ col.value }}
-            </span>
-          </td>
-        </tr>
-      </template>
-      <tr v-if="isAddingRecipient">
-        <td>
-          <TheWarningInput
-            :validator="val => !!val.trim()"
-            warningText="请输入姓名"
-            v-model="newData.recipient_id"
-            placeholder="请输入姓名"
-            clearable
-            style="width: 160px"
-          />
-        </td>
-        <td>
-          <TheWarningInput
-            :validator="val => !!val.trim() && EMAIL_PATTERN.test(val.trim())"
-            warningText="请输入正确的邮箱"
-            v-model="newData.mail"
-            placeholder="请输入邮箱"
-            clearable
-            style="width: 160px"
-          />
-        </td>
-        <td>
-          <TheWarningInput
-            :validator="val => !!val.trim() && PHONE_PATTERN.test(val.trim())"
-            warningText="请输入正确的手机号码"
-            v-model="newData.phone"
-            placeholder="请输入手机号码"
-            clearable
-            style="width: 160px"
-          />
-        </td>
-        <td><OInput v-model="newData.remark" placeholder="请输入备注" clearable style="width: 160px" /></td>
-        <td></td>
-        <td>
-          <div class="row space-between" style="margin-right: 16px;">
-            <OLink color="primary" @click="confirmAdd">保存</OLink>
-            <OLink color="primary" @click="cancelAdd" style="margin-left: 16px;">取消</OLink>
-          </div>
-        </td>
-      </tr>
+    <template #td_recipient_id="{ row }">
+      <TheWarningInput
+        v-if="editingRecipientId === row.recipient_id || row.key === ''"
+        :validator="val => !!val.trim()"
+        warningText="请输入姓名"
+        v-model="editingData.recipient_id"
+        placeholder="请输入姓名"
+        clearable
+        style="width: 160px"
+      />
+      <span v-else>{{ row.recipient_id }}</span>
+    </template>
+    <template #td_mail="{ row }">
+      <TheWarningInput
+        v-if="editingRecipientId === row.recipient_id || row.key === ''"
+        :validator="val => !!val.trim() && EMAIL_PATTERN.test(val.trim())"
+        warningText="请输入正确的邮箱"
+        v-model="editingData.mail"
+        placeholder="请输入邮箱"
+        clearable
+        style="width: 160px"
+      />
+      <span v-else>{{ row.mail }}</span>
+    </template>
+    <template #td_phone="{ row }">
+      <TheWarningInput
+        v-if="editingRecipientId === row.recipient_id || row.key === ''"
+        :validator="val => !!val.trim() && PHONE_PATTERN.test(val.trim())"
+        warningText="请输入正确的手机号码"
+        v-model="editingData.phone"
+        placeholder="请输入手机号码"
+        clearable
+        style="width: 160px"
+      />
+      <span v-else>{{ row.phone }}</span>
+    </template>
+    <template #td_remark="{ row }">
+      <OInput 
+        v-if="editingRecipientId === row.recipient_id || row.key === ''" 
+        v-model="editingData.remark" 
+        placeholder="请输入备注" 
+        clearable 
+        style="width: 160px"
+      />
+      <span v-else>{{ row.remark }}</span>
+    </template>
+    <template #td_formattedCreateTime="{ row }">
+      {{ row.formattedCreateTime }}
+    </template>
+    <template #td_operation="{ row }">
+      <div v-if="editingRecipientId === row.recipient_id || row.key === ''" class="row space-between" style="margin-right: 16px;">
+        <OLink color="primary" @click="confirmEditOrAdd">保存</OLink>
+        <OLink color="primary" @click="cancelAddOrEdit" style="margin-left: 16px;">取消</OLink>
+      </div>
+      <div v-else class="row space-between" style="margin-right: 16px;">
+        <OLink color="primary" @click="handleEditRecipient(row as Recipient)">修改接收人</OLink>
+        <OLink color="danger" @click="deleteRow((row as any).key)" style="margin-left: 48px;">删除</OLink>
+      </div>
     </template>
   </OTable>
   <OPagination :total="tableTotal" v-model:page="currentPage" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px;"/>

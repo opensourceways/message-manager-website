@@ -5,14 +5,17 @@ import { OCheckbox, OCollapse, OCollapseItem, OIconChevronDown, OMenu, OMenuItem
 import dayjs from 'dayjs';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import TheMessageItemDetail from './TheMessageItemDetail.vue';
+import { useI18n } from 'vue-i18n';
+import 'dayjs/locale/zh'
 
+const { locale } = useI18n();
 const router = useRouter();
 const expandedMenus = ref(['1', '2']);
 const checkedAll = ref<number[]>([]);
 const thisWeekCheckedAll = ref<number[]>([]);
 const aWeekAgoCheckedAll = ref<number[]>([]);
 const checkedItems = ref<number[]>([]);
-// const messages = ref<MessageT[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
@@ -21,17 +24,7 @@ const aWeekAgoMessages = ref<MessageT[]>([]);
 const expanded = ref([1, 2]);
 
 const NOW = dayjs();
-const SOURCES: Record<string, string> = {
-  'https://eur.openeuler.openatom.cn': 'EUR',
-  'https://gitee.com': 'Gitee',
-};
-const EVENT_TYPES: Record<string, string> = {
-  'build': '构建',
-  'issue': 'Issue',
-  'push': 'Push',
-  'pr': 'Pull Request',
-  'note': '评论',
-};
+dayjs.locale(locale.value);
 
 function toConfig() {
   router.push('/config');
@@ -41,9 +34,9 @@ function getData(val = { page: 1, pageSize: 10 }, source?: string, eventType?: s
   getMessages(source, eventType, isRead, val.page, val.pageSize).then(({ total: returnTotal, data }) => {
     thisWeekMessages.value = [];
     aWeekAgoMessages.value = [];
-    // messages.value = data;
     total.value = returnTotal;
     for (const item of data) {
+      item.formattedTime = dayjs(item.time).fromNow();
       const date = dayjs(item.time);
       if (NOW.diff(date, 'week') === 0) {
         thisWeekMessages.value.push(item);
@@ -53,6 +46,7 @@ function getData(val = { page: 1, pageSize: 10 }, source?: string, eventType?: s
     }
   });
 }
+getData();
 
 function onHoverMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mark-read') {
   if (event.target) {
@@ -80,7 +74,6 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
           <img class="active" src="@/assets/svg-icons/icon-setting-active.svg" alt="" style="width: 24px; height: 24px;">
           <img class="inactive" src="@/assets/svg-icons/icon-setting.svg" alt="" style="width: 24px; height: 24px;">
         </div>
-        <!-- <img src="@/assets/svg-icons/icon-setting.svg" style="width: 24px; height: 24px;" /> -->
       </div>
       <OMenu v-model:expanded="expandedMenus">
         <OSubMenu value="1">
@@ -115,8 +108,6 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
     </aside>
 
     <div class="message-list">
-      <!-- <template v-if="total">
-      </template> -->
       <div class="header">
         <div class="left">
           <OCheckbox v-model="checkedAll" :value="1"></OCheckbox>
@@ -145,23 +136,14 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
           <OCollapseItem :value="1">
             <template #title>
               <div style="display: flex; align-items: center; gap: 36px;">
-                <OCheckbox v-model="thisWeekCheckedAll" :value="1"></OCheckbox>
+                <OCheckbox v-model="thisWeekCheckedAll" :value="1" @click.capture.stop ></OCheckbox>
                 <span>本周</span>
               </div>
             </template>
             <div v-for="(msg) in thisWeekMessages" :key="msg.id" class="item">
-              <OCheckbox :value="msg.id" v-model="checkedItems"  @click.capture.stop/>
+              <OCheckbox :value="msg.id" v-model="checkedItems" />
               <div class="dot-icon" v-if="!msg.is_read"></div>
-              <div class="detail">
-                <div class="left">
-                  <p class="msg-title" :unread="!msg.is_read">{{ msg.title }}</p>
-                  <p></p>
-                </div>
-                <div class="right">
-                  <p>{{ msg.formattedTime }}</p>
-                  <p>{{ SOURCES[msg.source] }} | {{ EVENT_TYPES[msg.type] }}动态</p>
-                </div>
-              </div>
+              <TheMessageItemDetail :msg="msg" />
             </div>
           </OCollapseItem>
           <OCollapseItem :value="2">
@@ -174,16 +156,7 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
             <div v-for="(msg) in aWeekAgoMessages" :key="msg.id" class="item">
               <OCheckbox :value="msg.id" v-model="checkedItems" />
               <div class="dot-icon" v-if="!msg.is_read"></div>
-              <div class="detail">
-                <div class="left">
-                  <p class="msg-title" :unread="!msg.is_read">{{ msg.title }}</p>
-                  <p></p>
-                </div>
-                <div class="right">
-                  <p>{{ msg.formattedTime }}</p>
-                  <p>{{ SOURCES[msg.source] }} | {{ EVENT_TYPES[msg.type] }}动态</p>
-                </div>
-              </div>
+              <TheMessageItemDetail :msg="msg" />
             </div>
           </OCollapseItem>
         </OCollapse>
@@ -195,6 +168,10 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
 </template>
 
 <style scoped lang="scss">
+:deep(.o-collapse-item) {
+  border: none;
+}
+
 :deep(.o-pagination-wrap) {
   justify-content: flex-end;
 }
@@ -218,7 +195,6 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
   min-height: 900px;
 
   aside {
-
     .title {
       display: flex;
       justify-content: space-between;
@@ -254,14 +230,6 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
   }
 }
 
-.msg-title {
-  font-size: 22px;
-  font-weight: normal;
-
-  &[unread="true"] {
-    font-weight: bold;
-  }
-}
 
 .message-list {
   flex-grow: 1;
@@ -302,27 +270,6 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
 
       .dot-icon {
         margin-left: 12px;
-      }
-
-      .detail {
-        margin-left: 16px;
-        display: flex;
-        justify-content: space-between;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-        .left {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .right {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          align-items: flex-end;
-        }
       }
     }
   }

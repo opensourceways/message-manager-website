@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination } from '@opensig/opendesign';
+import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination, OTable } from '@opensig/opendesign';
 import { computed, reactive, ref } from 'vue';
-import { getSubscribes, postSubsCondition, putSubsCondition } from '@/api/config';
+import { getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
 import type { Subscribe } from '@/@types/type-config';
 import TheEditorWithTags from './components/TheEditorWithTags.vue';
 
@@ -12,251 +12,157 @@ const tableTotal = ref(0);
 class TableRow {
   id: any;
   name: string;
-  needInnerMessageIndeterminate: boolean = false;
-  needMailIndeterminate: boolean = false;
-  needMessageIndeterminate: boolean = false;
-  needConditions: string[] = [];
-  recipientIds: string[];
-  children?: TableRow[];
+  needCheckboxes: string[] = [];
+  recipientIds?: string;
+  children: TableRow[];
   hasAddIcon?: boolean;
   data: any;
 
-  constructor(data: any) {
+  constructor(data: any, name?: string, hasAddIcon?: boolean, children?: TableRow[]) {
     this.id = data.id;
+    this.hasAddIcon = hasAddIcon;
+    this.children = children ?? [];
+    this.name = name ?? data.mode_name;
     this.data = data;
-    this.name = data.mode_name;
-    if (data.need_inner_message_count > 0) {
-      if (data.need_inner_message_count < data.recipient_ids.length) {
-        this.needInnerMessageIndeterminate = true;
-      } else {
-        this.needConditions.push('need_inner_message');
-      }
+    this.recipientIds = data.recipient_ids?.join('、') ?? '';
+    if (data.need_inner_message) {
+      this.needCheckboxes.push('need_inner_message');
     }
-    if (data.need_mail_count > 0) {
-      if (data.need_mail_count < data.recipient_ids.length) {
-        this.needMailIndeterminate = true;
-      } else {
-        this.needConditions.push('need_mail');
-      }
+    if (data.need_mail) {
+      this.needCheckboxes.push('need_mail');
     }
-    if (data.need_message_count > 0) {
-      if (data.need_message_count < data.recipient_ids.length) {
-        this.needMessageIndeterminate = true;
-      } else {
-        this.needConditions.push('need_message');
-      }
+    if (data.need_message) {
+      this.needCheckboxes.push('need_message');
     }
-    this.recipientIds = data.recipient_ids;
   }
 }
 
 // -----------------------初始数据-----------------------
 const tableData = reactive<TableRow[]>([
-  {
+  new TableRow({
+    source: 'https://eur.openeuler.openatom.cn',
+    event_type: 'build',
     id: 'EUR',
-    name: 'EUR消息',
-    needConditions: [],
-    recipientIds: [],
-    needInnerMessageIndeterminate: false,
-    needMailIndeterminate: false,
-    needMessageIndeterminate: false,
-    hasAddIcon: true,
-    data: {
-      source: 'https://eur.openeuler.openatom.cn',
-      event_type: 'build',
-    },
-    children: [],
-  },
-  {
+  }, 'EUR消息', true),
+  new TableRow({
+    source: 'https://gitee.com',
     id: 'GITEE',
-    name: 'Gitee消息',
-    needConditions: [],
-    recipientIds: [],
-    data: {
-      source: 'https://eur.openeuler.openatom.cn',
-    },
-    needInnerMessageIndeterminate: false,
-    needMailIndeterminate: false,
-    needMessageIndeterminate: false,
-    hasAddIcon: true,
-    children: [
-      {
-        id: 'ISSUE',
-        name: 'Issue事件',
-        needConditions: [],
-        data: {
-          source: 'https://eur.openeuler.openatom.cn',
-          event_type: 'issue',
-        },
-        recipientIds: [],
-        needInnerMessageIndeterminate: false,
-        needMailIndeterminate: false,
-        needMessageIndeterminate: false,
-        hasAddIcon: true,
-        children: [],
-      },
-      {
-        id: 'PR',
-        name: 'Pull Request事件',
-        needConditions: [],
-        data: {
-          source: 'https://eur.openeuler.openatom.cn',
-          event_type: 'pr',
-        },
-        recipientIds: [],
-        needInnerMessageIndeterminate: false,
-        needMailIndeterminate: false,
-        needMessageIndeterminate: false,
-        hasAddIcon: true,
-        children: [],
-      },
-      {
-        id: 'PUSH',
-        name: 'Push事件',
-        needConditions: [],
-        recipientIds: [],
-        data: {
-          source: 'https://eur.openeuler.openatom.cn',
-          event_type: 'push',
-        },
-        needInnerMessageIndeterminate: false,
-        needMailIndeterminate: false,
-        needMessageIndeterminate: false,
-        hasAddIcon: true,
-        children: [],
-      },
-      {
-        id: 'NOTE',
-        name: '评论事件',
-        needConditions: [],
-        data: {
-          source: 'https://eur.openeuler.openatom.cn',
-          event_type: 'note',
-        },
-        recipientIds: [],
-        needInnerMessageIndeterminate: false,
-        needMailIndeterminate: false,
-        needMessageIndeterminate: false,
-        hasAddIcon: true,
-        children: [],
-      },
-    ],
-  },
+  }, 'Gitee消息', true, [
+    new TableRow({
+      source: 'https://gitee.com',
+      event_type: 'issue',
+      id: 'ISSUE',
+    }, 'Issue事件', true),
+    new TableRow({
+      source: 'https://gitee.com',
+      event_type: 'pr',
+      id: 'PR',
+    }, 'Pull Request事件', true),
+    new TableRow({
+      source: 'https://gitee.com',
+      event_type: 'push',
+      id: 'PUSH',
+    }, 'Push事件', true),
+    new TableRow({
+      source: 'https://gitee.com',
+      event_type: 'note',
+      id: 'NOTE',
+    }, '评论事件', true),
+  ]),
 ]);
+
+// ------------------获取固定的父标题的id------------------
+Promise.all([
+  postSubsCondition({ source: 'https://eur.openeuler.openatom.cn', event_type: 'build' }, { ignoreDuplicates: true }),
+  postSubsCondition({ source: 'https://gitee.com' }, { ignoreDuplicates: true }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'issue' }, { ignoreDuplicates: true }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'pr' }, { ignoreDuplicates: true }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'push' }, { ignoreDuplicates: true }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'note' }, { ignoreDuplicates: true }),
+]).then(([ eur, gitee, issue, pr, push, note ]) => {
+  tableData[0].id = eur.data.newId || eur.data.exist.id;
+  tableData[1].id = gitee.data.newId || gitee.data.exist.id;
+  tableData[1].children[0].id = issue.data.newId || issue.data.exist.id;
+  tableData[1].children[1].id = pr.data.newId || pr.data.exist.id;
+  tableData[1].children[2].id = push.data.newId || push.data.exist.id;
+  tableData[1].children[3].id = note.data.newId || note.data.exist.id;
+});
 
 // -----------------------查询数据-----------------------
 function getData(val = { page: 1, pageSize: 10 }) {
   getSubscribes(val.page, val.pageSize).then(({ total, data }) => {
     tableTotal.value = total;
-    const map = new Map<number, Subscribe & Record<string, any>>();
+    const map = new Map<number | string, Subscribe & Record<string, any>>();
     for (const item of data) {
-      let e = map.get(item.id);
-      if (!e) {
-        e = item as Subscribe;
-        e.recipient_ids = [item.recipient_id];
-        e.need_message_count = item.need_message ? 1 : 0;
-        e.need_mail_count = item.need_mail ? 1 : 0;
-        e.need_inner_message_count = item.need_inner_message ? 1 : 0;
-        map.set(item.id, e);
+      let cached = map.get(item.id);
+      if (!cached) {
+        cached = item;
+        cached.recipient_ids = [item.recipient_id];
+        map.set(item.id, cached);
       } else {
-        e.recipient_ids.push(item.recipient_id);
-        e.need_message_count += item.need_message ? 1 : 0;
-        e.need_mail_count += item.need_mail ? 1 : 0;
-        e.need_inner_message_count += item.need_inner_message ? 1 : 0;
+        cached.recipient_ids.push(item.recipient_id);
       }
     }
     resetTableData();
-    for (const item of data as (Subscribe & Record<string, any>)[]) {
-      item.needInnerMessageIndeterminate = item.need_inner_message_count > 0 && item.need_inner_message_count < item.recipient_ids.length;
-      item.needMailIndeterminate = item.need_mail_count > 0 && item.need_mail_count < item.recipient_ids.length;
-      item.needMessageIndeterminate = item.need_message_count > 0 && item.need_message_count < item.recipient_ids.length;
+    for (const item of map.values()) {
+      let row: TableRow | undefined;
       if (item.source === 'https://eur.openeuler.openatom.cn') {
-        if (item.mode_name) {
-          tableData[0].children?.push(new TableRow(item));
-        } else {
-          tableData[0].recipientIds = item.recipient_ids;
-          tableData[0].needInnerMessageIndeterminate = item.need_inner_message_count > 0 && item.need_inner_message_count < item.recipient_ids.length;
-          tableData[0].needMailIndeterminate = item.need_mail_count > 0 && item.need_mail_count < item.recipient_ids.length;
-          tableData[0].needMessageIndeterminate = item.need_message_count > 0 && item.need_message_count < item.recipient_ids.length;
-        }
-        continue;
+        row = tableData[0];
       }
       if (item.source === 'https://gitee.com') {
         switch (item.event_type) {
           case 'issue':
-            if (item.mode_name) {
-              tableData[1].children?.[0].children?.push(new TableRow(item));
-            } else {
-              tableData[1].children[0].recipientIds = item.recipient_ids;
-              tableData[1].children[0].needInnerMessageIndeterminate = item.need_inner_message_count > 0 && item.need_inner_message_count < item.recipient_ids.length;
-              tableData[1].children[0].needMailIndeterminate = item.need_mail_count > 0 && item.need_mail_count < item.recipient_ids.length;
-              tableData[1].children[0].needMessageIndeterminate = item.need_message_count > 0 && item.need_message_count < item.recipient_ids.length;
-            }
+            row = tableData[1].children[0];
             break;
           case 'pr':
-            if (item.mode_name) {
-              tableData[1].children?.[1].children?.push(new TableRow(item));
-            } else {
-              tableData[1].children[1].recipientIds = item.recipient_ids;
-              tableData[1].children[1].needInnerMessageIndeterminate = item.need_inner_message_count > 0 && item.need_inner_message_count < item.recipient_ids.length;
-              tableData[1].children[1].needMailIndeterminate = item.need_mail_count > 0 && item.need_mail_count < item.recipient_ids.length;
-              tableData[1].children[1].needMessageIndeterminate = item.need_message_count > 0 && item.need_message_count < item.recipient_ids.length;
-            }
+            row = tableData[1].children[1];
             break;
           case 'push':
-            if (item.mode_name) {
-              tableData[1].children?.[2].children?.push(new TableRow(item));
-            } else {
-              tableData[1].children[2].recipientIds = item.recipient_ids;
-              tableData[1].children[2].needInnerMessageIndeterminate = item.need_inner_message_count > 0 && item.need_inner_message_count < item.recipient_ids.length;
-              tableData[1].children[2].needMailIndeterminate = item.need_mail_count > 0 && item.need_mail_count < item.recipient_ids.length;
-              tableData[1].children[3].needMessageIndeterminate = item.need_message_count > 0 && item.need_message_count < item.recipient_ids.length;
-            }
+            row = tableData[1].children[2];
             break;
           case 'note':
-            if (item.mode_name) {
-              tableData[1].children?.[3].children?.push(new TableRow(item));
-            } else {
-              tableData[1].children[3].recipientIds = item.recipient_ids;
-              tableData[1].children[3].needInnerMessageIndeterminate = item.need_inner_message_count > 0 && item.need_inner_message_count < item.recipient_ids.length;
-              tableData[1].children[3].needMailIndeterminate = item.need_mail_count > 0 && item.need_mail_count < item.recipient_ids.length;
-              tableData[1].children[3].needMessageIndeterminate = item.need_message_count > 0 && item.need_message_count < item.recipient_ids.length;
-            }
+            row = tableData[1].children[3];
             break;
+          default:
+            row = tableData[1];
         }
+      }
+      if (!row) {
+        continue;
+      }
+      if (item.mode_name) {
+        row.children?.push(new TableRow(item));
+        continue;
+      }
+      row.recipientIds = item.recipient_ids.join('、');
+      if (item.need_inner_message) {
+        row.needCheckboxes.push('need_inner_message');
+      }
+      if (item.need_mail) {
+        row.needCheckboxes.push('need_mail');
+      }
+      if (item.need_message) {
+        row.needCheckboxes.push('need_message');
       }
     }
   })
 }
+getData();
 
 function resetTableData() {
-  tableData[0].needConditions = [];
-  tableData[0].recipientIds = [];
-  tableData[0].needInnerMessageIndeterminate = false;
-  tableData[0].needMailIndeterminate = false;
-  tableData[0].needMessageIndeterminate = false;
-  tableData[0].children = [];
-  tableData[1].needConditions = [];
-  tableData[1].needInnerMessageIndeterminate = false;
-  tableData[1].needMailIndeterminate = false;
-  tableData[1].needMessageIndeterminate = false;
-  for (const child of tableData[1].children) {
-    child.needConditions = [];
-    child.recipientIds = [];
-    child.needInnerMessageIndeterminate = false;
-    child.needMailIndeterminate = false;
-    child.needMessageIndeterminate = false;
-  }
+  tableData.forEach(function recursion(row) {
+    row.needCheckboxes = [];
+    row.recipientIds = '';
+    if (row.data.source !== 'https://gitee.com') {
+      row.children = [];
+    }
+    if (row.children) {
+      row.children.forEach(recursion);
+    }
+  });
 }
 
-/* function editRecipient(row: TableRow) {
-  if (row.data.source === 'https://eur.openeuler.openatom.cn') {
-
-  }
-} */
-
 const currentEditorType = ref<'add' | 'edit'>('add');
-
 // -----------------------eur精细化条件-----------------------
 const editEurCondition = reactive({
   source: '',
@@ -316,6 +222,7 @@ function cancelAddEurCondition() {
 }
 
 // -----------------------gitee精细化条件-----------------------
+const repoNameEditor = ref();
 const editGiteeCondition = reactive({
   source: '',
   mode_name: '',
@@ -328,6 +235,7 @@ const editGiteeCondition = reactive({
 const showEditGiteeDlg = ref(false);
 
 function confirmAddOrEditGiteeCondition() {
+  editGiteeCondition.mode_filter.repo_name = repoNameEditor.value.getTagValues().split(commaSeparator);
   (currentEditorType.value === 'add' ? postSubsCondition : putSubsCondition)(editGiteeCondition).then(() => {
     cancelAddEurCondition();
     getData({ page: currentPage.value, pageSize: pageSize.value });
@@ -397,20 +305,34 @@ function deleteCondition(row: TableRow) {
 
 // -----------------------修改/添加接收人-----------------------
 const showEditRecipientDlg = ref(false);
-const editRecipientSource = ref<string>('');
+const recipientTableColumns = [
+  { label: '姓名', key: 'name' },
+  { label: '邮箱', key:'mail' },
+  { label: '手机', key: 'phone' },
+  { label: '备注', key:'remark' },
+];
+const editRecipientTarget = reactive({
+  id: '',
+  source: '',
+  event_type: '',
+  name: '',
+});
 const recipients = ref<{
   recipient_id: string;
   mail: string;
   phone: string;
   remark: string;
 }[]>();
-const sourceDisplayText: Record<string, string> = {
+const SOURCE: Record<string, string> = {
   'https://eur.openeuler.openatom.cn': 'EUR消息',
   'https://gitee.com': 'Gitee消息',
 }
 
 function editRecipient(row: TableRow) {
-  editRecipientSource.value = row.data.source;
+  editRecipientTarget.id = row.id;
+  editRecipientTarget.source = row.data.source;
+  editRecipientTarget.event_type = row.data.event_type;
+  editRecipientTarget.name = row.name;
   showEditRecipientDlg.value = true;
   // todo 查询
 }
@@ -421,10 +343,10 @@ function addRecipient() {
 }
 
 function needCheckboxChange(row: TableRow) {
+  Promise.all(row.data.recipient_ids.map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
 }
 
-// -----------------------分页-----------------------
-
+// -----------------------表格多选-----------------------
 const multiSelection = ref<TableRow[]>([]);
 const handleSelectionChange = (val: TableRow[]) => multiSelection.value = val;
 const btnsDisabled = computed(() => multiSelection.value.length === 0);
@@ -439,10 +361,10 @@ defineExpose({
 <template>
   <ODialog v-model:visible="showEditEurDlg" :unmount-on-hide="false">
     <template #header>新增EUR消息接收条件</template>
-    <p class="dialog-content-title">
-      消息条件命名
-    </p>
-    <div class="dialog-content" style="">
+    <div class="dialog-content">
+      <p class="dialog-content-title">
+        消息条件命名
+      </p>
       <OForm class="form" has-required label-align="top" label-justify="left" label-width="20%">
         <OFormItem label="条件名称" required>
           <OInput clearable v-model="editEurCondition.mode_name" style="width: 100%;" />
@@ -486,7 +408,7 @@ defineExpose({
       </p>
       <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
         <OFormItem label="条件名称" required>
-          <OInput clearable v-model="editGiteeCondition.mode_name" style="width: 100%;" />
+          <OInput clearable v-model="editGiteeCondition.mode_name" style="width: 100%;" placeholder="请输入方便您区分的名称" />
         </OFormItem>
       </OForm>
       <p class="dialog-content-title">
@@ -494,7 +416,7 @@ defineExpose({
       </p>
       <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
         <OFormItem label="仓库名称" required>
-          <TheEditorWithTags v-model="editGiteeCondition.mode_filter.repo_name" style="width: 100%;" />
+          <TheEditorWithTags ref="repoNameEditor" style="width: 100%;" placeholder="请输入仓库名称" />
         </OFormItem>
         <OFormItem label="提交人" required>
           <div style="display: flex; gap: 16px;">
@@ -512,16 +434,29 @@ defineExpose({
     </template>
   </ODialog>
 
-  <ODialog v-model:visible="showEditRecipientDlg" :unmount-on-hide="false">
+  <ODialog v-model:visible="showEditRecipientDlg" :unmount-on-hide="false" size="large">
     <template #header>修改接收人</template>
-    <div class="dialog-content">
+    <div class="recipient-editor-content">
       <p style="font-size: 16px; font-weight: bold;">
-        消息类型：{{ sourceDisplayText[editRecipientSource] }}
+        消息类型：{{ SOURCE[editRecipientTarget.source] }}/{{ editRecipientTarget.name }}
       </p>
-      <OButton variant="outline" round="pill" color="primary">新增接收人</OButton>
-      <ElTable :data="recipients" style="width: 100%;">
-        <ElTableColumn label="姓名"></ElTableColumn>
-      </ElTable>
+      <p style="width: fit-content">
+        <OButton variant="outline" round="pill" color="primary" >新增接收人</OButton>
+      </p>
+      <OTable :columns="recipientTableColumns" :data="recipients">
+        <template #td_name="{ row }">
+          {{ row.name }}
+        </template>
+        <template #td_mail="{ row }">
+          {{ row.mail }}
+        </template>
+        <template #td_phone="{ row }">
+          {{ row.phone }}
+        </template>
+        <template #td_remark="{ row }">
+          {{ row.remark }}
+        </template>
+      </OTable>
     </div>
   </ODialog>
 
@@ -531,7 +466,6 @@ defineExpose({
     style="width: 100%; margin-top: 24px"
     default-expand-all
     @selection-change="handleSelectionChange"
-    :header-row-style="{ background: '#DCE1EF' }"
   >
     <el-table-column type="selection" width="45" />
     <ElTableColumn label="消息类型" prop="name" width="250">
@@ -544,17 +478,17 @@ defineExpose({
     </ElTableColumn>
     <ElTableColumn label="站内消息" >
       <template #default="{ row }">
-        <OCheckbox v-model="row.needConditions" value="need_inner_message" @change="needCheckboxChange(row)"/>
+        <OCheckbox v-model="row.needCheckboxes" value="need_inner_message" @change="needCheckboxChange(row)"/>
       </template>
     </ElTableColumn>
     <ElTableColumn label="邮箱" >
       <template #default="{ row }">
-        <OCheckbox v-model="row.needConditions" value="need_mail" @change="needCheckboxChange(row)"/>
+        <OCheckbox v-model="row.needCheckboxes" value="need_mail" @change="needCheckboxChange(row)"/>
       </template>
     </ElTableColumn>
     <ElTableColumn label="短信" >
       <template #default="{ row }">
-        <OCheckbox v-model="row.needConditions" value="need_message" @change="needCheckboxChange(row)"/>
+        <OCheckbox v-model="row.needCheckboxes" value="need_message" @change="needCheckboxChange(row)"/>
       </template>
     </ElTableColumn>
     <ElTableColumn label="电话">
@@ -569,7 +503,7 @@ defineExpose({
     </ElTableColumn>
     <ElTableColumn label="消息接收人" >
       <template #default="{ row }">
-        <p>{{ row.recipientIds.join('、') }}</p>
+        <p>{{ row.recipientIds }}</p>
       </template>
     </ElTableColumn>
     <ElTableColumn label="操作" width="200">
@@ -597,6 +531,12 @@ defineExpose({
 
 .dialog-content {
   width: 600px;
+}
+
+.recipient-editor-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .dlg-action {
