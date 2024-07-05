@@ -342,6 +342,7 @@ function addRecipient() {
   showEditRecipientDlg.value = true;
 }
 
+// -----------------------接收方式勾选框状态更改-----------------------
 function needCheckboxChange(row: TableRow) {
   Promise.all(row.data.recipient_ids.map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
 }
