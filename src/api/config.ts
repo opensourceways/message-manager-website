@@ -53,8 +53,8 @@ export function putSubsCondition(data: any) {
   return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), data);
 }
 
-export function deleteSubsCondition(id: string) {
-  
+export function deleteSubsCondition(data: { source: string, event_type: string, mode_name: string }) {
+  return request.delete('/message_center/config/subs', { data });
 }
 
 export function updateNeedStatus(needStatus: string[], recipient_id: string, subscribe_id: string) {
@@ -65,7 +65,18 @@ export function updateNeedStatus(needStatus: string[], recipient_id: string, sub
     'need_phone': false,
     recipient_id,
     subscribe_id
-  }
+  };
   needStatus.forEach(item => data[item] = true);
   return request.put('/message_center/config/push', data);
+}
+
+export function postPushConfg(data: any) {
+  return request.post('/message_center/config/push', data, { ignoreDuplicates: true });
+}
+
+export function deletePushConfg(data: any) {
+  return request.delete('/message_center/config/push', {
+    ignoreDuplicates: true,
+    data
+  });
 }

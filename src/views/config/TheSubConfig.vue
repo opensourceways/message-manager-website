@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination, OTable } from '@opensig/opendesign';
-import { computed, reactive, ref } from 'vue';
-import { getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
+import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination } from '@opensig/opendesign';
+import { computed, reactive, ref, watch } from 'vue';
+import { deleteSubsCondition, getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
 import type { Subscribe } from '@/@types/type-config';
 import TheEditorWithTags from './components/TheEditorWithTags.vue';
+import TheRecipientTableDialog from './components/TheRecipientTableDialog.vue';
 
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -16,7 +17,7 @@ class TableRow {
   recipientIds?: string;
   children: TableRow[];
   hasAddIcon?: boolean;
-  data: any;
+  data: Subscribe;
 
   constructor(data: any, name?: string, hasAddIcon?: boolean, children?: TableRow[]) {
     this.id = data.id;
@@ -92,7 +93,7 @@ Promise.all([
 function getData(val = { page: 1, pageSize: 10 }) {
   getSubscribes(val.page, val.pageSize).then(({ total, data }) => {
     tableTotal.value = total;
-    const map = new Map<number | string, Subscribe & Record<string, any>>();
+    const map = new Map<number | string, Subscribe>();
     for (const item of data) {
       let cached = map.get(item.id);
       if (!cached) {
@@ -100,7 +101,7 @@ function getData(val = { page: 1, pageSize: 10 }) {
         cached.recipient_ids = [item.recipient_id];
         map.set(item.id, cached);
       } else {
-        cached.recipient_ids.push(item.recipient_id);
+        cached.recipient_ids?.push(item.recipient_id);
       }
     }
     resetTableData();
@@ -278,8 +279,8 @@ function editCondition(row: TableRow) {
       editEurCondition.mode_name = row.data.mode_name;
       editEurCondition.event_type = row.data.event_type;
       editEurCondition.mode_filter = {
-        name: row.data.mode_filter.name.join(', '),
-        owner: row.data.mode_filter.owner.join(', '),
+        name: row.data.mode_filter.name?.join(', ') ?? '',
+        owner: row.data.mode_filter.owner?.join(', ') ?? '',
         topic: row.data.mode_filter.topic,
         status: row.data.mode_filter.status,
       };
@@ -290,7 +291,7 @@ function editCondition(row: TableRow) {
       editGiteeCondition.mode_name = row.data.mode_name;
       editGiteeCondition.event_type = row.data.event_type;
       editGiteeCondition.mode_filter = {
-        repo_name: row.data.mode_filter.repo_name,
+        repo_name: row.data.mode_filter.repo_name ?? '',
         is_bot: row.data.mode_filter.is_bot,
       };
       showEditGiteeDlg.value = true;
@@ -299,46 +300,44 @@ function editCondition(row: TableRow) {
   currentEditorType.value = 'edit';
 }
 
-function deleteCondition(row: TableRow) {
+const showDeleteDlg = ref(false);
+const deletedRow = ref<TableRow>();
 
+function deleteCondition(row: TableRow) {
+  deletedRow.value = row;
+  showDeleteDlg.value = true;
+}
+
+async function confirmDelete() {
+  if (!deletedRow.value) {
+    return;
+  }
+  await deleteSubsCondition({
+    source: deletedRow.value.data.source,
+    event_type: deletedRow.value.data.event_type,
+    mode_name: deletedRow.value.data.mode_name,
+  });
+  cancelDelete();
+  getData({ page: currentPage.value, pageSize: pageSize.value });
+}
+
+function cancelDelete() {
+  showDeleteDlg.value = false;
+  deletedRow.value = undefined;
 }
 
 // -----------------------修改/添加接收人-----------------------
 const showEditRecipientDlg = ref(false);
-const recipientTableColumns = [
-  { label: '姓名', key: 'name' },
-  { label: '邮箱', key:'mail' },
-  { label: '手机', key: 'phone' },
-  { label: '备注', key:'remark' },
-];
-const editRecipientTarget = reactive({
-  id: '',
-  source: '',
-  event_type: '',
-  name: '',
+const editRecipientTargetRows = ref<TableRow[]>([]);
+
+watch(showEditRecipientDlg, val => {
+  if (!val) {
+    getData({ page: currentPage.value, pageSize: pageSize.value });
+  }
 });
-const recipients = ref<{
-  recipient_id: string;
-  mail: string;
-  phone: string;
-  remark: string;
-}[]>();
-const SOURCE: Record<string, string> = {
-  'https://eur.openeuler.openatom.cn': 'EUR消息',
-  'https://gitee.com': 'Gitee消息',
-}
 
 function editRecipient(row: TableRow) {
-  editRecipientTarget.id = row.id;
-  editRecipientTarget.source = row.data.source;
-  editRecipientTarget.event_type = row.data.event_type;
-  editRecipientTarget.name = row.name;
-  showEditRecipientDlg.value = true;
-  // todo 查询
-}
-
-function addRecipient() {
-  // todo
+  editRecipientTargetRows.value = [row];
   showEditRecipientDlg.value = true;
 }
 
@@ -352,14 +351,32 @@ const multiSelection = ref<TableRow[]>([]);
 const handleSelectionChange = (val: TableRow[]) => multiSelection.value = val;
 const btnsDisabled = computed(() => multiSelection.value.length === 0);
 
+function handleExternalAddRecipient() {
+  editRecipientTargetRows.value = multiSelection.value;
+  showEditRecipientDlg.value = true;
+}
+
 defineExpose({
-  addRecipient,
-  editRecipient,
+  handleExternalAddRecipient,
+  // editRecipient,
   btnsDisabled
 })
 </script>
 
 <template>
+  <ODialog v-model:visible="showDeleteDlg" size="small">
+    <template #header>删除条件</template>
+    <div style="display: flex; justify-content: center;">
+      是否删除{{ deletedRow?.name }}
+    </div>
+    <template #footer>
+      <div class="dlg-action">
+        <OButton color="primary" variant="solid" @click="confirmDelete">确定</OButton>
+        <OButton @click="cancelDelete">取消</OButton>
+      </div>
+    </template>
+  </ODialog>
+
   <ODialog v-model:visible="showEditEurDlg" :unmount-on-hide="false">
     <template #header>新增EUR消息接收条件</template>
     <div class="dialog-content">
@@ -437,28 +454,10 @@ defineExpose({
 
   <ODialog v-model:visible="showEditRecipientDlg" :unmount-on-hide="false" size="large">
     <template #header>修改接收人</template>
-    <div class="recipient-editor-content">
-      <p style="font-size: 16px; font-weight: bold;">
-        消息类型：{{ SOURCE[editRecipientTarget.source] }}/{{ editRecipientTarget.name }}
-      </p>
-      <p style="width: fit-content">
-        <OButton variant="outline" round="pill" color="primary" >新增接收人</OButton>
-      </p>
-      <OTable :columns="recipientTableColumns" :data="recipients">
-        <template #td_name="{ row }">
-          {{ row.name }}
-        </template>
-        <template #td_mail="{ row }">
-          {{ row.mail }}
-        </template>
-        <template #td_phone="{ row }">
-          {{ row.phone }}
-        </template>
-        <template #td_remark="{ row }">
-          {{ row.remark }}
-        </template>
-      </OTable>
-    </div>
+    <TheRecipientTableDialog
+      :effectedRows="editRecipientTargetRows"
+      :isShowingDialog="showEditRecipientDlg"
+    ></TheRecipientTableDialog>
   </ODialog>
 
   <ElTable 
@@ -469,7 +468,7 @@ defineExpose({
     @selection-change="handleSelectionChange"
   >
     <el-table-column type="selection" width="45" />
-    <ElTableColumn label="消息类型" prop="name" width="250">
+    <ElTableColumn label="消息类型" prop="name" width="200">
       <template #default="{ row }">
         <div class="first-cell">
           {{ row.name }}
@@ -525,6 +524,7 @@ defineExpose({
 :deep(.table-header) {
   background-color: #DCE1EF;
 }
+
 :deep(.o-pagination-wrap) {
   margin-top: 32px;
   justify-content: flex-end;
@@ -532,12 +532,6 @@ defineExpose({
 
 .dialog-content {
   width: 600px;
-}
-
-.recipient-editor-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .dlg-action {

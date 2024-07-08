@@ -9,7 +9,11 @@ const subConfig = ref<any>();
 const btnsDisabled = computed(() => subConfig.value && subConfig.value.btnsDisabled);
 
 function addRecipient() {
-  subConfig.value.addRecipient();
+  subConfig.value.handleExternalAddRecipient();
+}
+
+function removeRecipient() {
+  // TODO: implement remove recipient logic
 }
 </script>
 
@@ -24,7 +28,7 @@ function addRecipient() {
         <template #suffix>
           <div v-if="activeTab === 'a'" class="subs-config-btn-group">
             <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'" @click="addRecipient">添加接收人</OButton>
-            <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'">移除接收人</OButton>
+            <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'" @click="removeRecipient">移除接收人</OButton>
           </div>
         </template>
         <OTabPane value="a" :label="$t('config.receiveConfig')">
