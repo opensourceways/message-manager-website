@@ -37,48 +37,62 @@ watch(() => tagSet.value.size, size => {
 });
 
 function getTagValues() {
-  const result: string[] = [];
-  input.value.querySelectorAll('span.tag').forEach(tag => result.push(tag.textContent as string));
-  return result;
+  return [...tagSet.value];
 }
 
 function deleteTag(event: MouseEvent) {
-  const tag = (event.target as HTMLImageElement).parentElement as HTMLSpanElement;
-  input.value.removeChild(tag);
+  const tagWrapper = (event.target as HTMLImageElement).parentElement?.parentElement as HTMLSpanElement;
+  input.value.removeChild(tagWrapper);
 }
 
-function addTag() {
-  const last = input.value.lastChild;
-  let text;
-  if (last?.nodeType === Node.TEXT_NODE) {
-    text = last.textContent?.trim();
-  } else if (last instanceof HTMLSpanElement && last.className !== 'tag') {
-    text = last.textContent?.trim();
+function addTag(event?: KeyboardEvent) {
+  if (event) {
+    event.preventDefault();
   }
+  const sel = window.getSelection();
+  const text = sel?.focusNode?.textContent;
   if (!text || tagSet.value.has(text)) {
     return;
   }
   tagSet.value.add(text);
-  tagsRemovedObserver.disconnect()
-  input.value.innerHTML = '';
-  appenTags();
+  const warpper = appendTag(text, sel.focusNode);
+  const range = document.createRange();
+  range.setStartAfter(warpper);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 
-function appenTags() {
-  for (const text of tagSet.value) {
-    const tag = document.createElement('span');
-    tag.classList.add('tag');
-    tag.textContent = text;
-    tag.contentEditable = 'false';
-    const icon = document.createElement('img');
-    icon.src = '/src/assets/svg-icons/icon-close.svg';
-    icon.classList.add('close');
-    icon.addEventListener('click', deleteTag);
-    tag.appendChild(icon);
-    input.value.appendChild(tag);
+function appendTag(text: string, focusNode: Node) {
+  const wrapper = document.createElement('span');
+  wrapper.classList.add('tag-wrapper');
+  wrapper.contentEditable = 'false';
+  const tag = document.createElement('span');
+  tag.classList.add('tag');
+  tag.textContent = text;
+  tag.contentEditable = 'false';
+  const icon = document.createElement('img');
+  icon.src = '/src/assets/svg-icons/icon-close.svg';
+  icon.classList.add('close');
+  icon.addEventListener('click', deleteTag);
+  tag.appendChild(icon);
+  wrapper.appendChild(tag);
+  input.value.insertBefore(wrapper, focusNode);
+  input.value.removeChild(focusNode);
+  return wrapper;
+}
+
+function getWrapper(node: Node): HTMLSpanElement | undefined {
+  let node_: any = node;
+  while (node_) {
+    if (node_ === input.value) {
+      return;
+    }
+    if (node_ instanceof HTMLSpanElement && node_.classList.contains('tag-wrapper')) {
+      return node_;
+    }
+    node_ = node_.parentElement;
   }
-  input.value.appendChild(document.createElement('span'));
-  tagsRemovedObserver.observe(input.value, OBERVER_CONFIG);
 }
 
 function onClick() {
@@ -86,8 +100,8 @@ function onClick() {
   if (!sel || !sel.anchorNode) {
     return;
   }
-  const parent = sel.anchorNode.parentElement;
-  if (parent && parent.classList.contains('tag')) {
+  const parent = getWrapper(sel.anchorNode);
+  if (parent) {
     const range = document.createRange();
     range.setStartAfter(parent);
     range.collapse(true);
@@ -114,33 +128,41 @@ defineExpose({
 <template>
   <div class="outer">
     <p v-if="showPlaceHolder" class="placeholder">{{ placeholder }}</p>
-    <img src="@/assets/svg-icons/icon-add.svg" class="add-icon" @click="addTag">
-    <div class="input" ref="input" contenteditable="true" @focus="onFocus" @blur="onBlur" @click="onClick"></div>
+    <!-- <img src="@/assets/svg-icons/icon-add.svg" class="add-icon" @click="addTag"> -->
+    <div class="input" ref="input" contenteditable="true" @focus="onFocus" @blur="onBlur" @keydown.enter="addTag" @click="onClick"></div>
   </div>
 </template>
 
 <style scoped lang="scss">
-:deep(.tag) {
-  padding: 3px 12px;
-  padding-right: 32px;
-  max-width: 100%;
-  background-color: #DEDEE3;
-  border-radius: 4px;
-  height: fit-content;
-  font-size: 12px;
-  line-height: 18px;
-  position: relative;
-  width: fit-content;
-  margin-right: 10px;
+:deep(.tag-wrapper) {
+  padding: 0 3px;
+  white-space: nowrap;
 
-  img {
-    width: 16px;
-    height: 16px;
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
+  &:first-child {
+    padding-left: 0;
+  }
+
+  .tag {
+    padding: 3px 12px;
+    padding-right: 32px;
+    max-width: 100%;
+    background-color: #DEDEE3;
+    border-radius: 4px;
+    height: fit-content;
+    font-size: 12px;
+    line-height: 18px;
+    position: relative;
+    width: fit-content;
+
+    img {
+      width: 16px;
+      height: 16px;
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
   }
 }
 
