@@ -1,8 +1,10 @@
 <script setup lang="ts">
+// TODO:文件命名建议同一模块使用相同前缀
 import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
 import { OButton, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import TheWarningInput from '@/components/TheWarningInput.vue';
+// TODO:建议调整import层级，重要的依赖往上放
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -19,7 +21,9 @@ const tableColumns = [
 const tableData = ref<Recipient[]>([]);
 const tableLoading = ref(false);
 let addRecipientGenerator: Generator | undefined;
+// TODO:正则提取
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
+// TODO:正则提取
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -214,6 +218,7 @@ async function deleteRow(recipient_id: string) {
   justify-content: space-between;
 }
 
+// TODO:使用变量
 .add-receiver {
   border: 1px solid #002EA7;
   background-color: #FFF;

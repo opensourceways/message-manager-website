@@ -1,10 +1,12 @@
 import { request, type AxiosResponse } from "@/shared/axios";
 import type { MessageT } from "@/@types/type-messages";
 import { isArray } from "@opensig/opendesign";
+// TODO:调整import顺序，重要三方件引入建议往上放
 import dayjs from "dayjs";
 import type { PagedResponse, Pagination } from "@/@types/types-common";
 import { generateQuery } from "@/utils/common";
 
+// TODO:建议业务侧处理数据
 function setMsgIdAndFormatTime(res: AxiosResponse<PagedResponse<MessageT>>): Pagination<MessageT> {
   const { count: total, query_info } = res.data
   if (isArray(query_info) && query_info.length) {
@@ -30,17 +32,17 @@ export function getMessages(source?: string, event_type?: string, is_read?: 1 | 
   const query = generateQuery({ source, event_type, is_read, count_per_page, page });
   return request.get<PagedResponse<MessageT>>(`/message_center/inner${query}`).then(setMsgIdAndFormatTime);
 }
-
+// TODO: api请按js-doc给出注释规范
 export function readMessages(...msgs: MessageT[]): Promise<void> {
   return request.put('/message_center/inner/', msgs.map(msg => ({ source: msg.source, event_id: msg.event_id })));
 }
-
+// TODO: api请按js-doc给出注释规范
 export function deleteMessages(...msgs: MessageT[]): Promise<any> {
   return request.delete('/message_center/inner/', {
     data: msgs.map(msg => ({ source: msg.source, event_id: msg.event_id }))
   });
 }
-
+// TODO: api请按js-doc给出注释规范
 export function getUnreadCount(): Promise<number> {
   return request.get('/message_center/inner/count').then(res => res.data.count).catch(() => 0);
 }

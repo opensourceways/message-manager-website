@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// TODO:整个文件考虑使用策略模式重构逻辑
 import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination, OTable } from '@opensig/opendesign';
 import { computed, reactive, ref } from 'vue';
 import { getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
@@ -9,6 +10,7 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const tableTotal = ref(0);
 
+// TODO:建议单独提取&加前缀
 class TableRow {
   id: any;
   name: string;
@@ -16,6 +18,7 @@ class TableRow {
   recipientIds?: string;
   children: TableRow[];
   hasAddIcon?: boolean;
+  // TODO:减少any的使用
   data: any;
 
   constructor(data: any, name?: string, hasAddIcon?: boolean, children?: TableRow[]) {
@@ -38,6 +41,7 @@ class TableRow {
 }
 
 // -----------------------初始数据-----------------------
+// TODO:建议通过配置获取
 const tableData = reactive<TableRow[]>([
   new TableRow({
     source: 'https://eur.openeuler.openatom.cn',
@@ -72,6 +76,7 @@ const tableData = reactive<TableRow[]>([
 ]);
 
 // ------------------获取固定的父标题的id------------------
+// TODO:建议通过配置获取
 Promise.all([
   postSubsCondition({ source: 'https://eur.openeuler.openatom.cn', event_type: 'build' }, { ignoreDuplicates: true }),
   postSubsCondition({ source: 'https://gitee.com' }, { ignoreDuplicates: true }),

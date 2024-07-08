@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// TODO: 组件不以The开头
 import { OInput } from '@opensig/opendesign';
 import { nextTick, ref } from 'vue';
 
@@ -14,11 +15,11 @@ const props = withDefaults(defineProps<{
 });
 
 const isValid = ref(true);
-
+// TODO:建议使用函数表达式定义函数
 function onChange(value: string) {
   emit('update:modelValue', value);
 }
-
+// TODO:建议使用函数表达式定义函数
 function onBlur() {
   nextTick(() => isValid.value = props.validator(props.modelValue))
 }

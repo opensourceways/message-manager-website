@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// 组件不以The开头
+// TODO:考虑该组件的使用场景，尽量使用数据驱动
 import { ref, type Ref, onMounted, watch } from 'vue';
 
 withDefaults(defineProps<{
@@ -11,6 +13,7 @@ withDefaults(defineProps<{
   width: 300,
   height: 126
 });
+// TODO:不要此处使用as
 const input = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 const tagSet = ref(new Set<string>());
 
@@ -35,18 +38,18 @@ watch(() => tagSet.value.size, size => {
     showPlaceHolder.value = false;
   }
 });
-
+// TODO:建议使用函数表达式定义函数
 function getTagValues() {
   const result: string[] = [];
   input.value.querySelectorAll('span.tag').forEach(tag => result.push(tag.textContent as string));
   return result;
 }
-
+// TODO:建议使用函数表达式定义函数
 function deleteTag(event: MouseEvent) {
   const tag = (event.target as HTMLImageElement).parentElement as HTMLSpanElement;
   input.value.removeChild(tag);
 }
-
+// TODO:建议使用函数表达式定义函数
 function addTag() {
   const last = input.value.lastChild;
   let text;
@@ -63,7 +66,7 @@ function addTag() {
   input.value.innerHTML = '';
   appenTags();
 }
-
+// TODO:建议使用函数表达式定义函数
 function appenTags() {
   for (const text of tagSet.value) {
     const tag = document.createElement('span');
@@ -74,13 +77,14 @@ function appenTags() {
     icon.src = '/src/assets/svg-icons/icon-close.svg';
     icon.classList.add('close');
     icon.addEventListener('click', deleteTag);
+    // TODO:为何需要使用appendChild
     tag.appendChild(icon);
     input.value.appendChild(tag);
   }
   input.value.appendChild(document.createElement('span'));
   tagsRemovedObserver.observe(input.value, OBERVER_CONFIG);
 }
-
+// TODO:建议使用函数表达式定义函数
 function onClick() {
   const sel = document.getSelection();
   if (!sel || !sel.anchorNode) {
@@ -95,11 +99,11 @@ function onClick() {
     sel.addRange(range);
   }
 }
-
+// TODO:建议使用函数表达式定义函数
 function onFocus() {
   showPlaceHolder.value = false;
 }
-
+// TODO:建议使用函数表达式定义函数
 function onBlur() {
   if (tagSet.value.size === 0) {
     showPlaceHolder.value = true;
@@ -112,14 +116,17 @@ defineExpose({
 </script>
 
 <template>
+  <!-- 建议外层class与业务关联 -->
   <div class="outer">
     <p v-if="showPlaceHolder" class="placeholder">{{ placeholder }}</p>
+    <!-- svg可以使用icon组件 -->
     <img src="@/assets/svg-icons/icon-add.svg" class="add-icon" @click="addTag">
     <div class="input" ref="input" contenteditable="true" @focus="onFocus" @blur="onBlur" @click="onClick"></div>
   </div>
 </template>
 
 <style scoped lang="scss">
+// TODO:为何需要deep
 :deep(.tag) {
   padding: 3px 12px;
   padding-right: 32px;

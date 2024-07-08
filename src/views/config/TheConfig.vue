@@ -5,6 +5,7 @@ import TheSubConfig from './TheSubConfig.vue'
 import { OButton, OTab, OTabPane } from '@opensig/opendesign';
 
 const activeTab = ref('a');
+// TODO:减少any的使用
 const subConfig = ref<any>();
 const btnsDisabled = computed(() => subConfig.value && subConfig.value.btnsDisabled);
 
@@ -14,6 +15,7 @@ function addRecipient() {
 </script>
 
 <template>
+  <!-- 建议外层class与业务关联 -->
   <div class="page-body">
     <header>
       <p class="title">{{ $t('config.subscribeConfig') }}</p>
@@ -46,6 +48,7 @@ function addRecipient() {
 
 .tabs {
   --tab-nav-justify: left;
+  // TODO:margin一般不为单数
   margin-top: 23px;
 }
 
@@ -65,6 +68,7 @@ header {
 }
 
 .title {
+  // 使用字号mixin
   font-size: 40px;
   font-weight: medium;
 }

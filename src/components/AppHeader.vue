@@ -40,6 +40,7 @@ function changeLocale(arg: string) {
 </template>
 
 <style scoped lang="scss">
+// TODO: 颜色使用变量
 .header {
   display: flex;
   align-items: center;
