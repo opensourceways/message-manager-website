@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
-import { OButton, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
+import { OButton, ODialog, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import TheWarningInput from '@/components/TheWarningInput.vue';
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -48,6 +48,7 @@ getData();
 
 // ----------------新增/修改接收人-------------------
 const editingData = reactive({
+  id: '',
   recipient_id: '',
   mail: '',
   phone: '',
@@ -63,10 +64,11 @@ function handleAddRecipient() {
       if (currentPage.value < lastPage) {
         // 跳到最后一页
         currentPage.value = lastPage;
-        yield;
+        yield getData();
       }
     }
     tableData.value.push({
+      id: '',
       key: '',
       recipient_id: '',
       mail: '',
@@ -95,6 +97,7 @@ function handleEditRecipient(recipient: Recipient) {
     return;
   }
   editingRecipientId.value = recipient.recipient_id;
+  editingData.id = recipient.id;
   editingData.recipient_id = recipient.recipient_id;
   editingData.mail = recipient.mail;
   editingData.phone = recipient.phone;
@@ -129,9 +132,22 @@ function cancelAddOrEdit() {
 }
 
 // ----------------删除接收人-------------------
-async function deleteRow(recipient_id: string) {
-  await deleteRecipient(recipient_id);
+const showDeleteDlg = ref(false);
+const deleteId = ref<string>();
+
+function deleteRow(recipient_id: string) {
+  deleteId.value = recipient_id;
+  showDeleteDlg.value = true;
+}
+
+async function confirmDelete() {
+  await deleteRecipient(deleteId.value as string);
   getData({ page: currentPage.value, pageSize: pageSize.value });
+  showDeleteDlg.value = false;
+}
+
+function cancelDelete() {
+  showDeleteDlg.value = false;
 }
 </script>
 
@@ -141,42 +157,52 @@ async function deleteRow(recipient_id: string) {
     <p v-html="$t('config.desc')"></p>
   </div>
 
+  <ODialog v-model:visible="showDeleteDlg" size="small">
+    <template #header>删除接收人</template>
+    <div style="display: flex; justify-content: center;">
+      是否删除该接收人?
+    </div>
+    <template #footer>
+      <div class="dlg-action">
+        <OButton color="primary" variant="solid" @click="confirmDelete">确定</OButton>
+        <OButton @click="cancelDelete">取消</OButton>
+      </div>
+    </template>
+  </ODialog>
+
   <OTable :columns="tableColumns" :loading="tableLoading" :data="tableData" style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)">
     <template #td_recipient_id="{ row }">
       <TheWarningInput
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
-        :validator="val => !!val.trim()"
+        @noEmpty="true"
         warningText="请输入姓名"
         v-model="editingData.recipient_id"
         placeholder="请输入姓名"
-        clearable
         style="width: 160px"
       />
-      <span v-else>{{ row.recipient_id }}</span>
+      <p class="td-p" v-else>{{ row.recipient_id }}</p>
     </template>
     <template #td_mail="{ row }">
       <TheWarningInput
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
-        :validator="val => !!val.trim() && EMAIL_PATTERN.test(val.trim())"
+        :regExp="EMAIL_PATTERN"
         warningText="请输入正确的邮箱"
         v-model="editingData.mail"
         placeholder="请输入邮箱"
-        clearable
         style="width: 160px"
       />
-      <span v-else>{{ row.mail }}</span>
+      <p class="td-p" v-else>{{ row.mail }}</p>
     </template>
     <template #td_phone="{ row }">
       <TheWarningInput
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
-        :validator="val => !!val.trim() && PHONE_PATTERN.test(val.trim())"
+        :regExp="PHONE_PATTERN"
         warningText="请输入正确的手机号码"
         v-model="editingData.phone"
         placeholder="请输入手机号码"
-        clearable
         style="width: 160px"
       />
-      <span v-else>{{ row.phone }}</span>
+      <p class="td-p" v-else>{{ row.phone }}</p>
     </template>
     <template #td_remark="{ row }">
       <OInput 
@@ -186,7 +212,7 @@ async function deleteRow(recipient_id: string) {
         clearable 
         style="width: 160px"
       />
-      <span v-else>{{ row.remark }}</span>
+      <p class="td-p" v-else>{{ row.remark }}</p>
     </template>
     <template #td_formattedCreateTime="{ row }">
       {{ row.formattedCreateTime }}
@@ -206,6 +232,17 @@ async function deleteRow(recipient_id: string) {
 </template>
 
 <style scoped lang="scss">
+.dlg-action {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.td-p {
+  word-break: break-all;
+  max-width: 160px;
+}
+
 .row {
   display: flex;
 }

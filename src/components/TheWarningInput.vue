@@ -8,9 +8,11 @@ const props = withDefaults(defineProps<{
   modelValue: string;
   placeholder?: string;
   clearable?: boolean;
-  validator: (value: string) => boolean;
+  noEmpty?: boolean;
+  regExp?: RegExp;
+  validator?: (value: string) => boolean;
 }>(), {
-  clearable: false,
+  clearable: true,
 });
 
 const isValid = ref(true);
@@ -20,7 +22,19 @@ function onChange(value: string) {
 }
 
 function onBlur() {
-  nextTick(() => isValid.value = props.validator(props.modelValue))
+  nextTick(() => {
+    if (props.noEmpty) {
+      isValid.value = !!props.modelValue.trim();
+      return;
+    }
+    if (props.regExp) {
+      isValid.value = props.regExp.test(props.modelValue);
+      return;
+    }
+    if (props.validator) {
+      isValid.value = props.validator(props.modelValue)
+    }
+  });
 }
 </script>
 
