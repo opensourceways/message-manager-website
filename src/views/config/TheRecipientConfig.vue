@@ -28,22 +28,25 @@ const tableTotal = ref(0);
 
 function getData(val = { page: 1, pageSize: 10 }) {
   tableLoading.value = true;
-  getRecipients(val.page, val.pageSize).then(({ total, data }) => {
-    tableData.value = data;
-    tableTotal.value = total;
-    if (addRecipientGenerator) {
-      addRecipientGenerator.next();
-    }
-  }).catch(() => {
-    tableData.value = [];
-    tableTotal.value = 0;
-  }).finally(() => {
-    tableLoading.value = false;
-    if (addRecipientGenerator) {
-      addRecipientGenerator.return(0);
-      addRecipientGenerator = undefined;
-    }
-  });
+  getRecipients(val.page, val.pageSize)
+    .then(({ total, data }) => {
+      tableData.value = data;
+      tableTotal.value = total;
+      if (addRecipientGenerator) {
+        addRecipientGenerator.next();
+      }
+    })
+    .catch(() => {
+      tableData.value = [];
+      tableTotal.value = 0;
+    })
+    .finally(() => {
+      tableLoading.value = false;
+      if (addRecipientGenerator) {
+        addRecipientGenerator.return(0);
+        addRecipientGenerator = undefined;
+      }
+    });
 }
 getData();
 
@@ -53,7 +56,7 @@ const editingData = reactive({
   recipient_id: '',
   mail: '',
   phone: '',
-  remark: ''
+  remark: '',
 });
 
 // ----------------新增接收人-------------------
@@ -85,7 +88,7 @@ function handleAddRecipient() {
 }
 
 async function confirmAdd() {
-  await addRecipient(editingData).catch(err => message.warning(err.response.data.error));
+  await addRecipient(editingData).catch((err) => message.warning(err.response.data.error));
   cancelAddOrEdit();
   getData({ page: currentPage.value, pageSize: pageSize.value });
 }
@@ -105,6 +108,16 @@ function handleEditRecipient(recipient: Recipient) {
   editingData.remark = recipient.remark;
 }
 
+const nameInput = ref();
+const phoneInput = ref();
+const mailInput = ref();
+
+const isInputsValid = () => {
+  if (nameInput.value.isValid && phoneInput.value.isValid && mailInput.value.isValid) {
+    return true;
+  }
+};
+
 async function confirmEdit() {
   await editRecipient(editingData);
   cancelAddOrEdit();
@@ -112,6 +125,9 @@ async function confirmEdit() {
 }
 
 function confirmEditOrAdd() {
+  if (!isInputsValid()) {
+    return;
+  }
   if (editingRecipientId.value) {
     confirmEdit();
   }
@@ -153,15 +169,13 @@ function cancelDelete() {
 </script>
 
 <template>
-  <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
+  <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px">
     <OButton variant="outline" round="pill" color="primary" @click="handleAddRecipient">新建接收人</OButton>
   </div>
 
   <ODialog v-model:visible="showDeleteDlg" size="small">
     <template #header>删除接收人</template>
-    <div class="delete-recipient-dlg-content">
-      是否删除该接收人?
-    </div>
+    <div class="delete-recipient-dlg-content">是否删除该接收人?</div>
     <template #footer>
       <div class="dlg-action">
         <OButton color="primary" variant="solid" round="pill" @click="confirmDelete">确定</OButton>
@@ -170,9 +184,15 @@ function cancelDelete() {
     </template>
   </ODialog>
 
-  <OTable :columns="tableColumns" :loading="tableLoading" :data="tableData" style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)">
+  <OTable
+    :columns="tableColumns"
+    :loading="tableLoading"
+    :data="tableData"
+    style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)"
+  >
     <template #td_recipient_id="{ row }">
       <TheWarningInput
+        ref="nameInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         @noEmpty="true"
         warningText="请输入姓名"
@@ -184,6 +204,7 @@ function cancelDelete() {
     </template>
     <template #td_mail="{ row }">
       <TheWarningInput
+        ref="phoneInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :regExp="EMAIL_PATTERN"
         warningText="请输入正确的邮箱"
@@ -195,6 +216,7 @@ function cancelDelete() {
     </template>
     <template #td_phone="{ row }">
       <TheWarningInput
+        ref="mailInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :regExp="PHONE_PATTERN"
         warningText="请输入正确的手机号码"
@@ -205,11 +227,11 @@ function cancelDelete() {
       <p class="td-p" v-else>{{ row.phone }}</p>
     </template>
     <template #td_remark="{ row }">
-      <OInput 
-        v-if="editingRecipientId === row.recipient_id || row.key === ''" 
-        v-model="editingData.remark" 
-        placeholder="请输入备注" 
-        clearable 
+      <OInput
+        v-if="editingRecipientId === row.recipient_id || row.key === ''"
+        v-model="editingData.remark"
+        placeholder="请输入备注"
+        clearable
         style="width: 160px"
       />
       <p class="td-p" v-else>{{ row.remark }}</p>
@@ -218,17 +240,17 @@ function cancelDelete() {
       {{ row.formattedCreateTime }}
     </template>
     <template #td_operation="{ row }">
-      <div v-if="editingRecipientId === row.recipient_id || row.key === ''" class="row space-between" style="margin-right: 16px;">
+      <div v-if="editingRecipientId === row.recipient_id || row.key === ''" class="row space-between" style="margin-right: 16px">
         <OLink color="primary" @click="confirmEditOrAdd">保存</OLink>
-        <OLink color="primary" @click="cancelAddOrEdit" style="margin-left: 16px;">取消</OLink>
+        <OLink color="primary" @click="cancelAddOrEdit" style="margin-left: 16px">取消</OLink>
       </div>
-      <div v-else class="row space-between" style="margin-right: 16px;">
+      <div v-else class="row space-between" style="margin-right: 16px">
         <OLink color="primary" @click="handleEditRecipient(row as Recipient)">修改接收人</OLink>
-        <OLink color="danger" @click="deleteRow((row as any).key)" style="margin-left: 48px;">删除</OLink>
+        <OLink color="danger" @click="deleteRow((row as any).key)" style="margin-left: 48px">删除</OLink>
       </div>
     </template>
   </OTable>
-  <OPagination :total="tableTotal" v-model:page="currentPage" :pageSizes="pageSizes" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px;"/>
+  <OPagination :total="tableTotal" v-model:page="currentPage" :pageSizes="pageSizes" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px" />
 </template>
 
 <style scoped lang="scss">
@@ -260,9 +282,9 @@ function cancelDelete() {
 }
 
 .add-receiver {
-  border: 1px solid #002EA7;
-  background-color: #FFF;
-  color: #002EA7;
+  border: 1px solid #002ea7;
+  background-color: #fff;
+  color: #002ea7;
   font-size: 16px;
   height: 40px;
   padding: 8px 16px;

@@ -3,17 +3,20 @@ import { OInput } from '@opensig/opendesign';
 import { nextTick, ref } from 'vue';
 
 const emit = defineEmits(['update:modelValue']);
-const props = withDefaults(defineProps<{
-  warningText: string;
-  modelValue: string;
-  placeholder?: string;
-  clearable?: boolean;
-  noEmpty?: boolean;
-  regExp?: RegExp;
-  validator?: (value: string) => boolean;
-}>(), {
-  clearable: true,
-});
+const props = withDefaults(
+  defineProps<{
+    warningText: string;
+    modelValue: string;
+    placeholder?: string;
+    clearable?: boolean;
+    noEmpty?: boolean;
+    regExp?: RegExp;
+    validator?: (value: string) => boolean;
+  }>(),
+  {
+    clearable: true,
+  }
+);
 
 const isValid = ref(true);
 
@@ -32,10 +35,14 @@ function onBlur() {
       return;
     }
     if (props.validator) {
-      isValid.value = props.validator(props.modelValue)
+      isValid.value = props.validator(props.modelValue);
     }
   });
 }
+
+defineExpose({
+  isValid,
+});
 </script>
 
 <template>
@@ -63,6 +70,6 @@ div {
 p {
   font-size: 12px;
   margin-left: 16px;
-  color: #E60012
+  color: #e60012;
 }
 </style>
