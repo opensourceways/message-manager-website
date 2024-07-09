@@ -122,6 +122,16 @@ function onRecipientCheckedChange(recipientId: string, ev: Event) {
 }
 
 // --------------------新增接收人--------------------
+const nameInput = ref();
+const mailInput = ref();
+const phoneInput = ref();
+
+const isInputsValid = () => {
+  if (nameInput.value.doValidate() && phoneInput.value.doValidate() && mailInput.value.doValidate()) {
+    return true;
+  }
+};
+
 function handleAddRecipient() {
   recipients.value.unshift({
     id: '',
@@ -133,6 +143,9 @@ function handleAddRecipient() {
 }
 
 function confirmAddRecipient() {
+  if (!isInputsValid()) {
+    return;
+  }
   if (!recipients.value.length) {
     return;
   }
@@ -180,6 +193,7 @@ function cancelAddRecipient() {
     >
       <template #td_name="{ row }">
         <TheWarningInput
+          ref="nameInput"
           v-if="row.id === ''"
           :noEmpty="true"
           v-model="row.recipient_id"
@@ -194,6 +208,7 @@ function cancelAddRecipient() {
       </template>
       <template #td_mail="{ row }">
         <TheWarningInput
+          ref="mailInput"
           v-if="row.id === ''"
           :regExp="EMAIL_PATTERN"
           v-model="row.mail"
@@ -205,6 +220,7 @@ function cancelAddRecipient() {
       </template>
       <template #td_phone="{ row }">
         <TheWarningInput
+          ref="phoneInput"
           v-if="row.id === ''"
           :regExp="PHONE_PATTERN"
           v-model="row.phone"

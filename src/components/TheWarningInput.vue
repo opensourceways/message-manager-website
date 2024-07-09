@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { OInput } from '@opensig/opendesign';
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 
 const emit = defineEmits(['update:modelValue']);
 const props = withDefaults(
@@ -20,39 +20,42 @@ const props = withDefaults(
 
 const isValid = ref(true);
 
-function onChange(value: string) {
-  emit('update:modelValue', value);
-}
+const doValidate = (value?: string) => {
+  value ??= props.modelValue;
+  if (props.validator && !props.validator(value)) {
+    isValid.value = false;
+    return false;
+  }
+  if (props.regExp && !props.regExp.test(value)) {
+    isValid.value = false;
+    return false;
+  }
+  if (props.noEmpty && !value.trim()) {
+    isValid.value = false;
+    return false;
+  }
+  isValid.value = true;
+  return true;
+};
 
-function onBlur() {
-  nextTick(() => {
-    if (props.noEmpty) {
-      isValid.value = !!props.modelValue.trim();
-      return;
-    }
-    if (props.regExp) {
-      isValid.value = props.regExp.test(props.modelValue);
-      return;
-    }
-    if (props.validator) {
-      isValid.value = props.validator(props.modelValue);
-    }
-  });
+function onInput(value: string) {
+  emit('update:modelValue', value);
 }
 
 defineExpose({
   isValid,
+  doValidate,
 });
 </script>
 
 <template>
   <div>
     <OInput
-      @change="onChange"
+      @input="onInput"
       :clearable="clearable"
       :modelValue="modelValue"
       variant="outline"
-      @blur="onBlur"
+      @blur="doValidate"
       :color="isValid ? 'normal' : 'danger'"
       :placeholder="placeholder"
     />

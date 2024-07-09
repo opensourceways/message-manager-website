@@ -113,7 +113,7 @@ const phoneInput = ref();
 const mailInput = ref();
 
 const isInputsValid = () => {
-  if (nameInput.value.isValid && phoneInput.value.isValid && mailInput.value.isValid) {
+  if (nameInput.value.doValidate() && phoneInput.value.doValidate() && mailInput.value.doValidate()) {
     return true;
   }
 };
@@ -194,7 +194,7 @@ function cancelDelete() {
       <TheWarningInput
         ref="nameInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
-        @noEmpty="true"
+        :noEmpty="true"
         warningText="请输入姓名"
         v-model="editingData.recipient_id"
         placeholder="请输入姓名"
