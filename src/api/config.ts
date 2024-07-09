@@ -13,7 +13,7 @@ export function getRecipients(page = 1, count_per_page = 10): Promise<Pagination
       if (isArray(query_info) && query_info.length) {
         for (const item of query_info) {
           item.formattedCreateTime = dayjs(item.created_at).format("YYYY/MM/DD HH:mm:ss");
-          item.key = item.recipient_id;
+          item.key = item.id;
         }
         return { total, data: query_info };
       }
