@@ -154,7 +154,6 @@ function cancelDelete() {
 <template>
   <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
     <OButton variant="outline" round="pill" color="primary" @click="handleAddRecipient">新建接收人</OButton>
-    <p v-html="$t('config.desc')"></p>
   </div>
 
   <ODialog v-model:visible="showDeleteDlg" size="small">

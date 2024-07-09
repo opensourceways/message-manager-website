@@ -74,12 +74,12 @@ const tableData = reactive<TableRow[]>([
 
 // ------------------获取固定的父标题的id------------------
 Promise.all([
-  postSubsCondition({ source: 'https://eur.openeuler.openatom.cn', event_type: 'build' }, { ignoreDuplicates: true }),
-  postSubsCondition({ source: 'https://gitee.com' }, { ignoreDuplicates: true }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'issue' }, { ignoreDuplicates: true }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'pr' }, { ignoreDuplicates: true }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'push' }, { ignoreDuplicates: true }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'note' }, { ignoreDuplicates: true }),
+  postSubsCondition({ source: 'https://eur.openeuler.openatom.cn', event_type: 'build' }, { ignoreDuplicates: true, showError: false }),
+  postSubsCondition({ source: 'https://gitee.com' }, { ignoreDuplicates: true, showError: false }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'issue' }, { ignoreDuplicates: true, showError: false }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'pr' }, { ignoreDuplicates: true, showError: false }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'push' }, { ignoreDuplicates: true, showError: false }),
+  postSubsCondition({ source: 'https://gitee.com', event_type: 'note' }, { ignoreDuplicates: true, showError: false }),
 ]).then(([ eur, gitee, issue, pr, push, note ]) => {
   tableData[0].id = eur.data.newId || eur.data.exist.id;
   tableData[1].id = gitee.data.newId || gitee.data.exist.id;
@@ -326,39 +326,55 @@ function cancelDelete() {
   deletedRow.value = undefined;
 }
 
+// -----------------------表格多选-----------------------
+const multiSelection = ref<TableRow[]>([]);
+const handleSelectionChange = (val: TableRow[]) => multiSelection.value = val;
+const btnsDisabled = computed(() => multiSelection.value.length === 0);
+const isAddingRecipient = ref(false);
+
+function handleExternalAddRecipient() {
+  editRecipientTargetRows.value = multiSelection.value;
+  showEditRecipientDlg.value = true;
+  isAddingRecipient.value = true;
+}
+
 // -----------------------修改/添加接收人-----------------------
 const showEditRecipientDlg = ref(false);
 const editRecipientTargetRows = ref<TableRow[]>([]);
-
-watch(showEditRecipientDlg, val => {
-  if (!val) {
-    getData({ page: currentPage.value, pageSize: pageSize.value });
-  }
-});
 
 function editRecipient(row: TableRow) {
   editRecipientTargetRows.value = [row];
   showEditRecipientDlg.value = true;
 }
 
+// -----------------------移除接收人-----------------------
+const removingRecipients = ref(false);
+
+function removeRecipients() {
+  if (!multiSelection.value.length) {
+    return;
+  }
+  editRecipientTargetRows.value = multiSelection.value;
+  removingRecipients.value = true;
+  showEditRecipientDlg.value = true;
+}
+
+watch(showEditRecipientDlg, val => {
+  if (!val) {
+    getData({ page: currentPage.value, pageSize: pageSize.value });
+    editRecipientTargetRows.value = [];
+    removingRecipients.value = false;
+  }
+});
+
 // -----------------------接收方式勾选框状态更改-----------------------
 function needCheckboxChange(row: TableRow) {
   Promise.all(row.data.recipient_ids.map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
 }
 
-// -----------------------表格多选-----------------------
-const multiSelection = ref<TableRow[]>([]);
-const handleSelectionChange = (val: TableRow[]) => multiSelection.value = val;
-const btnsDisabled = computed(() => multiSelection.value.length === 0);
-
-function handleExternalAddRecipient() {
-  editRecipientTargetRows.value = multiSelection.value;
-  showEditRecipientDlg.value = true;
-}
-
 defineExpose({
   handleExternalAddRecipient,
-  // editRecipient,
+  removeRecipients,
   btnsDisabled
 })
 </script>
@@ -455,6 +471,8 @@ defineExpose({
   <ODialog v-model:visible="showEditRecipientDlg" :unmount-on-hide="false" size="large">
     <template #header>修改接收人</template>
     <TheRecipientTableDialog
+      :add="isAddingRecipient"
+      :is-in-remove-dialog="removingRecipients"
       :effectedRows="editRecipientTargetRows"
       :isShowingDialog="showEditRecipientDlg"
     ></TheRecipientTableDialog>

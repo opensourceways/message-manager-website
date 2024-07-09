@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { OButton, OCheckbox, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import { ref, watch } from 'vue';
-import { addRecipient, deletePushConfg, getRecipients, postPushConfg } from '@/api/config';
+import { OButton, OCheckbox, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
+import { addRecipient, deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/config';
 import TheWarningInput from '@/components/TheWarningInput.vue';
+import type { Pagination } from '@/@types/types-common';
+import type { Recipient } from '@/@types/type-config';
 
 const emit = defineEmits(['update']);
 const props = defineProps<{
   effectedRows: any[];
   isShowingDialog: boolean;
+  isInRemoveDialog?: boolean;
+  add?: boolean;
 }>();
 const message = useMessage();
 const checkedIds = ref<string[]>([]);
@@ -50,11 +54,23 @@ watch(() => props.effectedRows, val => {
   checkedIds.value = [...new Set(ids)];
 });
 
+watch(() => props.add, val => {
+  if (val) {
+    handleAddRecipient();
+  }
+});
+
 function getData(val: { page: number, pageSize: number }) {
   loading.value = true;
-  getRecipients(val.page, val.pageSize)
+  let requestPromise: Promise<Pagination<Recipient>>;
+  if (props.isInRemoveDialog) {
+    requestPromise = getSubscribedRecipients(props.effectedRows.map(row => row.id));
+  } else {
+    requestPromise = getRecipients(val.page, val.pageSize);
+  }
+  requestPromise
     .then(({ total: total_, data }) => {
-      total.value = total_;
+      total.value = total_ ?? 0;
       recipients.value = data;
     })
     .catch(error => {

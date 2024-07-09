@@ -80,3 +80,8 @@ export function deletePushConfg(data: any) {
     data
   });
 }
+
+export function getSubscribedRecipients(subscribeIds: string[]): Promise<Pagination<Recipient>> {
+  const q = generateQuery({ 'subscribe_id': subscribeIds.join(',') });
+  return request.get(`message_center/config/push${q}`);
+}

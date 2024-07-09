@@ -3,7 +3,7 @@ import type { MessageT } from '@/@types/type-messages';
 import { getMessages } from '@/api/messages';
 import { OCheckbox, OCollapse, OCollapseItem, OIconChevronDown, OMenu, OMenuItem, OPagination, OSubMenu } from '@opensig/opendesign';
 import dayjs from 'dayjs';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import TheMessageItemDetail from './TheMessageItemDetail.vue';
 import { useI18n } from 'vue-i18n';
@@ -22,6 +22,8 @@ const total = ref(0);
 const thisWeekMessages = ref<MessageT[]>([]);
 const aWeekAgoMessages = ref<MessageT[]>([]);
 const expanded = ref([1, 2]);
+const activeSource = ref('https://eur.openeuler.openatom.cn');
+const activeEventType = ref();
 
 const NOW = dayjs();
 dayjs.locale(locale.value);
@@ -30,21 +32,22 @@ function toConfig() {
   router.push('/config');
 }
 
-function getData(val = { page: 1, pageSize: 10 }, source?: string, eventType?: string, isRead?: 0 | 1) {
-  getMessages(source, eventType, isRead, val.page, val.pageSize).then(({ total: returnTotal, data }) => {
-    thisWeekMessages.value = [];
-    aWeekAgoMessages.value = [];
-    total.value = returnTotal;
-    for (const item of data) {
-      item.formattedTime = dayjs(item.time).fromNow();
-      const date = dayjs(item.time);
-      if (NOW.diff(date, 'week') === 0) {
-        thisWeekMessages.value.push(item);
-      } else {
-        aWeekAgoMessages.value.push(item);
+function getData(pageOption = { page: 1, pageSize: 10 }, isRead?: 0 | 1) {
+  getMessages(activeSource.value, activeEventType.value, isRead, pageOption.page, pageOption.pageSize)
+    .then(({ total: returnTotal, data }) => {
+      thisWeekMessages.value = [];
+      aWeekAgoMessages.value = [];
+      total.value = returnTotal;
+      for (const item of data) {
+        item.formattedTime = dayjs(item.time).fromNow();
+        const date = dayjs(item.time);
+        if (NOW.diff(date, 'week') === 0) {
+          thisWeekMessages.value.push(item);
+        } else {
+          aWeekAgoMessages.value.push(item);
+        }
       }
-    }
-  });
+    });
 }
 getData();
 
@@ -63,6 +66,20 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
     }
   }
 }
+
+const activeMenu = ref('https://eur.openeuler.openatom.cn');
+
+watch(activeMenu, menu => {
+  if (menu === 'https://eur.openeuler.openatom.cn') {
+    activeSource.value = menu;
+    getData();
+  }
+  if (menu.startsWith('https://gitee.com')) {
+    activeSource.value = 'https://gitee.com';
+    activeEventType.value = menu.split('_')[1];
+    getData();
+  }
+});
 </script>
 
 <template>
@@ -75,7 +92,7 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
           <img class="inactive" src="@/assets/svg-icons/icon-setting.svg" alt="" style="width: 24px; height: 24px;">
         </div>
       </div>
-      <OMenu v-model:expanded="expandedMenus">
+      <OMenu v-model:expanded="expandedMenus" v-model="activeMenu">
         <OSubMenu value="1">
           <template #title>
             <p>消息来源</p>
