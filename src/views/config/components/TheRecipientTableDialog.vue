@@ -28,6 +28,7 @@ const recipients = ref<{
   phone: string;
   remark: string;
 }[]>([]);
+const pageSizes = [10, 20, 30, 50];
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
@@ -228,6 +229,7 @@ function cancelAddRecipient() {
       </template>
     </OTable>
     <OPagination
+      :pageSizes="pageSizes"
       :pageSize="pageSize"
       :page="page"
       :total="total"

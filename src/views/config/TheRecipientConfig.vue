@@ -16,23 +16,14 @@ const tableColumns = [
   { label: t('config.table.createTime'), key: 'formattedCreateTime' },
   { label: t('config.table.operation'), key: 'operation' },
 ];
-const tableData = ref<Recipient[]>([{
-      id: '1',
-      key: '1',
-      recipient_id: 'zjw',
-      mail: '1723168479@qq.com',
-      message: '',
-      phone: '13822561320',
-      remark: 'zjw',
-      created_at: '',
-      formattedCreateTime: '2024/07/05 10:00:00',
-    }]);
+const tableData = ref<Recipient[]>([]);
 const tableLoading = ref(false);
 let addRecipientGenerator: Generator | undefined;
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+const pageSizes = ref([10, 20, 30, 50]);
 const currentPage = ref(1);
-const pageSize = ref(10);
+const pageSize = ref(pageSizes.value[0]);
 const tableTotal = ref(0);
 
 function getData(val = { page: 1, pageSize: 10 }) {
@@ -237,7 +228,7 @@ function cancelDelete() {
       </div>
     </template>
   </OTable>
-  <OPagination :total="tableTotal" v-model:page="currentPage" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px;"/>
+  <OPagination :total="tableTotal" v-model:page="currentPage" :pageSizes="pageSizes" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px;"/>
 </template>
 
 <style scoped lang="scss">

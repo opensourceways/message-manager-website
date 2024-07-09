@@ -6,6 +6,7 @@ import type { Subscribe } from '@/@types/type-config';
 import TheEditorWithTags from './components/TheEditorWithTags.vue';
 import TheRecipientTableDialog from './components/TheRecipientTableDialog.vue';
 
+const pageSizes = ref([10, 20, 30, 50]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const tableTotal = ref(0);
@@ -535,7 +536,7 @@ defineExpose({
     </ElTableColumn>
   </ElTable>
 
-  <OPagination :total="tableTotal" :page="currentPage" :page-size="pageSize" @change="getData" />
+  <OPagination :total="tableTotal" :page="currentPage" :pageSizes="pageSizes" :page-size="pageSize" @change="getData" />
 </template>
 
 <style lang="scss" scoped>
