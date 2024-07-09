@@ -16,7 +16,17 @@ const tableColumns = [
   { label: t('config.table.createTime'), key: 'formattedCreateTime' },
   { label: t('config.table.operation'), key: 'operation' },
 ];
-const tableData = ref<Recipient[]>([]);
+const tableData = ref<Recipient[]>([{
+      id: '1',
+      key: '1',
+      recipient_id: 'zjw',
+      mail: '1723168479@qq.com',
+      message: '',
+      phone: '13822561320',
+      remark: 'zjw',
+      created_at: '',
+      formattedCreateTime: '2024/07/05 10:00:00',
+    }]);
 const tableLoading = ref(false);
 let addRecipientGenerator: Generator | undefined;
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
@@ -158,13 +168,13 @@ function cancelDelete() {
 
   <ODialog v-model:visible="showDeleteDlg" size="small">
     <template #header>删除接收人</template>
-    <div style="display: flex; justify-content: center;">
+    <div class="delete-recipient-dlg-content">
       是否删除该接收人?
     </div>
     <template #footer>
       <div class="dlg-action">
-        <OButton color="primary" variant="solid" @click="confirmDelete">确定</OButton>
-        <OButton @click="cancelDelete">取消</OButton>
+        <OButton color="primary" variant="solid" round="pill" @click="confirmDelete">确定</OButton>
+        <OButton @click="cancelDelete" round="pill">取消</OButton>
       </div>
     </template>
   </ODialog>
@@ -235,6 +245,14 @@ function cancelDelete() {
   display: flex;
   justify-content: center;
   gap: 16px;
+}
+
+.delete-recipient-dlg-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: var(--o-font_size-text2);
 }
 
 .td-p {
