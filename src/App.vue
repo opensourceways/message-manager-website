@@ -1,48 +1,54 @@
 <script setup lang="ts">
-import AppHeader from '@/components/AppHeader.vue';
-import { OBreadcrumb, OBreadcrumbItem } from '@opensig/opendesign';
-import { useRoute } from 'vue-router';
 import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { OBreadcrumb, OBreadcrumbItem, OScroller } from '@opensig/opendesign';
+import AppHeader from '@/components/AppHeader.vue';
+import AppFooter from './components/AppFooter.vue';
 
 const route = useRoute();
 
-const breadcrumbs = ref<{ text: string; name: string }[]>([])
+const breadcrumbs = ref<{ text: string; name: string }[]>([]);
 
-watch(() => route.name, name => {
-  switch (name) {
-    case 'config':
-      breadcrumbs.value = [
-        { text: '消息中心', name: 'home' },
-        { text: '消息订阅设置', name: 'config' },
-      ];
-      break;
-    case 'home':
-      breadcrumbs.value = [];
-      break;
+watch(
+  () => route.name,
+  (name) => {
+    switch (name) {
+      case 'config':
+        breadcrumbs.value = [
+          { text: '消息中心', name: 'home' },
+          { text: '消息订阅设置', name: 'config' },
+        ];
+        break;
+      case 'home':
+        breadcrumbs.value = [];
+        break;
+    }
   }
-})
+);
 </script>
 
 <template>
-  <AppHeader class="ly-header"/>
-  <div style="height: 144px;"></div>
-  <div class="container">
-    <div class="inner-container">
-      <OBreadcrumb>
-        <OBreadcrumbItem v-for="(item, index) in breadcrumbs" :key="index" :to="{ name: item.name }" >
-          {{ item.text }}
-        </OBreadcrumbItem>
-      </OBreadcrumb>
-      <RouterView />
-    </div>
-  </div>
+  <AppHeader />
+  <OScroller show-type="hover">
+    <div style="height: 26px;"></div>
+    <main class="ly-main">
+      <div class="inner-container">
+        <OBreadcrumb>
+          <OBreadcrumbItem v-for="(item, index) in breadcrumbs" :key="index" :to="{ name: item.name }">
+            {{ item.text }}
+          </OBreadcrumbItem>
+        </OBreadcrumb>
+        <RouterView />
+      </div>
+    </main>
+    <AppFooter />
+  </OScroller>
 </template>
 
 <style lang="scss">
 .page-body {
   width: 74vw;
-  min-height: 900px;
-  background-color: #FFF;
+  background-color: #fff;
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
   padding: calc(900px * 0.04) calc(74vw * 0.02);
 }
@@ -91,11 +97,6 @@ watch(() => route.name, name => {
 </style>
 
 <style lang="scss" scoped>
-.container {
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-}
 .inner-container {
   display: flex;
   flex-direction: column;
@@ -120,6 +121,8 @@ watch(() => route.name, name => {
 }
 
 .ly-main {
+  display: flex;
+  justify-content: center;
   padding-top: var(--layout-header-height);
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);

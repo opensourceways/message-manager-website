@@ -2,6 +2,19 @@ import { isClient, useMessage } from '@opensig/opendesign';
 const message = useMessage();
 
 /**
+ * safe window open
+ */
+export const windowOpen = (url?: string | URL | undefined, target?: string | undefined, features?: string | undefined) => {
+  const opener = window.open(url, target, features);
+  opener && (opener.opener = null);
+};
+
+// 检查是否是同域名
+export const checkOriginLink = (path: string) => {
+  return path.includes('openeuler.org');
+};
+
+/**
  * 时间戳转 xxxx/xx/xx 格式时间
  * @param {number} timestamp 待转换时间戳
  * @returns {string} 返回格式化时间，如 2024/01/01
@@ -92,3 +105,22 @@ export function generateQuery(queries: Record<string, any>): string {
   }
   return '';
 }
+
+interface TreeNode {
+  [ key: string ]: any;
+  children?: any[];
+}
+
+/**
+ * 遍历树状数据
+ * @param treeData 树形数据
+ * @param callback 回调函数
+ */
+export const treeDataIterator = <T extends TreeNode> (treeData: T[], callback: (node: T, index: number) => void) => {
+  treeData.forEach(function recursion(node, index) {
+    callback(node, index);
+    if (node.children) {
+      node.children.forEach(recursion);
+    }
+  });
+};

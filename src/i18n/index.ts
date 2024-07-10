@@ -5,6 +5,7 @@ import response from './response';
 import header from './header';
 import msg from './messages';
 import config from './config';
+import common from './common';
 
 const datetimeFormats: I18nOptions['datetimeFormats'] = {
   zh: {
@@ -46,6 +47,7 @@ const messages = {
     header: header.zh,
     msg: msg.zh,
     config: config.zh,
+    common: common.zh,
   },
   en: {
     // 操作&反馈提示
@@ -53,6 +55,7 @@ const messages = {
     header: header.en,
     msg: msg.en,
     config: config.en,
+    common: common.en,
   },
 };
 
