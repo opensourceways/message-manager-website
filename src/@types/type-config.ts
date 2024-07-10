@@ -17,10 +17,11 @@ export type Subscribe = {
   mode_name: string;
   spec_version: string;
   mode_filter: Record<string, any>;
-  recipient_id: string;
-  need_message: boolean;
-  need_phone: boolean;
-  need_mail: boolean;
-  need_inner_message: boolean;
-  recipient_ids: string[];
+  
+  recipient_name?: string;
+  need_message?: boolean;
+  need_phone?: boolean;
+  need_mail?: boolean;
+  need_inner_message?: boolean;
+  recipientNames?: string[];
 }

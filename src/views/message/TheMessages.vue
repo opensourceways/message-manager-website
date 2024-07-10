@@ -22,8 +22,8 @@ const total = ref(0);
 const thisWeekMessages = ref<MessageT[]>([]);
 const aWeekAgoMessages = ref<MessageT[]>([]);
 const expanded = ref([1, 2]);
-const activeSource = ref('https://eur.openeuler.openatom.cn');
-const activeEventType = ref();
+const activeSource = ref<string | undefined>('https://eur.openeuler.openatom.cn');
+const activeEventType = ref<string | undefined>();
 
 const NOW = dayjs();
 dayjs.locale(locale.value);
@@ -70,15 +70,15 @@ function onMouseLeaveMultiOperationIcon(event: MouseEvent, type: 'delete' | 'mar
 const activeMenu = ref('https://eur.openeuler.openatom.cn');
 
 watch(activeMenu, menu => {
-  if (menu === 'https://eur.openeuler.openatom.cn') {
-    activeSource.value = menu;
-    getData();
+  if (menu === 'all') {
+    activeSource.value = undefined;
+    activeEventType.value = undefined;
+  } else {
+    const [ source, type ] = menu.split('_');
+    activeSource.value = source;
+    activeEventType.value = type;
   }
-  if (menu.startsWith('https://gitee.com')) {
-    activeSource.value = 'https://gitee.com';
-    activeEventType.value = menu.split('_')[1];
-    getData();
-  }
+  getData();
 });
 </script>
 
@@ -100,7 +100,7 @@ watch(activeMenu, menu => {
           <OMenuItem value="all">
             全部消息来源
           </OMenuItem>
-          <OMenuItem value="https://eur.openeuler.openatom.cn">
+          <OMenuItem value="https://eur.openeuler.openatom.cn_build">
             EUR消息
           </OMenuItem>
           <OSubMenu value="2">
@@ -159,7 +159,7 @@ watch(activeMenu, menu => {
             </template>
             <div v-for="(msg) in thisWeekMessages" :key="msg.id" class="item">
               <OCheckbox :value="msg.id" v-model="checkedItems" />
-              <div class="dot-icon" v-if="!msg.is_read"></div>
+              <div class="dot-icon" :show="!msg.is_read"></div>
               <TheMessageItemDetail :msg="msg" />
             </div>
           </OCollapseItem>
@@ -172,7 +172,7 @@ watch(activeMenu, menu => {
             </template>
             <div v-for="(msg) in aWeekAgoMessages" :key="msg.id" class="item">
               <OCheckbox :value="msg.id" v-model="checkedItems" />
-              <div class="dot-icon" v-if="!msg.is_read"></div>
+              <div class="dot-icon" :show="!msg.is_read"></div>
               <TheMessageItemDetail :msg="msg" />
             </div>
           </OCollapseItem>
@@ -201,15 +201,19 @@ watch(activeMenu, menu => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #002EA7;
   margin-left: 12px;
+  background-color: transparent;
+
+  &[show="true"] {
+    background-color: #002EA7;
+  }
 }
 
 .messages-container {
   display: flex;
   gap: 32px;
   width: 80vw;
-  min-height: 900px;
+  min-height: 60vh;
 
   aside {
     .title {

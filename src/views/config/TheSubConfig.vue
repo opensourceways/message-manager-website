@@ -1,142 +1,101 @@
 <script setup lang="ts">
 import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination } from '@opensig/opendesign';
 import { computed, reactive, ref, watch } from 'vue';
-import { deleteSubsCondition, getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
+import { deleteSubsCondition, getAllSubs, getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
 import type { Subscribe } from '@/@types/type-config';
 import TheEditorWithTags from './components/TheEditorWithTags.vue';
 import TheRecipientTableDialog from './components/TheRecipientTableDialog.vue';
+import { subsSettingsRowNamesGenerator, subscribeSettingsInitialData } from '@/data/subscribeSettings';
+import { treeDataIterator } from '@/utils/common';
 
-const pageSizes = ref([10, 20, 30, 50]);
-const currentPage = ref(1);
-const pageSize = ref(10);
-const tableTotal = ref(0);
 
-class TableRow {
+class SubscribSettingsTableRow {
   id: any;
   name: string;
   needCheckboxes: string[] = [];
   recipientIds?: string;
-  children: TableRow[];
+  children: SubscribSettingsTableRow[] = [];
   hasAddIcon?: boolean;
   data: Subscribe;
 
-  constructor(data: any, name?: string, hasAddIcon?: boolean, children?: TableRow[]) {
+  constructor(data: Subscribe) {
     this.id = data.id;
-    this.hasAddIcon = hasAddIcon;
-    this.children = children ?? [];
-    this.name = name ?? data.mode_name;
+    if (data.mode_name) {
+      this.name = data.mode_name;
+    } else {
+      this.hasAddIcon = true;
+      this.name = subsSettingsRowNamesGenerator[data.source][data.event_type || 'default']();
+    }
     this.data = data;
-    this.recipientIds = data.recipient_ids?.join('、') ?? '';
-    if (data.need_inner_message) {
-      this.needCheckboxes.push('need_inner_message');
-    }
-    if (data.need_mail) {
-      this.needCheckboxes.push('need_mail');
-    }
-    if (data.need_message) {
-      this.needCheckboxes.push('need_message');
-    }
   }
 }
 
-// -----------------------初始数据-----------------------
-const tableData = reactive<TableRow[]>([
-  new TableRow({
-    source: 'https://eur.openeuler.openatom.cn',
-    event_type: 'build',
-    id: 'EUR',
-  }, 'EUR消息', true),
-  new TableRow({
-    source: 'https://gitee.com',
-    id: 'GITEE',
-  }, 'Gitee消息', true, [
-    new TableRow({
-      source: 'https://gitee.com',
-      event_type: 'issue',
-      id: 'ISSUE',
-    }, 'Issue事件', true),
-    new TableRow({
-      source: 'https://gitee.com',
-      event_type: 'pr',
-      id: 'PR',
-    }, 'Pull Request事件', true),
-    new TableRow({
-      source: 'https://gitee.com',
-      event_type: 'push',
-      id: 'PUSH',
-    }, 'Push事件', true),
-    new TableRow({
-      source: 'https://gitee.com',
-      event_type: 'note',
-      id: 'NOTE',
-    }, '评论事件', true),
-  ]),
-]);
+const generateInitialRows = (data: any[]) => {
+  let level = 0;
+  return data.map(function recursion(item, index) {
+    const res = new SubscribSettingsTableRow(item);
+    res.id = `${level}-${index}`;
+    if (item.children) {
+      level++;
+      res.children = item.children.map(recursion);
+    }
+    return res;
+  });
+}
 
-// ------------------获取固定的父标题的id------------------
-Promise.all([
-  postSubsCondition({ source: 'https://eur.openeuler.openatom.cn', event_type: 'build' }, { ignoreDuplicates: true, showError: false }),
-  postSubsCondition({ source: 'https://gitee.com' }, { ignoreDuplicates: true, showError: false }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'issue' }, { ignoreDuplicates: true, showError: false }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'pr' }, { ignoreDuplicates: true, showError: false }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'push' }, { ignoreDuplicates: true, showError: false }),
-  postSubsCondition({ source: 'https://gitee.com', event_type: 'note' }, { ignoreDuplicates: true, showError: false }),
-]).then(([ eur, gitee, issue, pr, push, note ]) => {
-  tableData[0].id = eur.data.newId || eur.data.exist.id;
-  tableData[1].id = gitee.data.newId || gitee.data.exist.id;
-  tableData[1].children[0].id = issue.data.newId || issue.data.exist.id;
-  tableData[1].children[1].id = pr.data.newId || pr.data.exist.id;
-  tableData[1].children[2].id = push.data.newId || push.data.exist.id;
-  tableData[1].children[3].id = note.data.newId || note.data.exist.id;
-});
+// -----------------------初始数据-----------------------
+const tableData = reactive<SubscribSettingsTableRow[]>(generateInitialRows(subscribeSettingsInitialData));
+
 
 // -----------------------查询数据-----------------------
-function getData(val = { page: 1, pageSize: 10 }) {
-  getSubscribes(val.page, val.pageSize).then(({ total, data }) => {
-    tableTotal.value = total;
+function getData() {
+  resetTableData();
+  getAllSubs().then(({ data }) => {
+    const parentRowMap = new Map<string, SubscribSettingsTableRow>();
+    treeDataIterator(
+      tableData,
+      row => parentRowMap.set(row.data.source + (row.data.event_type ?? ''), row)
+    );
+    for (const item of data.query_info) {
+      let row: SubscribSettingsTableRow | undefined;
+      if (item.event_type) {
+        row = parentRowMap.get(item.source + item.event_type);
+        if (item.mode_name) {
+          row?.children.push(new SubscribSettingsTableRow(item));
+          continue;
+        }
+      } else {
+        row = parentRowMap.get(item.source);
+      }
+      if (row) {
+        row.id = item.id;
+        row.data = item;
+      }
+    }
+  }).then(() => getDetailData());
+}
+
+function getDetailData() {
+  getSubscribes().then(data => {
     const map = new Map<number | string, Subscribe>();
     for (const item of data) {
       let cached = map.get(item.id);
       if (!cached) {
         cached = item;
-        cached.recipient_ids = [item.recipient_id];
+        cached.recipientNames = [item.recipient_name as string];
         map.set(item.id, cached);
       } else {
-        cached.recipient_ids?.push(item.recipient_id);
+        cached.recipientNames?.push(item.recipient_name as string);
       }
     }
-    resetTableData();
+    const idRowMap = new Map<string, SubscribSettingsTableRow>();
+    treeDataIterator(tableData, row => idRowMap.set(row.id, row));
     for (const item of map.values()) {
-      let row: TableRow | undefined;
-      if (item.source === 'https://eur.openeuler.openatom.cn') {
-        row = tableData[0];
-      }
-      if (item.source === 'https://gitee.com') {
-        switch (item.event_type) {
-          case 'issue':
-            row = tableData[1].children[0];
-            break;
-          case 'pr':
-            row = tableData[1].children[1];
-            break;
-          case 'push':
-            row = tableData[1].children[2];
-            break;
-          case 'note':
-            row = tableData[1].children[3];
-            break;
-          default:
-            row = tableData[1];
-        }
-      }
+      const row = idRowMap.get(item.id);
       if (!row) {
         continue;
       }
-      if (item.mode_name) {
-        row.children?.push(new TableRow(item));
-        continue;
-      }
-      row.recipientIds = item.recipient_ids.join('、');
+      row.recipientIds = item.recipientNames?.join('、');
       if (item.need_inner_message) {
         row.needCheckboxes.push('need_inner_message');
       }
@@ -147,15 +106,14 @@ function getData(val = { page: 1, pageSize: 10 }) {
         row.needCheckboxes.push('need_message');
       }
     }
-  })
+  });
 }
-getData();
 
 function resetTableData() {
   tableData.forEach(function recursion(row) {
     row.needCheckboxes = [];
     row.recipientIds = '';
-    if (row.data.source !== 'https://gitee.com') {
+    if (!row.data.mode_name && row.data.event_type) {
       row.children = [];
     }
     if (row.children) {
@@ -207,7 +165,7 @@ function confirmAddOrEditEurCondition() {
     }
   }).then(() => {
     cancelAddEurCondition();
-    getData({ page: currentPage.value, pageSize: pageSize.value });
+    getData();
   })
 }
 
@@ -237,10 +195,10 @@ const editGiteeCondition = reactive({
 const showEditGiteeDlg = ref(false);
 
 function confirmAddOrEditGiteeCondition() {
-  editGiteeCondition.mode_filter.repo_name = repoNameEditor.value.getTagValues().split(commaSeparator);
+  editGiteeCondition.mode_filter.repo_name = repoNameEditor.value.getTagValues();
   (currentEditorType.value === 'add' ? postSubsCondition : putSubsCondition)(editGiteeCondition).then(() => {
     cancelAddEurCondition();
-    getData({ page: currentPage.value, pageSize: pageSize.value });
+    getData();
   });
 }
 
@@ -255,7 +213,7 @@ function cancelAddGiteeCondition() {
 }
 
 // -----------------------添加/编辑/删除精细化条件-----------------------
-function addCondition(row: TableRow) {
+function addCondition(row: SubscribSettingsTableRow) {
   switch (row.data.source) {
     case 'https://eur.openeuler.openatom.cn':
       editEurCondition.source = row.data.source;
@@ -273,7 +231,7 @@ function addCondition(row: TableRow) {
   currentEditorType.value = 'add';
 }
 
-function editCondition(row: TableRow) {
+function editCondition(row: SubscribSettingsTableRow) {
   switch (row.data.source) {
     case 'https://eur.openeuler.openatom.cn':
       editEurCondition.source = row.data.source;
@@ -302,9 +260,9 @@ function editCondition(row: TableRow) {
 }
 
 const showDeleteDlg = ref(false);
-const deletedRow = ref<TableRow>();
+const deletedRow = ref<SubscribSettingsTableRow>();
 
-function deleteCondition(row: TableRow) {
+function deleteCondition(row: SubscribSettingsTableRow) {
   deletedRow.value = row;
   showDeleteDlg.value = true;
 }
@@ -319,7 +277,7 @@ async function confirmDelete() {
     mode_name: deletedRow.value.data.mode_name,
   });
   cancelDelete();
-  getData({ page: currentPage.value, pageSize: pageSize.value });
+  getData();
 }
 
 function cancelDelete() {
@@ -328,8 +286,8 @@ function cancelDelete() {
 }
 
 // -----------------------表格多选-----------------------
-const multiSelection = ref<TableRow[]>([]);
-const handleSelectionChange = (val: TableRow[]) => multiSelection.value = val;
+const multiSelection = ref<SubscribSettingsTableRow[]>([]);
+const handleSelectionChange = (val: SubscribSettingsTableRow[]) => multiSelection.value = val;
 const btnsDisabled = computed(() => multiSelection.value.length === 0);
 const isAddingRecipient = ref(false);
 
@@ -341,9 +299,9 @@ function handleExternalAddRecipient() {
 
 // -----------------------修改/添加接收人-----------------------
 const showEditRecipientDlg = ref(false);
-const editRecipientTargetRows = ref<TableRow[]>([]);
+const editRecipientTargetRows = ref<SubscribSettingsTableRow[]>([]);
 
-function editRecipient(row: TableRow) {
+function editRecipient(row: SubscribSettingsTableRow) {
   editRecipientTargetRows.value = [row];
   showEditRecipientDlg.value = true;
 }
@@ -362,15 +320,15 @@ function removeRecipients() {
 
 watch(showEditRecipientDlg, val => {
   if (!val) {
-    getData({ page: currentPage.value, pageSize: pageSize.value });
+    getData();
     editRecipientTargetRows.value = [];
     removingRecipients.value = false;
   }
 });
 
 // -----------------------接收方式勾选框状态更改-----------------------
-function needCheckboxChange(row: TableRow) {
-  Promise.all(row.data.recipient_ids.map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
+function needCheckboxChange(row: SubscribSettingsTableRow) {
+  Promise.all((row.data.recipientNames as string[]).map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
 }
 
 defineExpose({
@@ -535,8 +493,6 @@ defineExpose({
       </template>
     </ElTableColumn>
   </ElTable>
-
-  <OPagination :total="tableTotal" :page="currentPage" :pageSizes="pageSizes" :page-size="pageSize" @change="getData" />
 </template>
 
 <style lang="scss" scoped>

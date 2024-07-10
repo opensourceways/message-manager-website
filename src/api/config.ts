@@ -26,24 +26,19 @@ export function addRecipient(data: Partial<Recipient>) {
 }
 
 export function deleteRecipient(recipient_id: string) {
-  return request.delete('/message_center/config/recipient/', { data: { recipient_id } });
+  return request.delete('/message_center/config/recipient', { data: { recipient_id } });
 }
 
 export function editRecipient(data: Partial<Recipient>) {
   return request.put('/message_center/config/recipient', data);
 }
 
-export function getSubscribes(page = 1, count_per_page = 10): Promise<Pagination<Subscribe>> {
-  const query = generateQuery({ count_per_page, page });
-  return request.get<PagedResponse<Subscribe>>(`message_center/config/subs${query}`)
-    .then(res => {
-      const { count: total, query_info } = res.data;
-      if (isArray(query_info) && query_info.length) {
-        return { total, data: query_info };
-      }
-      return { total: 0, data: [] };
-    });
+export function getSubscribes(): Promise<Subscribe[]> {
+  return request.get<Subscribe[]>('message_center/config/subs')
+    .then(res => res.data ?? []);
 }
+
+export const getAllSubs = () => request.get<PagedResponse<Subscribe>>('/message_center/config/subs/all');
 
 export function postSubsCondition(data: any, config?: RequestConfig) {
   return request.post('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config);
@@ -59,10 +54,10 @@ export function deleteSubsCondition(data: { source: string, event_type: string, 
 
 export function updateNeedStatus(needStatus: string[], recipient_id: string, subscribe_id: string) {
   const data: any = {
-    'need_inner_message': false,
-    'need_mail': false,
-    'need_message': false,
-    'need_phone': false,
+    need_inner_message: false,
+    need_mail: false,
+    need_message: false,
+    need_phone: false,
     recipient_id,
     subscribe_id
   };
