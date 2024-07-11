@@ -75,26 +75,32 @@ function getData() {
 }
 getData();
 
+const aggregateData = (data: Subscribe[]): Subscribe[] => {
+  const map = new Map<string, Subscribe>();
+  for (const item of data) {
+    let cached = map.get(item.id);
+    if (!cached) {
+      cached = item;
+      cached.recipientNames = [item.recipient_name as string];
+      map.set(item.id, cached);
+    } else {
+      cached.recipientNames?.push(item.recipient_name as string);
+    }
+  }
+  return Array.from(map.values());
+};
+
 function getDetailData() {
   getSubscribes().then(data => {
-    const map = new Map<string, Subscribe>();
-    for (const item of data) {
-      let cached = map.get(item.id);
-      if (!cached) {
-        cached = item;
-        cached.recipientNames = [item.recipient_name as string];
-        map.set(item.id, cached);
-      } else {
-        cached.recipientNames?.push(item.recipient_name as string);
-      }
-    }
+    const aggregated = aggregateData(data);
     const idRowMap = new Map<string, SubscribSettingsTableRow>();
     treeDataIterator(tableData, row => idRowMap.set(row.id, row));
-    for (const item of map.values()) {
+    for (const item of aggregated) {
       const row = idRowMap.get(item.id);
       if (!row) {
         continue;
       }
+      row.data = item;
       row.recipientIds = item.recipientNames?.join('、');
       if (item.need_inner_message) {
         row.needCheckboxes.push('need_inner_message');
@@ -328,6 +334,8 @@ watch(showEditRecipientDlg, val => {
 
 // -----------------------接收方式勾选框状态更改-----------------------
 function needCheckboxChange(row: SubscribSettingsTableRow) {
+  console.log('??????');
+  
   Promise.all((row.data.recipientNames as string[]).map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
 }
 

@@ -54,7 +54,7 @@ const editingData = reactive({
 // ----------------新增接收人-------------------
 const isAddingRecipient = ref(false);
 
-const  handleAddRecipient = () => {
+const handleAddRecipient = () => {
   if (isAddingRecipient.value) {
     return;
   }
