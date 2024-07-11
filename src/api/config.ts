@@ -34,8 +34,8 @@ export function editRecipient(data: Partial<Recipient>) {
 }
 
 export function getSubscribes(): Promise<Subscribe[]> {
-  return request.get<Subscribe[]>('message_center/config/subs')
-    .then(res => res.data ?? []);
+  return request.get<{ query_info: Subscribe[] }>('message_center/config/subs')
+    .then(res => res?.data.query_info ?? []);
 }
 
 export const getAllSubs = () => request.get<PagedResponse<Subscribe>>('/message_center/config/subs/all');
