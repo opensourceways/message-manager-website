@@ -18,7 +18,6 @@ const tableColumns = [
 ];
 const tableData = ref<Recipient[]>([]);
 const tableLoading = ref(false);
-let addRecipientGenerator: Generator | undefined;
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
 const pageSizes = ref([10, 20, 30, 50]);
@@ -32,9 +31,6 @@ function getData(val = { page: 1, pageSize: 10 }) {
     .then(({ total, data }) => {
       tableData.value = data;
       tableTotal.value = total;
-      if (addRecipientGenerator) {
-        addRecipientGenerator.next();
-      }
     })
     .catch(() => {
       tableData.value = [];
@@ -42,10 +38,6 @@ function getData(val = { page: 1, pageSize: 10 }) {
     })
     .finally(() => {
       tableLoading.value = false;
-      if (addRecipientGenerator) {
-        addRecipientGenerator.return(0);
-        addRecipientGenerator = undefined;
-      }
     });
 }
 getData();
@@ -61,34 +53,32 @@ const editingData = reactive({
 
 // ----------------新增接收人-------------------
 const isAddingRecipient = ref(false);
-function handleAddRecipient() {
-  addRecipientGenerator = (function* () {
-    if (tableTotal.value > 0) {
-      const lastPage = Math.ceil(tableTotal.value / pageSize.value);
-      if (currentPage.value < lastPage) {
-        // 跳到最后一页
-        currentPage.value = lastPage;
-        yield getData();
-      }
-    }
-    tableData.value.push({
-      id: '',
-      key: '',
-      recipient_id: '',
-      mail: '',
-      message: '',
-      phone: '',
-      remark: '',
-      created_at: '',
-      formattedCreateTime: '',
-    });
-    isAddingRecipient.value = true;
-  })();
-  addRecipientGenerator.next();
+
+const  handleAddRecipient = () => {
+  if (isAddingRecipient.value) {
+    return;
+  }
+  tableData.value.unshift({
+    id: '',
+    key: '',
+    recipient_id: '',
+    mail: '',
+    message: '',
+    phone: '',
+    remark: '',
+    created_at: '',
+    formattedCreateTime: '',
+  });
+  isAddingRecipient.value = true;
 }
 
-async function confirmAdd() {
-  await addRecipient(editingData).catch((err) => message.warning(err.response.data.error));
+const confirmAdd = async () => {
+  try {
+    await addRecipient(editingData);
+  } catch (err: any) {
+    message.warning(err?.response?.data?.error);
+    return;
+  }
   cancelAddOrEdit();
   getData({ page: currentPage.value, pageSize: pageSize.value });
 }
@@ -138,7 +128,7 @@ function confirmEditOrAdd() {
 
 function cancelAddOrEdit() {
   if (isAddingRecipient.value) {
-    tableData.value.pop();
+    tableData.value.shift();
     isAddingRecipient.value = false;
   }
   editingRecipientId.value = undefined;

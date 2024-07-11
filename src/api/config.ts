@@ -21,8 +21,8 @@ export function getRecipients(page = 1, count_per_page = 10): Promise<Pagination
     });
 }
 
-export function addRecipient(data: Partial<Recipient>) {
-  return request.post('/message_center/config/recipient', data);
+export function addRecipient(data: Partial<Recipient>, showError = false) {
+  return request.post('/message_center/config/recipient', data, { showError });
 }
 
 export function deleteRecipient(recipient_id: string) {
