@@ -46,7 +46,6 @@ const generateInitialRows = (data: any[]) => {
 // -----------------------初始数据-----------------------
 const tableData = reactive<SubscribSettingsTableRow[]>(generateInitialRows(subscribeSettingsInitialData));
 
-
 // -----------------------查询数据-----------------------
 function getData() {
   resetTableData();
@@ -74,10 +73,11 @@ function getData() {
     }
   }).then(() => getDetailData());
 }
+getData();
 
 function getDetailData() {
   getSubscribes().then(data => {
-    const map = new Map<number | string, Subscribe>();
+    const map = new Map<string, Subscribe>();
     for (const item of data) {
       let cached = map.get(item.id);
       if (!cached) {
@@ -110,7 +110,7 @@ function getDetailData() {
 }
 
 function resetTableData() {
-  tableData.forEach(function recursion(row) {
+  tableData?.forEach(function recursion(row) {
     row.needCheckboxes = [];
     row.recipientIds = '';
     if (!row.data.mode_name && row.data.event_type) {

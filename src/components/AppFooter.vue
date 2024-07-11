@@ -194,7 +194,6 @@ const onExternalDialog = (href: string) => {
         <div class="inner">
           <div class="footer-logo">
             <img class="show-pc" :src="LogoFooter" alt="" />
-            <img class="show-mo" :src="LogoFooter1" alt="" />
             <p>
               <a class="email" :href="`mailto:${OPENEULER_CONTACT}`" target="_blank" rel="noopener noreferrer"> {{ OPENEULER_CONTACT }} </a>
             </p>
