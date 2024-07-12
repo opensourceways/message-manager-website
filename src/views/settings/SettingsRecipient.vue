@@ -2,7 +2,7 @@
 import type { Recipient } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
 import { OButton, ODialog, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
-import TheWarningInput from '@/components/TheWarningInput.vue';
+import WarningInput from '@/components/WarningInput.vue';
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -74,7 +74,10 @@ const handleAddRecipient = () => {
 
 const confirmAdd = async () => {
   try {
-    await addRecipient(editingData);
+    await addRecipient({
+      ...editingData,
+      phone: '+86' + editingData.phone,
+    });
   } catch (err: any) {
     message.warning(err?.response?.data?.error);
     return;
@@ -109,7 +112,10 @@ const isInputsValid = () => {
 };
 
 async function confirmEdit() {
-  await editRecipient(editingData);
+  await editRecipient({
+    ...editingData,
+    phone: '+86' + editingData.phone,
+  });
   cancelAddOrEdit();
   getData({ page: currentPage.value, pageSize: pageSize.value });
 }
@@ -181,7 +187,7 @@ function cancelDelete() {
     style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)"
   >
     <template #td_recipient_id="{ row }">
-      <TheWarningInput
+      <WarningInput
         ref="nameInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :noEmpty="true"
@@ -193,7 +199,7 @@ function cancelDelete() {
       <p class="td-p" v-else>{{ row.recipient_id }}</p>
     </template>
     <template #td_mail="{ row }">
-      <TheWarningInput
+      <WarningInput
         ref="phoneInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :regExp="EMAIL_PATTERN"
@@ -205,14 +211,15 @@ function cancelDelete() {
       <p class="td-p" v-else>{{ row.mail }}</p>
     </template>
     <template #td_phone="{ row }">
-      <TheWarningInput
+      <WarningInput
         ref="mailInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :regExp="PHONE_PATTERN"
+        :isPhoneNum="true"
         warningText="请输入正确的手机号码"
         v-model="editingData.phone"
         placeholder="请输入手机号码"
-        style="width: 160px"
+        style="width: 180px"
       />
       <p class="td-p" v-else>{{ row.phone }}</p>
     </template>

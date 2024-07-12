@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 import { OButton, OCheckbox, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import { addRecipient, deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/config';
-import TheWarningInput from '@/components/TheWarningInput.vue';
+import WarningInput from '@/components/WarningInput.vue';
 import type { Pagination } from '@/@types/types-common';
 import type { Recipient } from '@/@types/type-config';
 
@@ -192,7 +192,7 @@ function cancelAddRecipient() {
       style="border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius);"
     >
       <template #td_name="{ row }">
-        <TheWarningInput
+        <WarningInput
           ref="nameInput"
           v-if="row.id === ''"
           :noEmpty="true"
@@ -207,7 +207,7 @@ function cancelAddRecipient() {
         </p>
       </template>
       <template #td_mail="{ row }">
-        <TheWarningInput
+        <WarningInput
           ref="mailInput"
           v-if="row.id === ''"
           :regExp="EMAIL_PATTERN"
@@ -219,7 +219,7 @@ function cancelAddRecipient() {
         <p v-else class="td-p">{{ row.mail }}</p>
       </template>
       <template #td_phone="{ row }">
-        <TheWarningInput
+        <WarningInput
           ref="phoneInput"
           v-if="row.id === ''"
           :regExp="PHONE_PATTERN"

@@ -1,6 +1,5 @@
-export type MessageT = {
+export interface MessageT {
   id: string;
-  data_schema: string;
   event_id: string;
   source: string;
   source_url: string;

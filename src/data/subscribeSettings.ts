@@ -1,6 +1,4 @@
-import type { Subscribe } from "@/@types/type-config";
-
-export const subsSettingsRowNamesGenerator: any = {
+export const eventDisplayNames: any = {
   'https://eur.openeuler.openatom.cn': {
     build: () => 'EUR消息'
   },
@@ -13,7 +11,7 @@ export const subsSettingsRowNamesGenerator: any = {
   }
 }
 
-export const subscribeSettingsInitialData = [
+export const events = [
   { source: 'https://eur.openeuler.openatom.cn', event_type: 'build' },
   {
     source: 'https://gitee.com',

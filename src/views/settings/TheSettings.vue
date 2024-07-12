@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { OButton, OTab, OTabPane } from '@opensig/opendesign';
-import TheRecipientConfig from './TheRecipientConfig.vue';
-import TheSubConfig from './TheSubConfig.vue';
+import SettingsRecipient from './SettingsRecipient.vue';
+import SettingsSubscribe from './SettingsSubscribe.vue';
 
 const activeTab = ref('a');
 const subConfig = ref<any>();
@@ -32,10 +32,10 @@ function removeRecipient() {
           </div>
         </template>
         <OTabPane value="a" :label="$t('config.receiveConfig')">
-          <TheSubConfig ref="subConfig" />
+          <SettingsSubscribe ref="subConfig" />
         </OTabPane>
         <OTabPane value="b" :label="$t('config.receiverManagement')">
-          <TheRecipientConfig />
+          <SettingsRecipient />
         </OTabPane>
       </OTab>
     </div>

@@ -2,21 +2,19 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
 
-import i18n from '@/i18n';
-
 const routes = [
   {
     path: '/',
     name: 'home',
     component: () => {
-      return import('@/views/message/TheMessages.vue');
+      return import('@/views/message/TheMessageList.vue');
     },
   },
   {
-    path: '/config',
-    name: 'config',
+    path: '/settings',
+    name: 'settings',
     component: () => {
-      return import('@/views/config/TheConfig.vue');
+      return import('@/views/settings/TheSettings.vue');
     },
   },
   // 默认路由

@@ -11,6 +11,7 @@ const props = withDefaults(
     clearable?: boolean;
     noEmpty?: boolean;
     regExp?: RegExp;
+    isPhoneNum?: boolean;
     validator?: (value: string) => boolean;
   }>(),
   {
@@ -58,7 +59,11 @@ defineExpose({
       @blur="doValidate"
       :color="isValid ? 'normal' : 'danger'"
       :placeholder="placeholder"
-    />
+    >
+      <template #prepend v-if="isPhoneNum">
+        <span style="padding: 0 8px 0 7px">+86</span>
+      </template>
+    </OInput>
     <p v-show="!isValid">{{ warningText }}</p>
   </div>
 </template>

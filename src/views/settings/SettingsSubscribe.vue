@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, ORadio, OSelect, OPagination } from '@opensig/opendesign';
+import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, OSelect } from '@opensig/opendesign';
 import { computed, reactive, ref, watch } from 'vue';
 import { deleteSubsCondition, getAllSubs, getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
 import type { Subscribe } from '@/@types/type-config';
-import TheEditorWithTags from './components/TheEditorWithTags.vue';
-import TheRecipientTableDialog from './components/TheRecipientTableDialog.vue';
-import { subsSettingsRowNamesGenerator, subscribeSettingsInitialData } from '@/data/subscribeSettings';
+import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
+import { eventDisplayNames, events } from '@/data/subscribeSettings';
 import { treeDataIterator } from '@/utils/common';
-
+import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
 
 class SubscribSettingsTableRow {
   id: any;
@@ -24,7 +23,7 @@ class SubscribSettingsTableRow {
       this.name = data.mode_name;
     } else {
       this.hasAddIcon = true;
-      this.name = subsSettingsRowNamesGenerator[data.source][data.event_type || 'default']();
+      this.name = eventDisplayNames[data.source][data.event_type || 'default']();
     }
     this.data = data;
   }
@@ -44,7 +43,7 @@ const generateInitialRows = (data: any[]) => {
 }
 
 // -----------------------初始数据-----------------------
-const tableData = reactive<SubscribSettingsTableRow[]>(generateInitialRows(subscribeSettingsInitialData));
+const tableData = reactive<SubscribSettingsTableRow[]>(generateInitialRows(events));
 
 // -----------------------查询数据-----------------------
 function getData() {
@@ -188,35 +187,8 @@ function cancelAddEurCondition() {
 }
 
 // -----------------------gitee精细化条件-----------------------
-const repoNameEditor = ref();
-const editGiteeCondition = reactive({
-  source: '',
-  mode_name: '',
-  event_type: '',
-  mode_filter: {
-    repo_name: [],
-    is_bot: false,
-  }
-});
 const showEditGiteeDlg = ref(false);
-
-function confirmAddOrEditGiteeCondition() {
-  editGiteeCondition.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-  (currentEditorType.value === 'add' ? postSubsCondition : putSubsCondition)(editGiteeCondition).then(() => {
-    cancelAddEurCondition();
-    getData();
-  });
-}
-
-function cancelAddGiteeCondition() {
-  showEditGiteeDlg.value = false;
-  editGiteeCondition.mode_name = '';
-  editGiteeCondition.event_type = '';
-  editGiteeCondition.mode_filter = {
-    repo_name: [],
-    is_bot: false,
-  };
-}
+const editEventType = ref<string>()
 
 // -----------------------添加/编辑/删除精细化条件-----------------------
 function addCondition(row: SubscribSettingsTableRow) {
@@ -228,10 +200,8 @@ function addCondition(row: SubscribSettingsTableRow) {
       showEditEurDlg.value = true;
       break;
     case 'https://gitee.com':
-      editGiteeCondition.source = row.data.source;
-      editGiteeCondition.mode_name = row.data.mode_name;
-      editGiteeCondition.event_type = row.data.event_type;
       showEditGiteeDlg.value = true;
+      editEventType.value = row.data.event_type;
       break;
   }
   currentEditorType.value = 'add';
@@ -252,14 +222,8 @@ function editCondition(row: SubscribSettingsTableRow) {
       showEditEurDlg.value = true;
       break;
     case 'https://gitee.com':
-      editGiteeCondition.source = row.data.source;
-      editGiteeCondition.mode_name = row.data.mode_name;
-      editGiteeCondition.event_type = row.data.event_type;
-      editGiteeCondition.mode_filter = {
-        repo_name: row.data.mode_filter.repo_name ?? '',
-        is_bot: row.data.mode_filter.is_bot,
-      };
       showEditGiteeDlg.value = true;
+      editEventType.value = row.data.event_type;
       break;
   }
   currentEditorType.value = 'edit';
@@ -334,8 +298,6 @@ watch(showEditRecipientDlg, val => {
 
 // -----------------------接收方式勾选框状态更改-----------------------
 function needCheckboxChange(row: SubscribSettingsTableRow) {
-  console.log('??????');
-  
   Promise.all((row.data.recipientNames as string[]).map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
 }
 
@@ -401,48 +363,16 @@ defineExpose({
     </template>
   </ODialog>
 
-  <ODialog v-model:visible="showEditGiteeDlg" :unmount-on-hide="false">
-    <template #header>新增Gitee消息接收条件</template>
-    <div class="dialog-content">
-      <p class="dialog-content-title">
-        消息条件命名
-      </p>
-      <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
-        <OFormItem label="条件名称" required>
-          <OInput clearable v-model="editGiteeCondition.mode_name" style="width: 100%;" placeholder="请输入方便您区分的名称" />
-        </OFormItem>
-      </OForm>
-      <p class="dialog-content-title">
-        消息条件命名
-      </p>
-      <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
-        <OFormItem label="仓库名称" required>
-          <TheEditorWithTags ref="repoNameEditor" style="width: 100%;" placeholder="请输入仓库名称" />
-        </OFormItem>
-        <OFormItem label="提交人" required>
-          <div style="display: flex; gap: 16px;">
-            <ORadio v-model="editGiteeCondition.mode_filter.is_bot" :value="true">机器人</ORadio>
-            <ORadio v-model="editGiteeCondition.mode_filter.is_bot" :value="false">非机器人</ORadio>
-          </div>
-        </OFormItem>
-      </OForm>
-    </div>
-    <template #footer>
-      <div class="dlg-action">
-        <OButton color="primary" variant="solid" @click="confirmAddOrEditGiteeCondition">确定</OButton>
-        <OButton @click="cancelAddGiteeCondition">取消</OButton>
-      </div>
-    </template>
-  </ODialog>
+  <SettingsGiteeRuleDialog v-model:show="showEditGiteeDlg" :eventType="editEventType" :type="currentEditorType" @confirm="getData"/>
 
   <ODialog v-model:visible="showEditRecipientDlg" :unmount-on-hide="false" size="large">
     <template #header>修改接收人</template>
-    <TheRecipientTableDialog
+    <SettingsRecipientDialog
       :add="isAddingRecipient"
       :is-in-remove-dialog="removingRecipients"
       :effectedRows="editRecipientTargetRows"
       :isShowingDialog="showEditRecipientDlg"
-    ></TheRecipientTableDialog>
+    ></SettingsRecipientDialog>
   </ODialog>
 
   <ElTable 
