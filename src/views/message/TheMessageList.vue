@@ -43,7 +43,6 @@ const confirmDialogOptions = reactive({
   title: '',
   content: '',
 });
-// const confirmDialog = ref<any>();
 
 const NOW = dayjs();
 dayjs.locale(locale.value);
