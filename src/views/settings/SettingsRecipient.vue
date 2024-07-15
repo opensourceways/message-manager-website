@@ -19,7 +19,7 @@ const tableColumns = [
 const tableData = ref<Recipient[]>([]);
 const tableLoading = ref(false);
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
-const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+const PHONE_PATTERN = /^+861[3-9]\d{9}$/;
 const pageSizes = ref([10, 20, 30, 50]);
 const currentPage = ref(1);
 const pageSize = ref(pageSizes.value[0]);
@@ -200,7 +200,7 @@ function cancelDelete() {
     </template>
     <template #td_mail="{ row }">
       <WarningInput
-        ref="phoneInput"
+        ref="mailInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :regExp="EMAIL_PATTERN"
         warningText="请输入正确的邮箱"
@@ -212,10 +212,9 @@ function cancelDelete() {
     </template>
     <template #td_phone="{ row }">
       <WarningInput
-        ref="mailInput"
+        ref="phoneInput"
         v-if="editingRecipientId === row.recipient_id || row.key === ''"
         :regExp="PHONE_PATTERN"
-        :isPhoneNum="true"
         warningText="请输入正确的手机号码"
         v-model="editingData.phone"
         placeholder="请输入手机号码"
