@@ -22,7 +22,7 @@ export function getRecipients(page = 1, count_per_page = 10): Promise<Pagination
 }
 
 export function addRecipient(data: Partial<Recipient>, showError = false) {
-  return request.post('/message_center/config/recipient', data, { showError });
+  return request.post('/message_center/config/recipient', { ...data, message: data.phone }, { showError });
 }
 
 export function deleteRecipient(recipient_id: string) {
@@ -30,7 +30,7 @@ export function deleteRecipient(recipient_id: string) {
 }
 
 export function editRecipient(data: Partial<Recipient>) {
-  return request.put('/message_center/config/recipient', data);
+  return request.put('/message_center/config/recipient',  { ...data, message: data.phone });
 }
 
 export function getSubscribes(): Promise<Subscribe[]> {
