@@ -32,11 +32,11 @@ export function getMessages(source?: string, event_type?: string, is_read?: 1 | 
 }
 
 export function readMessages(...msgs: MessageT[]): Promise<void> {
-  return request.put('/message_center/inner/', msgs.map(msg => ({ source: msg.source, event_id: msg.event_id })));
+  return request.put('/message_center/inner', msgs.map(msg => ({ source: msg.source, event_id: msg.event_id })));
 }
 
 export function deleteMessages(...msgs: MessageT[]): Promise<any> {
-  return request.delete('/message_center/inner/', {
+  return request.delete('/message_center/inner', {
     data: msgs.map(msg => ({ source: msg.source, event_id: msg.event_id }))
   });
 }

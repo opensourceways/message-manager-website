@@ -13,10 +13,10 @@ watch(
   () => route.name,
   (name) => {
     switch (name) {
-      case 'config':
+      case 'settings':
         breadcrumbs.value = [
           { text: '消息中心', name: 'home' },
-          { text: '消息订阅设置', name: 'config' },
+          { text: '消息订阅设置', name: 'settings' },
         ];
         break;
       case 'home':

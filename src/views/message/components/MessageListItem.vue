@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { MessageT } from '@/@types/type-messages';
-import HorizontalLine from '@/components/HorizontalLine.vue';
 import WordAvatar from '@/components/WordAvatar.vue'
-import { OBadge } from '@opensig/opendesign';
-import { h } from 'vue';
+import { OBadge, ODivider } from '@opensig/opendesign';
+import { h, ref } from 'vue';
 
+defineEmits<{
+  (event: 'deleteMessage', msg: MessageT): void;
+  (event: 'readMessage', msg: MessageT): void;
+}>();
 defineProps<{
   msg: MessageT;
-  onHover?: boolean;
 }>();
 
 const EXTRACT_REGEX = /<sourceUrl>(.*?)<sourceUrl>/;
@@ -35,10 +37,16 @@ const Title = (props: { msg: MessageT }) => {
     unread: !props.msg.is_read,
   }, title);
 };
+
+const isHover = ref(false);
+
+const onHover = () => isHover.value = true;
+
+const cancelHover = () => isHover.value = false;
 </script>
 
 <template>
-  <div class="message-list-item">
+  <div class="message-list-item" @mouseenter="onHover" @mouseleave="cancelHover">
     <div class="list-item-left">
       <div class="user-info">
         <OBadge v-if="!msg.is_read" color="danger">
@@ -52,9 +60,19 @@ const Title = (props: { msg: MessageT }) => {
     <div class="list-item-right">
       <p>仓库{{ msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
+      <div v-show="isHover" class="list-item-right-hover">
+        <div class="icon-wrap" @click="$emit('deleteMessage', msg)">
+          <img src="@/assets/svg-icons/icon-delete.svg" class="inactive">
+          <img src="@/assets/svg-icons/icon-delete-active.svg" class="active">
+        </div>
+        <div class="icon-wrap" v-if="!msg.is_read" @click="$emit('readMessage', msg)">
+          <img src="@/assets/svg-icons/icon-read.svg" class="inactive">
+          <img src="@/assets/svg-icons/icon-read-active.svg" class="active">
+        </div>
+      </div>
     </div>
 
-    <HorizontalLine style="position: absolute; bottom: 0; transform: translateY(16px); width: 100%;" />
+    <ODivider style="position: absolute; bottom: 0; transform: translateY(28px); width: 100%;"/>
   </div>
 </template>
 
@@ -87,19 +105,53 @@ const Title = (props: { msg: MessageT }) => {
   }
 
   .list-item-right {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--o-color-info3);
     font-size: var(--o-font_size-tip2);
     line-height: var(--o-line_height-tip2);
   }
 
   .list-item-right-hover {
     display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: absolute;
+    right: 0;
+    height: 100%;
+    width: 100%;
     gap: 32px;
     padding-right: 22px;
+    background-color: var(--o-color-control2-light);
+
+    .icon-wrap {
+      img {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+      }
+  
+      .inactive {
+        display: inline-block;
+      }
+  
+      .active {
+        display: none;
+      }
+  
+      &:hover {
+        .inactive {
+          display: none;
+        }
+
+        .active {
+          display: inline-block;
+        }
+      }
+    }
   }
 }
 </style>
