@@ -322,7 +322,7 @@ watch(selectedVal, (val) => {
       </div>
     </div>
   </div>
-  <OPagination :total="total" :page="currentPage" :pageSize="pageSize" show-total @change="getData" />
+  <OPagination :total="total" :page="currentPage" :pageSize="pageSize" :pageSizes="[10, 20, 30, 50]" show-total @change="getData" />
 </template>
 
 <style scoped lang="scss">

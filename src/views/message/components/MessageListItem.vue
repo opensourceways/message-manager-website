@@ -49,7 +49,7 @@ const cancelHover = () => isHover.value = false;
   <div class="message-list-item" @mouseenter="onHover" @mouseleave="cancelHover">
     <div class="list-item-left">
       <div class="user-info">
-        <OBadge v-if="!msg.is_read" color="danger">
+        <OBadge :dot="true" v-if="!msg.is_read" color="danger">
           <WordAvatar :name="msg.user" size="small" />
         </OBadge>
         <WordAvatar v-else :name="msg.user" size="small" />
@@ -80,6 +80,10 @@ const cancelHover = () => isHover.value = false;
 .msg-title {
   font-size: 14px;
   line-height: 22px;
+}
+
+:deep(.o-badge-dot) {
+  --badge-dot-size: 6px;
 }
 
 .message-list-item {
