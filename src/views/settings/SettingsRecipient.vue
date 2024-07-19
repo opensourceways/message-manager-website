@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { Recipient } from '@/@types/type-config';
+import type { RecipientT } from '@/@types/type-config';
 import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
-import { OButton, ODialog, OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
+import { OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import WarningInput from '@/components/WarningInput.vue';
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useConfirmDialog } from '@vueuse/core';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const message = useMessage();
 const { t } = useI18n();
@@ -13,10 +15,9 @@ const tableColumns = [
   { label: t('config.table.mail'), key: 'mail' },
   { label: t('config.table.phone'), key: 'phone' },
   { label: t('config.table.remark'), key: 'remark' },
-  { label: t('config.table.createTime'), key: 'formattedCreateTime' },
   { label: t('config.table.operation'), key: 'operation' },
 ];
-const tableData = ref<Recipient[]>([]);
+const tableData = ref<RecipientT[]>([]);
 const tableLoading = ref(false);
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
 const PHONE_PATTERN = /^\+861[3-9]\d{9}$/;
@@ -44,7 +45,7 @@ getData();
 
 // ----------------新增/修改接收人-------------------
 const editingData = reactive({
-  id: '',
+  id: '' as string | number,
   recipient_id: '',
   mail: '',
   phone: '',
@@ -63,23 +64,19 @@ const handleAddRecipient = () => {
     key: '',
     recipient_id: '',
     mail: '',
-    message: '',
     phone: '',
     remark: '',
-    created_at: '',
-    formattedCreateTime: '',
   });
   isAddingRecipient.value = true;
 }
 
 const confirmAdd = async () => {
   try {
-    await addRecipient({
-      ...editingData,
-      phone: '+86' + editingData.phone,
-    });
+    await addRecipient(editingData);
   } catch (err: any) {
-    message.warning(err?.response?.data?.error);
+    if (err?.response?.data?.error) {
+      message.warning(err?.response?.data?.error);
+    }
     return;
   }
   cancelAddOrEdit();
@@ -89,7 +86,7 @@ const confirmAdd = async () => {
 // ----------------修改接收人-------------------
 const editingRecipientId = ref<number | string | undefined>();
 
-function handleEditRecipient(recipient: Recipient) {
+function handleEditRecipient(recipient: RecipientT) {
   if (!recipient) {
     return;
   }
@@ -114,7 +111,7 @@ const isInputsValid = () => {
 async function confirmEdit() {
   await editRecipient({
     ...editingData,
-    phone: '+86' + editingData.phone,
+    phone: editingData.phone,
   });
   cancelAddOrEdit();
   getData({ page: currentPage.value, pageSize: pageSize.value });
@@ -145,46 +142,40 @@ function cancelAddOrEdit() {
 }
 
 // ----------------删除接收人-------------------
-const showDeleteDlg = ref(false);
-const deleteId = ref<string>();
+const {
+  isRevealed,
+  reveal,
+  confirm,
+  cancel
+} = useConfirmDialog();
 
-function deleteRow(recipient_id: string) {
-  deleteId.value = recipient_id;
-  showDeleteDlg.value = true;
+const deleteRow = async(recipient_id: string) => {
+  const { isCanceled } = await reveal();
+  if (!isCanceled) {
+    try {
+      await deleteRecipient(recipient_id);
+      getData({ page: currentPage.value, pageSize: pageSize.value });
+    } catch (error: any) {
+      if (error?.response?.data?.error) {
+        message.warning(error.response.data.error);
+      }
+    }
+  }
 }
 
-async function confirmDelete() {
-  await deleteRecipient(deleteId.value as string);
-  getData({ page: currentPage.value, pageSize: pageSize.value });
-  showDeleteDlg.value = false;
-}
-
-function cancelDelete() {
-  showDeleteDlg.value = false;
-}
+defineExpose({
+  handleAddRecipient
+});
 </script>
 
 <template>
-  <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px">
-    <OButton variant="outline" round="pill" color="primary" @click="handleAddRecipient">新建接收人</OButton>
-  </div>
-
-  <ODialog v-model:visible="showDeleteDlg" size="small">
-    <template #header>删除接收人</template>
-    <div class="delete-recipient-dlg-content">是否删除该接收人?</div>
-    <template #footer>
-      <div class="dlg-action">
-        <OButton color="primary" variant="solid" round="pill" @click="confirmDelete">确定</OButton>
-        <OButton @click="cancelDelete" round="pill">取消</OButton>
-      </div>
-    </template>
-  </ODialog>
+  <ConfirmDialog :show="isRevealed" title="删除接收人" content="是否删除该接收人?" @confirm="confirm" @cancel="cancel" />
 
   <OTable
     :columns="tableColumns"
     :loading="tableLoading"
     :data="tableData"
-    style="margin-top: 12px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: var(--table-radius)"
+    class="recipient-table"
   >
     <template #td_recipient_id="{ row }">
       <WarningInput
@@ -220,7 +211,7 @@ function cancelDelete() {
         placeholder="请输入手机号码"
         style="width: 180px"
       />
-      <p class="td-p" v-else>{{ row.phone }}</p>
+      <p class="td-p" v-else>{{ row.displayPhone }}</p>
     </template>
     <template #td_remark="{ row }">
       <OInput
@@ -232,17 +223,14 @@ function cancelDelete() {
       />
       <p class="td-p" v-else>{{ row.remark }}</p>
     </template>
-    <template #td_formattedCreateTime="{ row }">
-      {{ row.formattedCreateTime }}
-    </template>
     <template #td_operation="{ row }">
-      <div v-if="editingRecipientId === row.recipient_id || row.key === ''" class="row space-between" style="margin-right: 16px">
+      <div v-if="editingRecipientId === row.recipient_id || row.key === ''" class="table-actions">
         <OLink color="primary" @click="confirmEditOrAdd">保存</OLink>
-        <OLink color="primary" @click="cancelAddOrEdit" style="margin-left: 16px">取消</OLink>
+        <OLink color="primary" @click="cancelAddOrEdit" style="margin-left: 32px">取消</OLink>
       </div>
-      <div v-else class="row space-between" style="margin-right: 16px">
-        <OLink color="primary" @click="handleEditRecipient(row as Recipient)">修改接收人</OLink>
-        <OLink color="danger" @click="deleteRow((row as any).key)" style="margin-left: 48px">删除</OLink>
+      <div v-else class="table-actions">
+        <OLink color="primary" @click="handleEditRecipient(row as RecipientT)">修改</OLink>
+        <OLink color="danger" @click="deleteRow((row as any).key)" style="margin-left: 32px">删除</OLink>
       </div>
     </template>
   </OTable>
@@ -269,6 +257,10 @@ function cancelDelete() {
   max-width: 160px;
 }
 
+.table-actions {
+  width: fit-content;
+}
+
 .row {
   display: flex;
 }
@@ -277,13 +269,10 @@ function cancelDelete() {
   justify-content: space-between;
 }
 
-.add-receiver {
-  border: 1px solid #002ea7;
-  background-color: #fff;
-  color: #002ea7;
-  font-size: 16px;
-  height: 40px;
-  padding: 8px 16px;
-  border-radius: 20px;
+.recipient-table {
+  margin-top: 12px;
+  border: 1px solid var(--o-color-control-light);
+  border-radius: var(--table-radius);
+  --table-head-bg: rgb(var(--o-kleinblue-2));
 }
 </style>

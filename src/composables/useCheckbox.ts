@@ -1,14 +1,27 @@
 import { ref, watch, type Ref } from 'vue';
 
-export const useCheckbox = <T>(
-  datasource: Ref<T[]>,
-  cbValueExtractor: (item: T) => string | number,
-) => {
+export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T) => string | number) => {
   const checkboxes = ref<(string | number)[]>([]);
   const indeterminate = ref<boolean>(false);
   const parentCheckbox = ref<(string | number)[]>([]);
 
-  watch(parentCheckbox, val => {
+  const setCheckAll = () => {
+    indeterminate.value = false;
+    parentCheckbox.value = [1];
+  };
+
+  const clearCheckboxes = () => {
+    indeterminate.value = false;
+    parentCheckbox.value = [];
+  };
+
+  watch(datasource, (val) => {
+    if (val.length === 0) {
+      clearCheckboxes();
+    }
+  });
+
+  watch(parentCheckbox, (val) => {
     if (datasource.value.length === 0) {
       return;
     }
@@ -17,13 +30,13 @@ export const useCheckbox = <T>(
         checkboxes.value = datasource.value.map(cbValueExtractor);
       }
     } else {
-      if (checkboxes.value.length > 0) {
+      if (!indeterminate.value && checkboxes.value.length > 0) {
         checkboxes.value = [];
       }
     }
   });
 
-  watch(checkboxes, val => {
+  watch(checkboxes, (val) => {
     if (datasource.value.length === 0) {
       return;
     }
@@ -45,16 +58,6 @@ export const useCheckbox = <T>(
       indeterminate.value = true;
     }
   });
-
-  const setCheckAll = () => {
-    indeterminate.value = false;
-    parentCheckbox.value = [1];
-  };
-
-  const clearCheckboxes = () => {
-    indeterminate.value = false;
-    parentCheckbox.value = [];
-  };
 
   return {
     checkboxes,

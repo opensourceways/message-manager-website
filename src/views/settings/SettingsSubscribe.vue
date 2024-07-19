@@ -1,484 +1,208 @@
 <script setup lang="ts">
-import { OButton, OCheckbox, ODialog, OForm, OFormItem, OInput, OLink, OOption, OSelect } from '@opensig/opendesign';
-import { computed, reactive, ref, watch } from 'vue';
-import { deleteSubsCondition, getAllSubs, getSubscribes, postSubsCondition, putSubsCondition, updateNeedStatus } from '@/api/config';
-import type { Subscribe } from '@/@types/type-config';
-import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
-import { eventDisplayNames, events } from '@/data/subscribeSettings';
-import { treeDataIterator } from '@/utils/common';
+import { provide, reactive, ref } from 'vue';
+import { getAllSubs, getSubsDetail } from '@/api/config';
+import SettingsSubsTable from './components/SettingsSubsTable.vue';
 import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
+import { EVENT_SOURCES } from '@/data/subscribeSettings';
+import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-config';
+import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
 
-class SubscribSettingsTableRow {
-  id: any;
-  name: string;
-  needCheckboxes: string[] = [];
-  recipientIds?: string;
-  children: SubscribSettingsTableRow[] = [];
-  hasAddIcon?: boolean;
-  data: Subscribe;
+const events: Record<string, Record<string, SubscribeRuleT[]>> = {
+  [EVENT_SOURCES.EUR]: {
+    build: [],
+  },
+  [EVENT_SOURCES.GITEE]: {
+    issue: [],
+    pr: [],
+    push: [],
+    note: [],
+  },
+};
 
-  constructor(data: Subscribe) {
-    this.id = data.id;
-    if (data.mode_name) {
-      this.name = data.mode_name;
-    } else {
-      this.hasAddIcon = true;
-      this.name = eventDisplayNames[data.source][data.event_type || 'default']();
-    }
-    this.data = data;
+const tableRefs = ref<InstanceType<typeof SettingsSubsTable>[]>();
+
+// ------------------------编辑消息接收规则的弹窗里的数据------------------------
+const dialogData = reactive({
+  show: false,
+  dlgType: 'add' as 'add' | 'edit',
+  eventType: '',
+  subscribe: null as SubscribeRuleT | null,
+});
+
+// ------------------------弹窗显示控制------------------------
+const dialogSwitches = reactive({
+  [EVENT_SOURCES.GITEE]: false, // 新增/编Eur精细化订阅弹窗
+  [EVENT_SOURCES.EUR]: false, // 新增/编辑Gitee精细化订阅弹窗
+  recipient: false, // 新增/修改接收人弹窗
+});
+
+// 子组件点击新增/修改消息接收规则的按钮触发
+provide('onEditOrAdd', (dlgType: 'edit' | 'add', source: string, eventType: string, subscribe?: SubscribeRuleT) => {
+  dialogData.dlgType = dlgType;
+  dialogData.eventType = eventType;
+  if (subscribe) {
+    dialogData.subscribe = subscribe;
   }
-}
+  dialogSwitches[source] = true;
+});
 
-const generateInitialRows = (data: any[]) => {
-  let level = 0;
-  return data.map(function recursion(item, index) {
-    const res = new SubscribSettingsTableRow(item);
-    res.id = `${level}-${index}`;
-    if (item.children) {
-      level++;
-      res.children = item.children.map(recursion);
-    }
-    return res;
-  });
-}
+// 初始表格数据
+const initialData = reactive(events);
 
-// -----------------------初始数据-----------------------
-const tableData = reactive<SubscribSettingsTableRow[]>(generateInitialRows(events));
-
-// -----------------------查询数据-----------------------
-function getData() {
-  resetTableData();
-  getAllSubs().then(({ data }) => {
-    const parentRowMap = new Map<string, SubscribSettingsTableRow>();
-    treeDataIterator(
-      tableData,
-      row => parentRowMap.set(row.data.source + (row.data.event_type ?? ''), row)
-    );
-    for (const item of data.query_info) {
-      let row: SubscribSettingsTableRow | undefined;
-      if (item.event_type) {
-        row = parentRowMap.get(item.source + item.event_type);
-        if (item.mode_name) {
-          row?.children.push(new SubscribSettingsTableRow(item));
-          continue;
-        }
-      } else {
-        row = parentRowMap.get(item.source);
-      }
-      if (row) {
-        row.id = item.id;
-        row.data = item;
-      }
-    }
-  }).then(() => getDetailData());
-}
-getData();
-
-const aggregateData = (data: Subscribe[]): Subscribe[] => {
-  const map = new Map<string, Subscribe>();
+/**
+ * 聚合detail数据，主要是后端返回的数据中，如果一条消息接收规则有多个接收人，
+ *
+ * 则返回的形式是有多个id及其他字段相同，除了接收人id和姓名不同的消息接收规则，所以需要聚合成一个
+ */
+const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
+  const map = new Map<string, SubscribeRuleT>();
   for (const item of data) {
     let cached = map.get(item.id);
     if (!cached) {
       cached = item;
-      cached.recipientNames = [item.recipient_name as string];
+      cached.recipients = [{ id: item.recipient_id, name: item.recipient_name }];
       map.set(item.id, cached);
     } else {
-      cached.recipientNames?.push(item.recipient_name as string);
+      cached.recipients?.push({ id: item.recipient_id, name: item.recipient_name });
     }
   }
   return Array.from(map.values());
 };
 
-function getDetailData() {
-  getSubscribes().then(data => {
-    const aggregated = aggregateData(data);
-    const idRowMap = new Map<string, SubscribSettingsTableRow>();
-    treeDataIterator(tableData, row => idRowMap.set(row.id, row));
-    for (const item of aggregated) {
-      const row = idRowMap.get(item.id);
-      if (!row) {
-        continue;
-      }
-      row.data = item;
-      row.recipientIds = item.recipientNames?.join('、');
+// 重置表格数据
+const resetData = () => {
+  for (const prop in initialData) {
+    for (const innerProp in initialData[prop]) {
+      initialData[prop][innerProp].splice(1, initialData[prop][innerProp].length - 1);
+    }
+  }
+};
+
+// ------------------------获取数据------------------------
+const getData = async () => {
+  const allSubsData = await getAllSubs();
+  resetData();
+  for (const item of allSubsData) {
+    if (!item.source || !item.event_type) {
+      continue;
+    }
+    if (!item.mode_name) {
+      // 如果没有mode_name，则是默认全部消息的精细化订阅，插入首位
+      initialData[item.source][item.event_type].unshift(item);
+      continue;
+    }
+    initialData[item.source][item.event_type].push(item);
+  }
+  const detailData = await getSubsDetail();
+  const aggregated = aggregateData(detailData);
+  for (const item of aggregated) {
+    if (!item.source || !item.event_type) {
+      continue;
+    }
+    const row = initialData[item.source][item.event_type].find((sub) => sub.id === item.id);
+    if (row) {
+      row.needCheckboxes ??= [];
+      row.displayRecipientNames = item.recipients?.map((r) => r.name).join('、');
+      row.recipients = item.recipients;
       if (item.need_inner_message) {
-        row.needCheckboxes.push('need_inner_message');
+        row.needCheckboxes?.push('need_inner_message');
       }
       if (item.need_mail) {
-        row.needCheckboxes.push('need_mail');
+        row.needCheckboxes?.push('need_mail');
       }
       if (item.need_message) {
-        row.needCheckboxes.push('need_message');
+        row.needCheckboxes?.push('need_message');
       }
     }
-  });
-}
-
-function resetTableData() {
-  tableData?.forEach(function recursion(row) {
-    row.needCheckboxes = [];
-    row.recipientIds = '';
-    if (!row.data.mode_name && row.data.event_type) {
-      row.children = [];
-    }
-    if (row.children) {
-      row.children.forEach(recursion);
-    }
-  });
-}
-
-const currentEditorType = ref<'add' | 'edit'>('add');
-// -----------------------eur精细化条件-----------------------
-const editEurCondition = reactive({
-  source: '',
-  mode_name: '',
-  event_type: '',
-  mode_filter: {
-    name: '',
-    owner: '',
-    topic: [],
-    status: [],
-  },
-});
-const showEditEurDlg = ref(false);
-const eurBuildTopics = [
-  { label: '开始', value: 'start' },
-  { label: '结束', value: 'end' },
-];
-const eurBuildStatus = [
-  { label: 'failed', value: 0 },
-  { label: 'succeeded', value: 1 },
-  { label: 'canceled', value: 2 },
-  { label: 'running', value: 3 },
-  { label: 'pending', value: 4 },
-  { label: 'skipped', value: 5 },
-  { label: 'starting', value: 6 },
-  { label: 'importing', value: 7 },
-  { label: 'forked', value: 8 },
-  { label: 'waiting', value: 9 },
-  { label: 'unknown', value: 1000 },
-];
-const commaSeparator = /\s*(?:,|，)\s*/;
-
-function confirmAddOrEditEurCondition() {
-  (currentEditorType.value === 'add' ? postSubsCondition : putSubsCondition)({
-    ...editEurCondition,
-    mode_filter: {
-      ...editEurCondition.mode_filter,
-      name: editEurCondition.mode_filter.name.split(commaSeparator),
-      owner: editEurCondition.mode_filter.owner.split(commaSeparator),
-    }
-  }).then(() => {
-    cancelAddEurCondition();
-    getData();
-  })
-}
-
-function cancelAddEurCondition() {
-  showEditEurDlg.value = false;
-  editEurCondition.mode_name = '';
-  editEurCondition.event_type = '';
-  editEurCondition.mode_filter = {
-    name: '',
-    owner: '',
-    topic: [],
-    status: [],
-  };
-}
-
-// -----------------------gitee精细化条件-----------------------
-const showEditGiteeDlg = ref(false);
-const editEventType = ref<string>()
-
-// -----------------------添加/编辑/删除精细化条件-----------------------
-function addCondition(row: SubscribSettingsTableRow) {
-  switch (row.data.source) {
-    case 'https://eur.openeuler.openatom.cn':
-      editEurCondition.source = row.data.source;
-      editEurCondition.mode_name = row.data.mode_name;
-      editEurCondition.event_type = row.data.event_type;
-      showEditEurDlg.value = true;
-      break;
-    case 'https://gitee.com':
-      showEditGiteeDlg.value = true;
-      editEventType.value = row.data.event_type;
-      break;
   }
-  currentEditorType.value = 'add';
-}
+};
+getData();
 
-function editCondition(row: SubscribSettingsTableRow) {
-  switch (row.data.source) {
-    case 'https://eur.openeuler.openatom.cn':
-      editEurCondition.source = row.data.source;
-      editEurCondition.mode_name = row.data.mode_name;
-      editEurCondition.event_type = row.data.event_type;
-      editEurCondition.mode_filter = {
-        name: row.data.mode_filter.name?.join(', ') ?? '',
-        owner: row.data.mode_filter.owner?.join(', ') ?? '',
-        topic: row.data.mode_filter.topic,
-        status: row.data.mode_filter.status,
-      };
-      showEditEurDlg.value = true;
-      break;
-    case 'https://gitee.com':
-      showEditGiteeDlg.value = true;
-      editEventType.value = row.data.event_type;
-      break;
-  }
-  currentEditorType.value = 'edit';
-}
+// ------------------------修改接收人相关------------------------
+const editRecipientsEffectedRows = ref<SubscribeRuleT[]>([]);
+const recipientDlgType = ref('add' as 'add' | 'remove');
 
-const showDeleteDlg = ref(false);
-const deletedRow = ref<SubscribSettingsTableRow>();
+/**
+ * 单个接收规则修改接收人
+ * @param rule 订阅规则
+ */
+const editRecipients = (rule: SubscribeRuleT) => {
+  editRecipientsEffectedRows.value = [rule];
+  dialogSwitches.recipient = true;
+};
 
-function deleteCondition(row: SubscribSettingsTableRow) {
-  deletedRow.value = row;
-  showDeleteDlg.value = true;
-}
-
-async function confirmDelete() {
-  if (!deletedRow.value) {
+/**
+ * 父组件点击添加接收人的按钮
+ *
+ * 查询所有接收人，打开接收人弹窗，勾选操作
+ */
+const addRecipient = () => {
+  if (!tableRefs.value) {
     return;
   }
-  await deleteSubsCondition({
-    source: deletedRow.value.data.source,
-    event_type: deletedRow.value.data.event_type,
-    mode_name: deletedRow.value.data.mode_name,
-  });
-  cancelDelete();
-  getData();
-}
+  editRecipientsEffectedRows.value = tableRefs.value.flatMap((table) => table.getCheckedRules());
+  console.log('1', editRecipientsEffectedRows.value);
 
-function cancelDelete() {
-  showDeleteDlg.value = false;
-  deletedRow.value = undefined;
-}
+  recipientDlgType.value = 'add';
+  dialogSwitches.recipient = true;
+};
 
-// -----------------------表格多选-----------------------
-const multiSelection = ref<SubscribSettingsTableRow[]>([]);
-const handleSelectionChange = (val: SubscribSettingsTableRow[]) => multiSelection.value = val;
-const btnsDisabled = computed(() => multiSelection.value.length === 0);
-const isAddingRecipient = ref(false);
-
-function handleExternalAddRecipient() {
-  editRecipientTargetRows.value = multiSelection.value;
-  showEditRecipientDlg.value = true;
-  isAddingRecipient.value = true;
-}
-
-// -----------------------修改/添加接收人-----------------------
-const showEditRecipientDlg = ref(false);
-const editRecipientTargetRows = ref<SubscribSettingsTableRow[]>([]);
-
-function editRecipient(row: SubscribSettingsTableRow) {
-  editRecipientTargetRows.value = [row];
-  showEditRecipientDlg.value = true;
-}
-
-// -----------------------移除接收人-----------------------
-const removingRecipients = ref(false);
-
-function removeRecipients() {
-  if (!multiSelection.value.length) {
+const removeRecipient = () => {
+  if (!tableRefs.value) {
     return;
   }
-  editRecipientTargetRows.value = multiSelection.value;
-  removingRecipients.value = true;
-  showEditRecipientDlg.value = true;
-}
+  editRecipientsEffectedRows.value = tableRefs.value.map((table) => table.getCheckedRules()).flat();
+  recipientDlgType.value = 'remove';
+  dialogSwitches.recipient = true;
+};
 
-watch(showEditRecipientDlg, val => {
-  if (!val) {
-    getData();
-    editRecipientTargetRows.value = [];
-    removingRecipients.value = false;
+/**
+ * 父组件两个按钮是否置灰
+ */
+const btnDisabled = ref(true);
+
+/**
+ * 表格组件上checkbox的改变
+ */
+const checkboxChange = () => {
+  if (!tableRefs.value) {
+    return;
   }
-});
-
-// -----------------------接收方式勾选框状态更改-----------------------
-function needCheckboxChange(row: SubscribSettingsTableRow) {
-  Promise.all((row.data.recipientNames as string[]).map((id: string) => updateNeedStatus(row.needCheckboxes, id, row.data.id)))
-}
+  for (const table of tableRefs.value) {
+    const count = table.getCheckedRulesCount();
+    if (count > 0) {
+      btnDisabled.value = false;
+      return;
+    }
+  }
+  btnDisabled.value = true;
+};
 
 defineExpose({
-  handleExternalAddRecipient,
-  removeRecipients,
-  btnsDisabled
-})
+  btnDisabled,
+  addRecipient,
+  removeRecipient,
+});
 </script>
 
 <template>
-  <ODialog v-model:visible="showDeleteDlg" size="small">
-    <template #header>删除条件</template>
-    <div style="display: flex; justify-content: center;">
-      是否删除{{ deletedRow?.name }}
-    </div>
-    <template #footer>
-      <div class="dlg-action">
-        <OButton color="primary" variant="solid" @click="confirmDelete">确定</OButton>
-        <OButton @click="cancelDelete">取消</OButton>
-      </div>
-    </template>
-  </ODialog>
+  <SettingsGiteeRuleDialog
+    v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
+    :type="dialogData.dlgType"
+    :eventType="dialogData.eventType"
+    :subscribe="(dialogData.subscribe as SubscribeRuleT<GiteeModeFilterT>)"
+  />
 
-  <ODialog v-model:visible="showEditEurDlg" :unmount-on-hide="false">
-    <template #header>新增EUR消息接收条件</template>
-    <div class="dialog-content">
-      <p class="dialog-content-title">
-        消息条件命名
-      </p>
-      <OForm class="form" has-required label-align="top" label-justify="left" label-width="20%">
-        <OFormItem label="条件名称" required>
-          <OInput clearable v-model="editEurCondition.mode_name" style="width: 100%;" />
-        </OFormItem>
-      </OForm>
-      <p class="dialog-content-title">
-        消息条件接收设置（必须至少填写一项）
-      </p>
-      <OForm class="form" layout="h" label-align="top" label-justify="left" label-width="20%">
-        <OFormItem label="项目名称" >
-          <OInput clearable v-model="editEurCondition.mode_filter.name"  style="width: 100%;" />
-        </OFormItem>
-        <OFormItem label="项目拥有者" >
-          <OInput clearable v-model="editEurCondition.mode_filter.owner"  style="width: 100%;" />
-        </OFormItem>
-        <OFormItem label="构建开始/结束" >
-          <OSelect v-model="editEurCondition.mode_filter.topic" multiple variant="outline" placeholder="请选择构建开始/结束" clearable>
-            <OOption v-for="item in eurBuildTopics" :key="item.value" :label="item.label" :value="item.value" />
-          </OSelect>
-        </OFormItem>
-        <OFormItem label="构建状态" >
-          <OSelect v-model="editEurCondition.mode_filter.status" multiple variant="outline" placeholder="请选择构建开始/结束" clearable>
-            <OOption v-for="item in eurBuildStatus" :key="item.value" :label="item.label" :value="item.value" />
-          </OSelect>
-        </OFormItem>
-      </OForm>
-    </div>
-    <template #footer>
-      <div class="dlg-action">
-        <OButton color="primary" variant="solid" @click="confirmAddOrEditEurCondition">确定</OButton>
-        <OButton @click="cancelAddEurCondition">取消</OButton>
-      </div>
-    </template>
-  </ODialog>
+  <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" />
 
-  <SettingsGiteeRuleDialog v-model:show="showEditGiteeDlg" :eventType="editEventType" :type="currentEditorType" @confirm="getData"/>
-
-  <ODialog v-model:visible="showEditRecipientDlg" :unmount-on-hide="false" size="large">
-    <template #header>修改接收人</template>
-    <SettingsRecipientDialog
-      :add="isAddingRecipient"
-      :is-in-remove-dialog="removingRecipients"
-      :effectedRows="editRecipientTargetRows"
-      :isShowingDialog="showEditRecipientDlg"
-    ></SettingsRecipientDialog>
-  </ODialog>
-
-  <ElTable 
-    row-key="id"
-    :data="tableData"
-    style="width: 100%; margin-top: 24px"
-    default-expand-all
-    @selection-change="handleSelectionChange"
-  >
-    <el-table-column type="selection" width="45" />
-    <ElTableColumn label="消息类型" prop="name" width="200">
-      <template #default="{ row }">
-        <div class="first-cell">
-          {{ row.name }}
-          <img v-if="row.hasAddIcon" @click="addCondition(row)" src="@/assets/svg-icons/icon-add.svg" />
-        </div>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="站内消息" >
-      <template #default="{ row }">
-        <OCheckbox v-model="row.needCheckboxes" value="need_inner_message" @change="needCheckboxChange(row)"/>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="邮箱" >
-      <template #default="{ row }">
-        <OCheckbox v-model="row.needCheckboxes" value="need_mail" @change="needCheckboxChange(row)"/>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="短信" >
-      <template #default="{ row }">
-        <OCheckbox v-model="row.needCheckboxes" value="need_message" @change="needCheckboxChange(row)"/>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="电话">
-      <template #default>
-        <OCheckbox :disabled="true" value="1"/>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="API钩子">
-      <template #default>
-        <OCheckbox :disabled="true" value="1"/>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="消息接收人" >
-      <template #default="{ row }">
-        <p>{{ row.recipientIds }}</p>
-      </template>
-    </ElTableColumn>
-    <ElTableColumn label="操作" width="200">
-      <template #default="{ row }">
-        <div class="table-action">
-          <OLink color="primary" @click="editRecipient(row)">修改接收人</OLink>
-          <OLink v-if="row.data.mode_name" color="primary" @click="editCondition(row)">修改条件</OLink>
-          <OLink v-if="row.data.mode_name" color="danger" @click="deleteCondition(row)">删除</OLink>
-        </div>
-      </template>
-    </ElTableColumn>
-  </ElTable>
+  <SettingsSubsTable
+    ref="tableRefs"
+    v-for="(types, prop) in initialData"
+    :key="prop"
+    :source="prop"
+    :eventTypes="types"
+    style="margin-top: 24px; margin-bottom: 24px"
+    @editRecipients="editRecipients"
+    @checkboxChange="checkboxChange"
+  />
 </template>
-
-<style lang="scss" scoped>
-:deep(.table-header) {
-  background-color: #DCE1EF;
-}
-
-:deep(.o-pagination-wrap) {
-  margin-top: 32px;
-  justify-content: flex-end;
-}
-
-.dialog-content {
-  width: 600px;
-}
-
-.dlg-action {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-}
-
-.dialog-content-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
-
-.form {
-  width: 100%;
-}
-
-.first-cell {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  font-size: 12px;
-
-  img {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-}
-
-:deep(.cell) {
-  display: flex;
-  align-items: center;
-}
-</style>

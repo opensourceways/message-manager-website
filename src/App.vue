@@ -48,9 +48,7 @@ watch(
 <style lang="scss">
 .page-body {
   width: 74vw;
-  background-color: #fff;
-  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
-  padding: calc(900px * 0.04) calc(74vw * 0.02);
+  // padding: calc(900px * 0.04) calc(74vw * 0.02);
 }
 #app {
   --color-primary: #027ef2;

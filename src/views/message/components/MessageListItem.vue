@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { h, ref } from 'vue';
+import { OBadge, ODivider, OIcon } from '@opensig/opendesign';
+import DeleteIcon from '~icons/app/icon-delete.svg';
+import ReadIcon from '~icons/app/icon-read.svg';
+
 import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue'
-import { OBadge, ODivider } from '@opensig/opendesign';
-import { h, ref } from 'vue';
 
 defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
@@ -37,16 +40,10 @@ const Title = (props: { msg: MessageT }) => {
     unread: !props.msg.is_read,
   }, title);
 };
-
-const isHover = ref(false);
-
-const onHover = () => isHover.value = true;
-
-const cancelHover = () => isHover.value = false;
 </script>
 
 <template>
-  <div class="message-list-item" @mouseenter="onHover" @mouseleave="cancelHover">
+  <div class="message-list-item" >
     <div class="list-item-left">
       <div class="user-info">
         <OBadge :dot="true" v-if="!msg.is_read" color="danger">
@@ -60,15 +57,9 @@ const cancelHover = () => isHover.value = false;
     <div class="list-item-right">
       <p>仓库{{ msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
-      <div v-show="isHover" class="list-item-right-hover">
-        <div class="icon-wrap" @click="$emit('deleteMessage', msg)">
-          <img src="@/assets/svg-icons/icon-delete.svg" class="inactive">
-          <img src="@/assets/svg-icons/icon-delete-active.svg" class="active">
-        </div>
-        <div class="icon-wrap" v-if="!msg.is_read" @click="$emit('readMessage', msg)">
-          <img src="@/assets/svg-icons/icon-read.svg" class="inactive">
-          <img src="@/assets/svg-icons/icon-read-active.svg" class="active">
-        </div>
+      <div class="list-item-right-hover">
+        <OIcon @click="$emit('deleteMessage', msg)" class="icon"><DeleteIcon/></OIcon>
+        <OIcon @click="$emit('readMessage', msg)" class="icon" v-if="!msg.is_read"><ReadIcon/></OIcon>
       </div>
     </div>
 
@@ -120,7 +111,7 @@ const cancelHover = () => isHover.value = false;
   }
 
   .list-item-right-hover {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: flex-end;
     position: absolute;
@@ -131,30 +122,19 @@ const cancelHover = () => isHover.value = false;
     padding-right: 22px;
     background-color: var(--o-color-control2-light);
 
-    .icon-wrap {
-      img {
-        width: 24px;
-        height: 24px;
-        cursor: pointer;
-      }
-  
-      .inactive {
-        display: inline-block;
-      }
-  
-      .active {
-        display: none;
-      }
-  
-      &:hover {
-        .inactive {
-          display: none;
-        }
+    .icon {
+      font-size: 24px;
+      cursor: pointer;
 
-        .active {
-          display: inline-block;
-        }
+      @include hover {
+        color: rgb(var(--o-kleinblue-6));
       }
+    }
+  }
+
+  @include hover {
+    .list-item-right-hover {
+      display: flex;
     }
   }
 }

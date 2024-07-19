@@ -18,6 +18,76 @@
   /**
    * @name 
    * @type palette
+   * @group kleinblue
+   * @description 
+   */
+  --o-kleinblue-1: 227, 234, 246;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-2: 190, 206, 237;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-3: 132, 161, 220;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-4: 81, 119, 202;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-5: 37, 81, 185;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-6: 0, 47, 167;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-7: 0, 39, 147;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-8: 0, 31, 126;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-9: 0, 24, 126;
+  /**
+  * @name 
+  * @type palette
+  * @group kleinblue
+  * @description 
+  */
+  --o-kleinblue-10: 0, 18, 85;
+  /**
+   * @name 
+   * @type palette
    * @group deepblue
    * @description 
    */
@@ -1001,56 +1071,62 @@
    * @group primary
    * @description 常规
    */
-  --o-color-primary1: rgb(var(--o-mixedgray-12));
+  --o-color-primary1: rgb(var(--o-kleinblue-6));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 悬浮
    */
-  --o-color-primary2: rgb(var(--o-mixedgray-11));
+  --o-color-primary2: rgb(var(--o-kleinblue-4));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 激活
    */
-  --o-color-primary3: rgb(var(--o-mixedgray-13));
+  --o-color-primary3: rgb(var(--o-kleinblue-7));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 禁用
    */
-  --o-color-primary4: rgb(var(--o-mixedgray-6));
+  --o-color-primary4: rgb(var(--o-kleinblue-3));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 常规-浅
    */
-  --o-color-primary1-light: rgb(var(--o-mixedgray-4));
+  --o-color-primary1-light: rgb(var(--o-kleinblue-2));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 悬浮-浅
    */
-  --o-color-primary2-light: rgb(var(--o-mixedgray-5));
+  --o-color-primary2-light: rgb(var(--o-kleinblue-3));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 激活-浅
    */
-  --o-color-primary3-light: rgb(var(--o-mixedgray-6));
+  --o-color-primary3-light: rgb(var(--o-kleinblue-4));
   /**
    * @name 
    * @type color
    * @group primary
    * @description 禁用-浅
    */
-  --o-color-primary4-light: rgb(var(--o-mixedgray-5));
+  --o-color-primary4-light: rgb(var(--o-kleinblue-1));
+  /**
+   * @name 
+   * @type color
+   * @group success
+   * @description 常规
+   */
   /**
    * @name 
    * @type color

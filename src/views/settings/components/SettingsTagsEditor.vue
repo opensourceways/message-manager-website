@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { ref, type Ref, onMounted, watch } from 'vue';
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   width?: string | number;
   height?: string | number;
   placeholder?: string;
   showAddButton?: boolean;
+  tags?: string[];
 }>(), {
   placeholder: '',
   width: 300,
   height: 126
 });
-const input = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
+const inputArea = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 const tagSet = ref(new Set<string>());
 
-const OBERVER_CONFIG = { childList: true };
 const tagsRemovedObserver = new MutationObserver(([mut]) => {
   if (mut.removedNodes.length) {
     mut.removedNodes.forEach(node => {
@@ -25,7 +25,7 @@ const tagsRemovedObserver = new MutationObserver(([mut]) => {
   }
 });
 
-onMounted(() => tagsRemovedObserver.observe(input.value, OBERVER_CONFIG));
+onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }));
 const showPlaceHolder = ref(true);
 
 watch(() => tagSet.value.size, size => {
@@ -36,16 +36,20 @@ watch(() => tagSet.value.size, size => {
   }
 });
 
-function getTagValues() {
-  return [...tagSet.value];
-}
+watch(() => props.tags, tags => {
+  if (tags && tags.length) {
+    tagSet.value = new Set(tags);
+    inputArea.value.innerHTML = '';
+    tags.forEach(tag => appendTag(tag, inputArea.value));
+  }
+});
 
-function deleteTag(event: MouseEvent) {
+const deleteTag = (event: MouseEvent) => {
   const tagWrapper = (event.target as HTMLImageElement).parentElement?.parentElement as HTMLSpanElement;
-  input.value.removeChild(tagWrapper);
+  inputArea.value.removeChild(tagWrapper);
 }
 
-function addTag(event?: KeyboardEvent) {
+const addTag = (event?: KeyboardEvent) => {
   if (event) {
     event.preventDefault();
   }
@@ -63,7 +67,7 @@ function addTag(event?: KeyboardEvent) {
   sel.addRange(range);
 }
 
-function appendTag(text: string, focusNode: Node) {
+const appendTag = (text: string, focusNode?: Node) => {
   const wrapper = document.createElement('span');
   wrapper.classList.add('tag-wrapper');
   wrapper.contentEditable = 'false';
@@ -77,15 +81,17 @@ function appendTag(text: string, focusNode: Node) {
   icon.addEventListener('click', deleteTag);
   tag.appendChild(icon);
   wrapper.appendChild(tag);
-  input.value.insertBefore(wrapper, focusNode);
-  input.value.removeChild(focusNode);
+  if (focusNode) {
+    inputArea.value.insertBefore(wrapper, focusNode);
+    inputArea.value.removeChild(focusNode);
+  }
   return wrapper;
 }
 
-function getWrapper(node: Node): HTMLSpanElement | undefined {
+const getWrapper = (node: Node): HTMLSpanElement | undefined => {
   let node_: any = node;
   while (node_) {
-    if (node_ === input.value) {
+    if (node_ === inputArea.value) {
       return;
     }
     if (node_ instanceof HTMLSpanElement && node_.classList.contains('tag-wrapper')) {
@@ -95,7 +101,7 @@ function getWrapper(node: Node): HTMLSpanElement | undefined {
   }
 }
 
-function onClick() {
+const onClick = () => {
   const sel = document.getSelection();
   if (!sel || !sel.anchorNode) {
     return;
@@ -110,15 +116,17 @@ function onClick() {
   }
 }
 
-function onFocus() {
+const onFocus = () => {
   showPlaceHolder.value = false;
 }
 
-function onBlur() {
+const onBlur = () => {
   if (tagSet.value.size === 0) {
     showPlaceHolder.value = true;
   }
 }
+
+const getTagValues = () => [...tagSet.value];
 
 defineExpose({
   getTagValues,
@@ -128,8 +136,7 @@ defineExpose({
 <template>
   <div class="outer">
     <p v-if="showPlaceHolder" class="placeholder">{{ placeholder }}</p>
-    <!-- <img src="@/assets/svg-icons/icon-add.svg" class="add-icon" @click="addTag"> -->
-    <div class="input" ref="input" contenteditable="true" @focus="onFocus" @blur="onBlur" @keydown.enter="addTag" @click="onClick"></div>
+    <div class="inputArea" ref="inputArea" contenteditable="true" @focus="onFocus" @blur="onBlur" @keydown.enter="addTag" @click="onClick"></div>
   </div>
 </template>
 
@@ -176,7 +183,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
 
-  .input {
+  .inputArea {
     width: 100%;
     outline: none;
     flex-grow: 1;
@@ -184,8 +191,8 @@ defineExpose({
 
   .placeholder {
     position: absolute;
-    font-size: 16px;
-    color: rgba(0, 0, 0, 0.4);
+    font-size: var(--o-font_size-tip1);
+    color: var(--o-color-info3);
   }
 
   .add-icon {
