@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RecipientT } from '@/@types/type-config';
-import { addRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
+import type { RecipientT } from '@/@types/type-settings';
+import { addRecipient as postRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
 import { OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import WarningInput from '@/components/WarningInput.vue';
 import { reactive, ref } from 'vue';
@@ -55,7 +55,7 @@ const editingData = reactive({
 // ----------------新增接收人-------------------
 const isAddingRecipient = ref(false);
 
-const handleAddRecipient = () => {
+const addRecipient = () => {
   if (isAddingRecipient.value) {
     return;
   }
@@ -72,7 +72,7 @@ const handleAddRecipient = () => {
 
 const confirmAdd = async () => {
   try {
-    await addRecipient(editingData);
+    await postRecipient(editingData);
   } catch (err: any) {
     if (err?.response?.data?.error) {
       message.warning(err?.response?.data?.error);
@@ -164,7 +164,7 @@ const deleteRow = async(recipient_id: string) => {
 }
 
 defineExpose({
-  handleAddRecipient
+  addRecipient
 });
 </script>
 

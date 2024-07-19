@@ -3,8 +3,8 @@ import { reactive, ref, watch } from 'vue';
 import { OButton, OCheckbox, ODialog, OInput, OLink, OPagination, OScroller, OTable, useMessage } from '@opensig/opendesign';
 import { addRecipient, deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/config';
 import WarningInput from '@/components/WarningInput.vue';
-import type { Pagination } from '@/@types/types-common';
-import type { RecipientT, SubscribeRuleT } from '@/@types/type-config';
+import type { PagedResponseT } from '@/@types/types-common';
+import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';
 import { eventSourceNames } from '@/data/subscribeSettings';
 import { useCheckbox } from '@/composables/useCheckbox';
 
@@ -52,19 +52,19 @@ watch(
 
 const getData = async (val: { page: number; pageSize: number }) => {
   loading.value = true;
-  let requestPromise: Pagination<RecipientT>;
+  let requestPromise: PagedResponseT<RecipientT>;
   try {
     if (props.type === 'remove') {
       requestPromise = await getSubscribedRecipients(props.effectedRows.map((row) => row.id));
     } else {
       requestPromise = await getRecipients(val.page, val.pageSize);
     }
-    const { total: total_, data } = requestPromise;
-    total.value = total_ ?? 0;
-    for (const recipient of data) {
+    const { count, query_info } = requestPromise;
+    total.value = count ?? 0;
+    for (const recipient of query_info) {
       recipient.id = Number(recipient.id);
     }
-    recipients.value = data;
+    recipients.value = query_info;
     if (props.effectedRows?.length) {
       const ids = props.effectedRows.flatMap((row) => row.recipients?.map((r) => r.id) || []);
       checkboxes.value = [...new Set(ids)];

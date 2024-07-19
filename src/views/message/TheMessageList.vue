@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OCollapse, OCollapseItem, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon } from '@opensig/opendesign';
+import { OCheckbox, OCollapse, OCollapseItem, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon, isArray } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -18,6 +18,8 @@ import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages } from '@/api/messages';
 import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
+import type { AxiosResponse } from 'axios';
+import type { PagedResponseT } from '@/@types/types-common';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -93,14 +95,16 @@ watch(checkedAll, (val) => {
 
 // ------------------------获取数据------------------------
 const getData = (pageOption = { page: 1, pageSize: 10 }) => {
-  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize).then(
-    ({ total: returnTotal, data }) => {
+  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize)
+  .then(setMsgIdAndFormatTime)
+  .then(
+    ({ count, query_info }) => {
       thisWeekMessages.value = [];
       aWeekAgoMessages.value = [];
       thisWeekCheckboxOps.clearCheckboxes();
       aWeekAgoCheckboxOps.clearCheckboxes();
-      total.value = returnTotal;
-      for (const item of data) {
+      total.value = count;
+      for (const item of query_info) {
         const date = dayjs(item.time);
         item.formattedTime = date.fromNow();
         if (NOW.diff(date, 'week') === 0) {
@@ -112,6 +116,20 @@ const getData = (pageOption = { page: 1, pageSize: 10 }) => {
     }
   );
 };
+
+const setMsgIdAndFormatTime = (res: AxiosResponse<PagedResponseT<MessageT>>): PagedResponseT<MessageT> => {
+  const { count, query_info } = res.data
+  if (isArray(query_info) && query_info.length) {
+    for (const msg of query_info) {
+      msg.id = msg.source + msg.event_id;
+      msg.formattedTime = dayjs(msg.time).format('MM/DD HH:mm');
+    }
+    return { count, query_info };
+  }
+  return { count: 0, query_info: [] };
+}
+
+
 getData();
 
 // ------------------------菜单事件------------------------

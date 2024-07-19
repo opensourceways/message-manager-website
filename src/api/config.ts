@@ -1,6 +1,6 @@
 import { request, type RequestConfig } from '@/shared/axios';
-import type { RecipientT, SubscribeRuleT } from '@/@types/type-config';
-import type { PagedResponse, Pagination } from '@/@types/types-common';
+import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';
+import type { PagedResponseT } from '@/@types/types-common';
 import { isArray } from '@opensig/opendesign';
 import { generateQuery } from '@/utils/common';
 
@@ -10,18 +10,18 @@ import { generateQuery } from '@/utils/common';
  * @param count_per_page 每页数量
  * @returns 接收人数组
  */
-export function getRecipients(page = 1, count_per_page = 10): Promise<Pagination<RecipientT>> {
+export function getRecipients(page = 1, count_per_page = 10): Promise<PagedResponseT<RecipientT>> {
   const query = generateQuery({ count_per_page, page });
-  return request.get<PagedResponse<RecipientT>>(`message_center/config/recipient${query}`).then((res) => {
-    const { count: total, query_info } = res.data;
+  return request.get<PagedResponseT<RecipientT>>(`message_center/config/recipient${query}`).then((res) => {
+    const { count, query_info } = res.data;
     if (isArray(query_info) && query_info.length) {
       for (const item of query_info) {
         item.key = item.id;
         item.displayPhone = item.phone.substring(0, 6) + '****' + item.phone.substring(10);
       }
-      return { total, data: query_info };
+      return { count, query_info };
     }
-    return { total: 0, data: [] };
+    return { count: 0, query_info: [] };
   });
 }
 
@@ -65,7 +65,7 @@ export function getSubsDetail(): Promise<SubscribeRuleT[]> {
  * @returns 消息接收规则标题（不包含接收人信息）
  */
 export const getAllSubs = () => {
-  return request.get<PagedResponse<SubscribeRuleT>>('/message_center/config/subs/all').then((res) => res.data.query_info ?? []);
+  return request.get<PagedResponseT<SubscribeRuleT>>('/message_center/config/subs/all').then((res) => res.data.query_info ?? []);
 };
 
 /**
@@ -140,7 +140,7 @@ export function deletePushConfg(data: { recipient_id: number; subscribe_id: numb
  * @param subscribeIds 消息接收规则ID数组
  * @returns 接收人
  */
-export function getSubscribedRecipients(subscribeIds: string[]): Promise<Pagination<RecipientT>> {
+export function getSubscribedRecipients(subscribeIds: string[]) {
   const q = generateQuery({ subscribe_id: subscribeIds.join(',') });
-  return request.get(`message_center/config/push${q}`);
+  return request.get<PagedResponseT<RecipientT>>(`message_center/config/push${q}`).then(res => res.data);
 }

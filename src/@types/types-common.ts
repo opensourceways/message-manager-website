@@ -1,9 +1,4 @@
-export type PagedResponse<T> = {
-  count: number;
-  query_info: T[];
-}
-
-export type Pagination<T> = {
-  total: number;
-  data: T[];
+export type PagedResponseT<T> = {
+  count: number; // 总条数
+  query_info: T[]; // 当页数据
 }

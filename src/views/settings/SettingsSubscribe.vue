@@ -4,7 +4,7 @@ import { getAllSubs, getSubsDetail } from '@/api/config';
 import SettingsSubsTable from './components/SettingsSubsTable.vue';
 import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
-import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-config';
+import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
 
 const events: Record<string, Record<string, SubscribeRuleT[]>> = {

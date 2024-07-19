@@ -3,7 +3,7 @@ import { computed, inject, watch } from 'vue';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { OCheckbox, OLink } from '@opensig/opendesign';
 import { eventSourceNames, eventTypeNames } from '@/data/subscribeSettings';
-import type { SubscribeRuleT } from '@/@types/type-config';
+import type { SubscribeRuleT } from '@/@types/type-settings';
 
 const emit = defineEmits<{
   (event: 'addRule', source: string, type: string): void;
