@@ -1,7 +1,6 @@
-import type { SimpleUserInfo } from '@/@types/type-user';
+import type { UserInfoT } from '@/@types/type-user';
 import { request } from '@/shared/axios';
-
-const USERINFO_URL = import.meta.env.VITE_USERINFO_URL;
+import { getCsrfToken } from '@/shared/login';
 
 /**
  * code码换token
@@ -122,12 +121,26 @@ export function deleteUser() {
   });
 }
 
+interface UserPermissionResponseT {
+  msg: string;
+  code: number;
+  data: UserInfoT;
+}
+
 /**
- * 获取简单用户信息
- * @returns {Promise<SimpleUserInfo>} 用户信息
+ * 获取用户信息
+ * @param community community字段，默认openeuler
+ * @returns {Promise<UserInfoT>} 用户信息
  */
-export const getSimpleUserInfo = (): Promise<SimpleUserInfo> => {
-  return request.get<{ data: SimpleUserInfo }>(USERINFO_URL).then((res) => {
-    return res.data.data;
-  });
-};
+export function queryUserInfo(community = 'openeuler') {
+  const url = '/api-id/oneid/user/permission';
+  const token = getCsrfToken();
+  return request
+    .get<UserPermissionResponseT>(url, {
+      params: { community },
+      global: true,
+      headers: { token },
+    })
+    .then((res) => res.data.data);
+}
+

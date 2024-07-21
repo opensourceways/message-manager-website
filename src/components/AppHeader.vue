@@ -1,27 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { OLink, OPopup } from '@opensig/opendesign';
-import { useRouter } from 'vue-router';
 import { OPENEULER } from '@/data/config';
 
 import openeulerLogo from '@/assets/svg-icons/logo.svg';
-import { doLogin } from '@/shared/login';
-import { useLoginStore, useUserInfoStore } from '@/stores/user';
 
 import AppLogin from './AppLogin.vue';
-
-const router = useRouter();
-const loginStore = useLoginStore();
-
-const goHome = () => {
-  router.push({
-    path: '/',
-  });
-};
-
-const login = () => {
-  doLogin();
-};
 </script>
 
 <template>

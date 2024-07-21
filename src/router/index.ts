@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
+import { doLogin, getCsrfToken, tokenFailIndicateLogin } from '@/shared/login';
+import { useUserInfoStore } from '@/stores/user';
+import { queryUserInfo } from '@/api/api-user';
 
 const routes = [
   {
@@ -36,7 +39,21 @@ const router = createRouter({
   },
 });
 
-router.beforeEach(async (to) => {
+router.beforeEach(async () => {
+  const csrfToken = getCsrfToken();
+  const userInfoStore = useUserInfoStore();
+  if (!csrfToken) {
+    userInfoStore.clearUserInfo();
+    return true;
+  }
+  if (!userInfoStore.username || !userInfoStore.photo) {
+    try {
+      userInfoStore.setUserInfo(await queryUserInfo());
+    } catch (error) {
+      doLogin();
+      return true;
+    }
+  }
   return true;
 });
 

@@ -1,5 +1,7 @@
+import type { UserInfoT } from '@/@types/type-user';
 import { LOGIN_STATUS, type LoginStatusT } from '@/shared/login';
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 /**
  * 登录状态
@@ -38,29 +40,20 @@ export const useLoginStore = defineStore('login', {
 /**
  * 用户基本信息
  */
-export const useUserInfoStore = defineStore('userInfo', {
-  state: () => {
-    return {
-      id: '', // id
-      account: '', // 账号
-      fullname: '', // 昵称
-      email: '', // 邮箱
-      description: '', // 个人简介
-      avatar_id: '', // 头像
-      phone: '', // 手机号
-      request_delete: false, // 注销状态
-      request_delete_at: 0, // 头像
-      is_disable_admin: false, // 是否有下架权限
+export const useUserInfoStore = defineStore('userInfo', () => {
+    // 登录信息
+    const photo = ref('');
+    const username = ref('');
+    const setUserInfo = (data?: UserInfoT) => {
+      if (!data) {
+        return;
+      }
+      photo.value = data.photo || '';
+      username.value = data.username || '';
     };
-  },
-});
-
-export const useSimpleUserInfoStore = defineStore('simpleUserInfo', {
-  state: () => {
-    return {
-      nickname: '',
-      photo: '',
-      username: '',
+    const clearUserInfo = () => {
+      photo.value = '';
+      username.value = '';
     };
-  },
+    return { photo, username, setUserInfo, clearUserInfo };
 });
