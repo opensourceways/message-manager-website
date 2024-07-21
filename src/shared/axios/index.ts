@@ -190,7 +190,7 @@ const responseInterceptorId = request.interceptors.response.use(
     if (err.response?.status === 400) {
       useUserInfoStore().clearUserInfo();
       Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
-      doLogin();
+      // doLogin();
     }
 
     return Promise.reject(err);

@@ -50,7 +50,7 @@ router.beforeEach(async () => {
     try {
       userInfoStore.setUserInfo(await queryUserInfo());
     } catch (error) {
-      doLogin();
+      // doLogin();
       return true;
     }
   }
