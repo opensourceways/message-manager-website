@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, ref } from 'vue';
+import { h } from 'vue';
 import { OBadge, ODivider, OIcon } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
@@ -79,7 +79,7 @@ const Title = (props: { msg: MessageT }) => {
 
 .message-list-item {
   position: relative;
-  margin-left: 36px;
+  margin-left: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
