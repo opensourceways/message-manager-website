@@ -5,7 +5,22 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OCollapse, OCollapseItem, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon, isArray, OPopover, OButton } from '@opensig/opendesign';
+import {
+  OCheckbox,
+  OCollapse,
+  OCollapseItem,
+  OMenu,
+  OMenuItem,
+  OPagination,
+  OSubMenu,
+  useMessage,
+  OSelect,
+  OOption,
+  OIcon,
+  isArray,
+  OPopover,
+  OButton,
+} from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -22,6 +37,7 @@ import type { AxiosResponse } from 'axios';
 import type { PagedResponseT } from '@/@types/types-common';
 import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
+import { useUnreadMsgCountStore } from '@/stores/common';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -106,9 +122,8 @@ const requestParams = reactive({
 
 const getData = (pageOption = { page: 1, pageSize: 10 }) => {
   getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize)
-  .then(setMsgIdAndFormatTime)
-  .then(
-    ({ count, query_info }) => {
+    .then(setMsgIdAndFormatTime)
+    .then(({ count, query_info }) => {
       thisWeekMessages.value = [];
       aWeekAgoMessages.value = [];
       thisWeekCheckboxOps.clearCheckboxes();
@@ -123,12 +138,11 @@ const getData = (pageOption = { page: 1, pageSize: 10 }) => {
           aWeekAgoMessages.value.push(item);
         }
       }
-    }
-  );
+    });
 };
 
 const setMsgIdAndFormatTime = (res: AxiosResponse<PagedResponseT<MessageT>>): PagedResponseT<MessageT> => {
-  const { count, query_info } = res.data
+  const { count, query_info } = res.data;
   if (isArray(query_info) && query_info.length) {
     for (const msg of query_info) {
       msg.id = msg.source + msg.event_id;
@@ -137,7 +151,7 @@ const setMsgIdAndFormatTime = (res: AxiosResponse<PagedResponseT<MessageT>>): Pa
     return { count, query_info };
   }
   return { count: 0, query_info: [] };
-}
+};
 
 getData();
 
@@ -202,9 +216,14 @@ const delMultiMessages = async () => {
 };
 
 // ------------------------标记已读消息------------------------
+const unreadCountStore = useUnreadMsgCountStore();
+
 const markReadMessage = (msg: MessageT) => {
   readMessages(msg)
-    .then(() => getData())
+    .then(() => {
+      getData();
+      unreadCountStore.updateCount();
+    })
     .catch((error) => {
       if (error?.response?.data?.message) {
         message.warning(error.response.data.message);
@@ -221,7 +240,10 @@ const markReadMultiMessages = () => {
   messages.push(...thisWeekMessages.value.filter((item) => set.has(item.id)));
   messages.push(...aWeekAgoMessages.value.filter((item) => set.has(item.id)));
   readMessages(...messages)
-    .then(() => getData())
+    .then(() => {
+      getData();
+      unreadCountStore.updateCount();
+    })
     .catch((error) => {
       if (error?.response?.data?.message) {
         message.warning(error.response.data.message);
