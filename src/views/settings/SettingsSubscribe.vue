@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { provide, reactive, ref } from 'vue';
-import { getAllSubs, getSubsDetail } from '@/api/config';
+import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/config';
 import SettingsSubsTable from './components/SettingsSubsTable.vue';
 import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { useConfirmDialog } from '@vueuse/core';
+import { AxiosError } from 'axios';
+import { useMessage } from '@opensig/opendesign';
 
 const events: Record<string, Record<string, SubscribeRuleT[]>> = {
   [EVENT_SOURCES.EUR]: {
@@ -161,6 +165,31 @@ const removeRecipient = () => {
  */
 const btnDisabled = ref(true);
 
+// ------------------------删除规则------------------------
+const {
+  isRevealed,
+  reveal,
+  confirm,
+  cancel
+} = useConfirmDialog();
+
+const deleteModeName = ref('');
+
+const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) => {
+  const { isCanceled } = await reveal();
+  if (isCanceled) {
+    return;
+  }
+  try {
+    await deleteSubsRule(param);
+    await getData();
+  } catch (error) {
+    if (error instanceof AxiosError && error?.response?.data?.message) {
+      useMessage().warning(error.response.data.message);
+    }
+  }
+}
+
 /**
  * 表格组件上checkbox的改变
  */
@@ -186,6 +215,7 @@ defineExpose({
 </script>
 
 <template>
+  <ConfirmDialog :show="isRevealed" @confirm="confirm" @cancel="cancel" title="删除条件" :content="`是否确定删除${deleteModeName}?`"></ConfirmDialog>
   <SettingsGiteeRuleDialog
     v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
     :type="dialogData.dlgType"
@@ -204,5 +234,6 @@ defineExpose({
     style="margin-top: 24px; margin-bottom: 24px"
     @editRecipients="editRecipients"
     @checkboxChange="checkboxChange"
+    @deleteRule="deleteRule"
   />
 </template>

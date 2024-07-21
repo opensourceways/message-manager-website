@@ -10,6 +10,7 @@ const emit = defineEmits<{
   (event: 'editRule', source: string, type: string, modeName: string, modeFilter: { repo_name: string; is_bot: boolean }): void;
   (event: 'editRecipients', rule: SubscribeRuleT): void;
   (event: 'checkboxChange'): void;
+  (event: 'deleteRule', rule: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>): void;
 }>();
 const props = defineProps<{
   source: string;

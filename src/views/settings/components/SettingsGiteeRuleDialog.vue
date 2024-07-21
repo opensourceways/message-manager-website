@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue';
 import { ODialog, OForm, OFormItem, OInput, ORadio, type DialogActionT } from '@opensig/opendesign';
 import SettingsTagsEditor from './SettingsTagsEditor.vue';
-import { postSubsCondition, putSubsCondition } from '@/api/config';
+import { postSubsRule, putSubsRule } from '@/api/config';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
 
@@ -72,7 +72,7 @@ const actions: DialogActionT[] = [
     size: 'large',
     onClick: () => {
       data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-      (props.type === 'add' ? postSubsCondition : putSubsCondition)({
+      (props.type === 'add' ? postSubsRule : putSubsRule)({
         ...data,
         source,
         event_type: props.eventType,

@@ -74,7 +74,7 @@ export const getAllSubs = () => {
  * @param config axios设置
  * @returns 调用结果
  */
-export function postSubsCondition(data: Partial<SubscribeRuleT>, config?: RequestConfig) {
+export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConfig) {
   return request.post('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config);
 }
 
@@ -83,7 +83,7 @@ export function postSubsCondition(data: Partial<SubscribeRuleT>, config?: Reques
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function putSubsCondition(data: Partial<SubscribeRuleT>) {
+export function putSubsRule(data: Partial<SubscribeRuleT>) {
   return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
 }
 
@@ -92,7 +92,7 @@ export function putSubsCondition(data: Partial<SubscribeRuleT>) {
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function deleteSubsCondition(data: { source: string; event_type: string; mode_name: string }) {
+export function deleteSubsRule(data: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) {
   return request.delete('/message_center/config/subs', { data });
 }
 
