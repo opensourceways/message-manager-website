@@ -29,9 +29,9 @@ const tableTotal = ref(0);
 function getData(val = { page: 1, pageSize: 10 }) {
   tableLoading.value = true;
   getRecipients(val.page, val.pageSize)
-    .then(({ total, data }) => {
-      tableData.value = data;
-      tableTotal.value = total;
+    .then(({ count, query_info }) => {
+      tableData.value = query_info;
+      tableTotal.value = count;
     })
     .catch(() => {
       tableData.value = [];

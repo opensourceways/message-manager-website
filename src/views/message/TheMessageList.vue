@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OCollapse, OCollapseItem, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon, isArray } from '@opensig/opendesign';
+import { OCheckbox, OCollapse, OCollapseItem, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon, isArray, OPopover, OButton } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -20,31 +20,32 @@ import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import type { AxiosResponse } from 'axios';
 import type { PagedResponseT } from '@/@types/types-common';
+import { useUserInfoStore } from '@/stores/user';
+import { getCsrfToken } from '@/shared/login';
 
 const message = useMessage();
 const { locale } = useI18n();
 const router = useRouter();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
-
+const settingsIcon = ref();
 const expandedMenus = ref(events.map((_, index) => `${index}`));
-const currentPage = ref(1);
-const pageSize = ref(10);
-const total = ref(0);
 const thisWeekMessages = ref<MessageT[]>([]);
 const aWeekAgoMessages = ref<MessageT[]>([]);
 const collapseExpanded = ref([1, 2]);
-const requestParams = reactive({
-  source: '',
-  eventType: '',
-  isRead: undefined as 0 | 1 | undefined,
-});
-const confirmDialogOptions = reactive({
-  title: '',
-  content: '',
-});
-
 const NOW = dayjs();
 dayjs.locale(locale.value);
+const showTipPopOver = ref(false);
+const userInfoStore = useUserInfoStore();
+
+watchEffect(() => {
+  if (getCsrfToken() && userInfoStore.username && userInfoStore.photo) {
+    const showTipCount = Number(sessionStorage.getItem('showTipCount') ?? '0');
+    if (Number(showTipCount) < 1) {
+      showTipPopOver.value = true;
+      sessionStorage.setItem('showTipCount', (showTipCount + 1).toString());
+    }
+  }
+});
 
 const toConfig = () => router.push('/settings');
 
@@ -94,6 +95,15 @@ watch(checkedAll, (val) => {
 });
 
 // ------------------------获取数据------------------------
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+const requestParams = reactive({
+  source: '',
+  eventType: '',
+  isRead: undefined as 0 | 1 | undefined,
+});
+
 const getData = (pageOption = { page: 1, pageSize: 10 }) => {
   getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize)
   .then(setMsgIdAndFormatTime)
@@ -129,7 +139,6 @@ const setMsgIdAndFormatTime = (res: AxiosResponse<PagedResponseT<MessageT>>): Pa
   return { count: 0, query_info: [] };
 }
 
-
 getData();
 
 // ------------------------菜单事件------------------------
@@ -148,6 +157,11 @@ watch(activeMenu, (menu) => {
 });
 
 // ------------------------删除消息------------------------
+const confirmDialogOptions = reactive({
+  title: '',
+  content: '',
+});
+
 const delMessage = async (msg: MessageT) => {
   confirmDialogOptions.title = '删除消息';
   confirmDialogOptions.content = `是否确定删除1条消息`;
@@ -238,7 +252,13 @@ watch(selectedVal, (val) => {
     <aside>
       <div class="title">
         消息中心
-        <OIcon class="settings-icon" @click="toConfig"><SettingsIcon /></OIcon>
+        <OIcon class="settings-icon" ref="settingsIcon" @click="toConfig"><SettingsIcon /></OIcon>
+        <OPopover :target="settingsIcon" :visible="showTipPopOver" trigger="none">
+          <div class="first-time-login-tip">
+            <p>可在消息订阅管理中订阅你所关注的消息</p>
+            <OButton variant="text" @click="showTipPopOver = false">知道了</OButton>
+          </div>
+        </OPopover>
       </div>
       <OMenu v-model="activeMenu" :default-expanded="expandedMenus">
         <OMenuItem value="all"> 全部消息 </OMenuItem>
@@ -335,6 +355,18 @@ watch(selectedVal, (val) => {
 </template>
 
 <style scoped lang="scss">
+.first-time-login-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 10px;
+  @include tip1;
+
+  p {
+    width: 168px;
+  }
+}
+
 :deep(.o-collapse-item) {
   border: none;
 }

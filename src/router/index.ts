@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
-import { doLogin, getCsrfToken, tokenFailIndicateLogin } from '@/shared/login';
-import { useUserInfoStore } from '@/stores/user';
+import { LOGIN_STATUS, doLogin, getCsrfToken, tokenFailIndicateLogin } from '@/shared/login';
+import { useLoginStore, useUserInfoStore } from '@/stores/user';
 import { queryUserInfo } from '@/api/api-user';
 
 const routes = [
@@ -42,14 +42,18 @@ const router = createRouter({
 router.beforeEach(async () => {
   const csrfToken = getCsrfToken();
   const userInfoStore = useUserInfoStore();
+  const loginStore = useLoginStore();
   if (!csrfToken) {
     userInfoStore.clearUserInfo();
+    loginStore.setLoginStatus(LOGIN_STATUS.NOT);
     return true;
   }
   if (!userInfoStore.username || !userInfoStore.photo) {
     try {
       userInfoStore.setUserInfo(await queryUserInfo());
+      loginStore.setLoginStatus(LOGIN_STATUS.DONE);
     } catch (error) {
+      loginStore.setLoginStatus(LOGIN_STATUS.FAILED);
       // doLogin();
       return true;
     }

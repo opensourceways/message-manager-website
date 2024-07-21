@@ -71,15 +71,18 @@ const appendTag = (text: string, focusNode?: Node) => {
   const wrapper = document.createElement('span');
   wrapper.classList.add('tag-wrapper');
   wrapper.contentEditable = 'false';
+
   const tag = document.createElement('span');
   tag.classList.add('tag');
   tag.textContent = text;
   tag.contentEditable = 'false';
+
   const icon = document.createElement('img');
   icon.src = '/src/assets/svg-icons/icon-close.svg';
   icon.classList.add('close');
   icon.addEventListener('click', deleteTag);
   tag.appendChild(icon);
+
   wrapper.appendChild(tag);
   if (focusNode) {
     inputArea.value.insertBefore(wrapper, focusNode);

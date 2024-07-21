@@ -8,13 +8,8 @@ import LoginIcon from '~icons/app/icon-login.svg';
 const userInfoStore = useUserInfoStore();
 const userInfo = ref();
 const csrfToken = getCsrfToken();
-const visible = ref(false);
 
-setTimeout(() => {
-  visible.value = true;
-}, 3000);
-
-const toUserCenter = () => window.location.href = 'https://openeuler-usercenter.test.osinfra.cn/';
+const toUserCenter = () => window.location.href = import.meta.env.VITE_LOGIN_URL;
 </script>
 
 <template>
@@ -23,7 +18,7 @@ const toUserCenter = () => window.location.href = 'https://openeuler-usercenter.
       <img v-if="userInfoStore.photo" :src="userInfoStore.photo" />
       {{ userInfoStore.username }}
     </div>
-    <OPopup position="bottom" :target="userInfo" :visible="visible">
+    <OPopup position="bottom" :target="userInfo">
       <ul class="header-user-menu">
         <li @click="toUserCenter">个人中心</li>
         <li>消息中心</li>
@@ -52,7 +47,7 @@ const toUserCenter = () => window.location.href = 'https://openeuler-usercenter.
 }
 
 .header-user-menu {
-  width: fit-content;
+  width: fit;
   background-color: var(--o-color-white);
   box-shadow: var(--o-shadow-3);
 
