@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RecipientT } from '@/@types/type-settings';
-import { addRecipient as postRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/config';
+import { addRecipient as postRecipient, deleteRecipient, editRecipient, getRecipients } from '@/api/api-settings';
 import { OInput, OLink, OPagination, OTable, useMessage } from '@opensig/opendesign';
 import WarningInput from '@/components/WarningInput.vue';
 import { reactive, ref } from 'vue';

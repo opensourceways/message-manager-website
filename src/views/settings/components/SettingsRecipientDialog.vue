@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { OButton, OCheckbox, ODialog, OInput, OLink, OPagination, OScroller, OTable, useMessage } from '@opensig/opendesign';
-import { addRecipient, deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/config';
+import { addRecipient, deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/api-settings';
 import WarningInput from '@/components/WarningInput.vue';
 import type { PagedResponseT } from '@/@types/types-common';
 import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';

@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue';
 import { ODialog, OForm, OFormItem, OInput, ORadio, type DialogActionT } from '@opensig/opendesign';
 import SettingsTagsEditor from './SettingsTagsEditor.vue';
-import { postSubsRule, putSubsRule } from '@/api/config';
+import { postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide, reactive, ref } from 'vue';
-import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/config';
+import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
 import SettingsSubsTable from './components/SettingsSubsTable.vue';
 import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
