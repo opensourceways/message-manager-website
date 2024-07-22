@@ -187,11 +187,11 @@ const responseInterceptorId = request.interceptors.response.use(
     }
 
     // token过期，重新登录
-    if (err.response?.status === 400) {
-      useUserInfoStore().clearUserInfo();
-      Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
+    // if (err.response?.status === 400) {
+      // useUserInfoStore().clearUserInfo();
+      // Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
       // doLogin();
-    }
+    // }
 
     return Promise.reject(err);
   }

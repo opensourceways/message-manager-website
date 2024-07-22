@@ -284,7 +284,7 @@ watch(selectedVal, (val) => {
           <OMenuItem class="menu-item" v-if="!ev.children" :value="`${ev.source}_${ev.event_type}`">
             {{ eventTypeNames[ev.source][ev.event_type] }}
           </OMenuItem>
-          <OSubMenu v-else :value="`${index}`">
+          <OSubMenu class="submenu-title" v-else :value="`${index}`">
             <template #title>
               <p>{{ eventTypeNames[ev.source].default }}</p>
             </template>
@@ -377,6 +377,11 @@ watch(selectedVal, (val) => {
   --menu-item-bg-color-selected: rgb(var(--o-kleinblue-1));
   --menu-item-bg-color-hover: rgb(var(--o-kleinblue-1));
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));
+}
+
+.submenu-title {
+  --sub-menu-bg-color-hover: rgb(var(--o-kleinblue-1));
+  --sub-menu-bg-color-selected: rgb(var(--o-kleinblue-1));
 }
 
 .first-time-login-tip {

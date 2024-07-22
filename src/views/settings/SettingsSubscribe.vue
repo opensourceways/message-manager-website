@@ -77,7 +77,7 @@ const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
 const resetData = () => {
   for (const prop in initialData) {
     for (const innerProp in initialData[prop]) {
-      initialData[prop][innerProp].splice(1, initialData[prop][innerProp].length - 1);
+      initialData[prop][innerProp] = [];
     }
   }
 };
@@ -121,7 +121,6 @@ const getData = async () => {
   }
 };
 getData();
-// https://openeuler-usercenter.test.osinfra.cn/login?redirect_uri=https%3A%2F%2Fmessage-center.test.osinfra.cn%2F
 
 // ------------------------修改接收人相关------------------------
 const editRecipientsEffectedRows = ref<SubscribeRuleT[]>([]);
@@ -223,7 +222,7 @@ defineExpose({
     :subscribe="(dialogData.subscribe as SubscribeRuleT<GiteeModeFilterT>)"
   />
 
-  <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" />
+  <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" @update="getData"/>
 
   <SettingsSubsTable
     ref="tableRefs"
