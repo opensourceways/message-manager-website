@@ -57,6 +57,10 @@ const removeRecipient = () => {
 </template>
 
 <style scoped lang="scss">
+.page-body {
+  width: 74vw;
+}
+
 .tips {
   max-width: 300px;
   @include text1;

@@ -26,7 +26,7 @@ import AppLogin from './AppLogin.vue';
 
 <style lang="scss" scoped>
 .header-wrap {
-  height: 64px;
+  height: var(--layout-header-height);
   width: 100%;
   position: fixed;
   top: 0;

@@ -200,9 +200,7 @@ const delMultiMessages = async () => {
   confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
   const { isCanceled } = await reveal();
   if (!isCanceled) {
-    const messages = [];
-    messages.push(...thisWeekMessages.value.filter((item) => set.has(item.id)));
-    messages.push(...aWeekAgoMessages.value.filter((item) => set.has(item.id)));
+    const messages = thisWeekMessages.value.concat(aWeekAgoMessages.value).filter((item) => set.has(item.id));
     deleteMessages(...messages)
       .then(() => {
         getData();
@@ -236,9 +234,7 @@ const markReadMessage = (msg: MessageT) => {
  */
 const markReadMultiMessages = () => {
   const set = new Set(checkedItems.value);
-  const messages = [];
-  messages.push(...thisWeekMessages.value.filter((item) => set.has(item.id)));
-  messages.push(...aWeekAgoMessages.value.filter((item) => set.has(item.id)));
+  const messages = thisWeekMessages.value.concat(aWeekAgoMessages.value).filter((item) => set.has(item.id));
   readMessages(...messages)
     .then(() => {
       getData();

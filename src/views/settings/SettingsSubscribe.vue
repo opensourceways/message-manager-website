@@ -121,6 +121,7 @@ const getData = async () => {
   }
 };
 getData();
+// https://openeuler-usercenter.test.osinfra.cn/login?redirect_uri=https%3A%2F%2Fmessage-center.test.osinfra.cn%2F
 
 // ------------------------修改接收人相关------------------------
 const editRecipientsEffectedRows = ref<SubscribeRuleT[]>([]);
@@ -172,7 +173,6 @@ const {
   confirm,
   cancel
 } = useConfirmDialog();
-
 const deleteModeName = ref('');
 
 const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) => {

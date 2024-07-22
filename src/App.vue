@@ -30,7 +30,6 @@ watch(
 <template>
   <AppHeader />
   <OScroller show-type="hover">
-    <div style="height: 26px;"></div>
     <main class="ly-main">
       <div class="inner-container">
         <OBreadcrumb>
@@ -46,10 +45,6 @@ watch(
 </template>
 
 <style lang="scss">
-.page-body {
-  width: 74vw;
-  // padding: calc(900px * 0.04) calc(74vw * 0.02);
-}
 #app {
   --color-primary: #027ef2;
 
@@ -121,7 +116,7 @@ watch(
 .ly-main {
   display: flex;
   justify-content: center;
-  padding-top: var(--layout-header-height);
+  padding-top: calc(var(--layout-header-height) * 2);
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
 }

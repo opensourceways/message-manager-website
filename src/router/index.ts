@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
-import { LOGIN_KEYS, getCsrfToken } from '@/shared/login';
+import { LOGIN_KEYS, doLogin, getCsrfToken } from '@/shared/login';
 import { useUserInfoStore } from '@/stores/user';
 import { queryUserInfo } from '@/api/api-user';
 import { useUnreadMsgCountStore } from '@/stores/common';
@@ -46,14 +46,15 @@ router.beforeEach(async () => {
   const userInfoStore = useUserInfoStore();
   if (!csrfToken) {
     userInfoStore.clearUserInfo();
+    doLogin();
     return true;
   }
   if (!userInfoStore.username || !userInfoStore.photo) {
     try {
       userInfoStore.setUserInfo(await queryUserInfo());
     } catch (error) {
-      // doLogin();
       Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
+      doLogin();
       return true;
     }
   }
