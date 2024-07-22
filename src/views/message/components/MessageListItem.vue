@@ -69,7 +69,7 @@ const Title = (props: { msg: MessageT }) => {
 
 <style scoped lang="scss">
 .msg-title {
-  font-size: 14px;
+  @include tip1;
   line-height: 22px;
 }
 
@@ -89,7 +89,7 @@ const Title = (props: { msg: MessageT }) => {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 14px;
+    @include tip1;
     line-height: 22px;
 
     .user-info {

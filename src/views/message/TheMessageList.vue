@@ -434,6 +434,7 @@ watch(selectedVal, (val) => {
   display: flex;
   gap: 32px;
   width: 80vw;
+  max-width: 1418px;
   min-height: 60vh;
 
   aside {
@@ -459,7 +460,7 @@ watch(selectedVal, (val) => {
     .left {
       display: flex;
       align-items: center;
-      font-size: 16px;
+      @include text1;
     }
 
     .right {
