@@ -110,7 +110,7 @@ export function updateNeedStatus(rule: SubscribeRuleT) {
     need_mail: false,
     need_message: false,
     need_phone: false,
-    recipient_id: rule.recipients?.map(r => r.id),
+    recipient_id: rule.recipients?.map(r => r.id.toString()),
     subscribe_id: rule.id,
   };
   rule.needCheckboxes?.forEach((item) => (data[item] = true));
