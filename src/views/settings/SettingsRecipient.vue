@@ -274,5 +274,6 @@ defineExpose({
   border: 1px solid var(--o-color-control-light);
   border-radius: var(--table-radius);
   --table-head-bg: rgb(var(--o-kleinblue-2));
+  --table-row-hover: rgb(var(--o-kleinblue-1));
 }
 </style>

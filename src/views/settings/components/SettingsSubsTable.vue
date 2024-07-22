@@ -4,6 +4,7 @@ import { useCheckbox } from '@/composables/useCheckbox';
 import { OCheckbox, OLink } from '@opensig/opendesign';
 import { eventSourceNames, eventTypeNames } from '@/data/subscribeSettings';
 import type { SubscribeRuleT } from '@/@types/type-settings';
+import { updateNeedStatus } from '@/api/api-settings';
 
 const emit = defineEmits<{
   (event: 'addRule', source: string, type: string): void;
@@ -48,6 +49,10 @@ const getCheckedRulesCount = () => {
   return checkboxes.value.length;
 };
 
+const needCheckboxChange = (rule: SubscribeRuleT) => {
+  updateNeedStatus(rule)
+}
+
 defineExpose({
   getCheckedRules,
   getCheckedRulesCount
@@ -87,9 +92,9 @@ defineExpose({
             <td class="first-cell">
               {{ rule.mode_name || '全部消息（默认）' }}
             </td>
-            <td><OCheckbox value="need_inner_message" v-model="rule.needCheckboxes" /></td>
-            <td><OCheckbox value="need_mail" v-model="rule.needCheckboxes" /></td>
-            <td><OCheckbox value="need_message" v-model="rule.needCheckboxes" /></td>
+            <td><OCheckbox @change="needCheckboxChange(rule)" value="need_inner_message" v-model="rule.needCheckboxes" /></td>
+            <td><OCheckbox @change="needCheckboxChange(rule)" value="need_mail" v-model="rule.needCheckboxes" /></td>
+            <td><OCheckbox @change="needCheckboxChange(rule)" value="need_message" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox :value="1" :disabled="true" /></td>
             <td><OCheckbox :value="1" :disabled="true" /></td>
             <td>

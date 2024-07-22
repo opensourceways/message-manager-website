@@ -104,16 +104,16 @@ export function deleteSubsRule(data: Pick<SubscribeRuleT, 'mode_name' | 'source'
  * @param subscribe_id 接受规则id
  * @returns 调用结果
  */
-export function updateNeedStatus(needStatus: string[], recipient_id: string, subscribe_id: string) {
+export function updateNeedStatus(rule: SubscribeRuleT) {
   const data: any = {
     need_inner_message: false,
     need_mail: false,
     need_message: false,
     need_phone: false,
-    recipient_id,
-    subscribe_id,
+    recipient_id: rule.recipients?.map(r => r.id),
+    subscribe_id: rule.id,
   };
-  needStatus.forEach((item) => (data[item] = true));
+  rule.needCheckboxes?.forEach((item) => (data[item] = true));
   return request.put('/message_center/config/push', data);
 }
 

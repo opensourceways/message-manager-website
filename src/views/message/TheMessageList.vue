@@ -279,16 +279,16 @@ watch(selectedVal, (val) => {
         </OPopover>
       </div>
       <OMenu v-model="activeMenu" :default-expanded="expandedMenus">
-        <OMenuItem value="all"> 全部消息 </OMenuItem>
+        <OMenuItem class="menu-item" value="all"> 全部消息 </OMenuItem>
         <template v-for="(ev, index) in events" :key="ev.source + (ev.event_type ?? '')">
-          <OMenuItem v-if="!ev.children" :value="`${ev.source}_${ev.event_type}`">
+          <OMenuItem class="menu-item" v-if="!ev.children" :value="`${ev.source}_${ev.event_type}`">
             {{ eventTypeNames[ev.source][ev.event_type] }}
           </OMenuItem>
           <OSubMenu v-else :value="`${index}`">
             <template #title>
               <p>{{ eventTypeNames[ev.source].default }}</p>
             </template>
-            <OMenuItem v-for="child in ev.children" :key="child.event_type" :value="`${ev.source}_${child.event_type}`">
+            <OMenuItem class="menu-item" v-for="child in ev.children" :key="child.event_type" :value="`${ev.source}_${child.event_type}`">
               {{ eventTypeNames[ev.source][child.event_type] }}
             </OMenuItem>
           </OSubMenu>
@@ -373,6 +373,12 @@ watch(selectedVal, (val) => {
 </template>
 
 <style scoped lang="scss">
+.menu-item {
+  --menu-item-bg-color-selected: rgb(var(--o-kleinblue-1));
+  --menu-item-bg-color-hover: rgb(var(--o-kleinblue-1));
+  --menu-item-color-selected: rgb(var(--o-kleinblue-6));
+}
+
 .first-time-login-tip {
   display: flex;
   flex-direction: column;
@@ -482,7 +488,7 @@ watch(selectedVal, (val) => {
       margin-top: 6px;
 
       @include hover {
-        background-color: var(--o-color-control2-light);
+        background-color: var(--o-kleinblue-1);
       }
     }
   }
