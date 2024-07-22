@@ -233,7 +233,7 @@ watch(selectedVal, (val) => {
       <template v-if="total > 0">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" value="1"></OCheckbox>
+            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
             <OSelect v-model="selectedVal" variant="text">
               <OOption v-for="item in selectOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
