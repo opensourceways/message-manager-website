@@ -120,7 +120,7 @@ const Title = (props: { msg: MessageT }) => {
     width: 100%;
     gap: 32px;
     padding-right: 22px;
-    background-color: var(--o-color-control2-light);
+    background-color: rgb(var(--o-kleinblue-1));
 
     .icon {
       font-size: 24px;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch, watchEffect } from 'vue';
+import {  reactive, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -7,8 +7,6 @@ import 'dayjs/locale/zh';
 
 import {
   OCheckbox,
-  OCollapse,
-  OCollapseItem,
   OMenu,
   OMenuItem,
   OPagination,
@@ -17,7 +15,6 @@ import {
   OSelect,
   OOption,
   OIcon,
-  isArray,
   OPopover,
   OButton,
 } from '@opensig/opendesign';
@@ -33,8 +30,6 @@ import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages } from '@/api/messages';
 import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
-import type { AxiosResponse } from 'axios';
-import type { PagedResponseT } from '@/@types/types-common';
 import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
@@ -45,10 +40,7 @@ const router = useRouter();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const settingsIcon = ref();
 const expandedMenus = ref(events.map((_, index) => `${index}`));
-const thisWeekMessages = ref<MessageT[]>([]);
-const aWeekAgoMessages = ref<MessageT[]>([]);
-const collapseExpanded = ref([1, 2]);
-const NOW = dayjs();
+const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
 const userInfoStore = useUserInfoStore();
@@ -66,49 +58,11 @@ watchEffect(() => {
 const toConfig = () => router.push('/settings');
 
 // ------------------------多选框事件------------------------
-const thisWeekCheckboxOps = useCheckbox(thisWeekMessages, (msg) => msg.id);
-const aWeekAgoCheckboxOps = useCheckbox(aWeekAgoMessages, (msg) => msg.id);
-const checkedAll = ref<number[]>([]);
-const checkedAllIndeterminate = ref(false);
-
-const checkedItems = computed(() => thisWeekCheckboxOps.checkboxes.value.concat(aWeekAgoCheckboxOps.checkboxes.value));
-
-watch([() => thisWeekCheckboxOps.parentCheckbox.value, () => aWeekAgoCheckboxOps.parentCheckbox.value], ([thisWeek, aWeekAgo]) => {
-  if (thisWeek.length && aWeekAgo.length) {
-    if (!checkedAll.value.length) {
-      checkedAll.value = [1];
-    }
-    checkedAllIndeterminate.value = false;
-  } else if (!thisWeek.length && !aWeekAgo.length) {
-    if (checkedAll.value.length) {
-      checkedAll.value = [];
-    }
-    checkedAllIndeterminate.value = false;
-  } else {
-    if (checkedAll.value.length) {
-      checkedAll.value = [];
-    }
-    checkedAllIndeterminate.value = true;
-  }
-});
-
-watch(checkedAll, (val) => {
-  if (val.length) {
-    if (!thisWeekCheckboxOps.parentCheckbox.value.length) {
-      thisWeekCheckboxOps.setCheckAll();
-    }
-    if (!aWeekAgoCheckboxOps.parentCheckbox.value.length) {
-      aWeekAgoCheckboxOps.setCheckAll();
-    }
-  } else {
-    if (thisWeekCheckboxOps.parentCheckbox.value.length) {
-      thisWeekCheckboxOps.clearCheckboxes();
-    }
-    if (aWeekAgoCheckboxOps.parentCheckbox.value.length) {
-      aWeekAgoCheckboxOps.clearCheckboxes();
-    }
-  }
-});
+const {
+  checkboxes,
+  parentCheckbox,
+  indeterminate
+} = useCheckbox(messages, (msg) => msg.id);
 
 // ------------------------获取数据------------------------
 const currentPage = ref(1);
@@ -122,35 +76,16 @@ const requestParams = reactive({
 
 const getData = (pageOption = { page: 1, pageSize: 10 }) => {
   getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize)
-    .then(setMsgIdAndFormatTime)
-    .then(({ count, query_info }) => {
-      thisWeekMessages.value = [];
-      aWeekAgoMessages.value = [];
-      thisWeekCheckboxOps.clearCheckboxes();
-      aWeekAgoCheckboxOps.clearCheckboxes();
+    .then((res) => {
+      const { count, query_info } = res.data;
       total.value = count;
-      for (const item of query_info) {
-        const date = dayjs(item.time);
-        item.formattedTime = date.fromNow();
-        if (NOW.diff(date, 'week') === 0) {
-          thisWeekMessages.value.push(item);
-        } else {
-          aWeekAgoMessages.value.push(item);
-        }
+      for (const msg of query_info) {
+        msg.id = msg.source + msg.event_id;
+        const date = dayjs(msg.time);
+        msg.formattedTime = date.fromNow();
       }
+      messages.value = query_info;
     });
-};
-
-const setMsgIdAndFormatTime = (res: AxiosResponse<PagedResponseT<MessageT>>): PagedResponseT<MessageT> => {
-  const { count, query_info } = res.data;
-  if (isArray(query_info) && query_info.length) {
-    for (const msg of query_info) {
-      msg.id = msg.source + msg.event_id;
-      msg.formattedTime = dayjs(msg.time).format('MM/DD HH:mm');
-    }
-    return { count, query_info };
-  }
-  return { count: 0, query_info: [] };
 };
 
 getData();
@@ -195,13 +130,12 @@ const delMessage = async (msg: MessageT) => {
  * 删除多条
  */
 const delMultiMessages = async () => {
-  const set = new Set(checkedItems.value);
+  const set = new Set(checkboxes.value);
   confirmDialogOptions.title = '删除消息';
   confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
   const { isCanceled } = await reveal();
   if (!isCanceled) {
-    const messages = thisWeekMessages.value.concat(aWeekAgoMessages.value).filter((item) => set.has(item.id));
-    deleteMessages(...messages)
+    deleteMessages(...messages.value.filter((item) => set.has(item.id)))
       .then(() => {
         getData();
       })
@@ -233,9 +167,8 @@ const markReadMessage = (msg: MessageT) => {
  * 已读多条
  */
 const markReadMultiMessages = () => {
-  const set = new Set(checkedItems.value);
-  const messages = thisWeekMessages.value.concat(aWeekAgoMessages.value).filter((item) => set.has(item.id));
-  readMessages(...messages)
+  const set = new Set(checkboxes.value);
+  readMessages(...messages.value.filter((item) => set.has(item.id)))
     .then(() => {
       getData();
       unreadCountStore.updateCount();
@@ -300,67 +233,29 @@ watch(selectedVal, (val) => {
       <template v-if="total > 0">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="checkedAll" :indeterminate="checkedAllIndeterminate" value="1"></OCheckbox>
+            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" value="1"></OCheckbox>
             <OSelect v-model="selectedVal" variant="text">
               <OOption v-for="item in selectOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
           </div>
-          <div class="right" :disabled="checkedItems.length === 0">
-            <div class="msg-action" :diabled="checkedItems.length === 0" @click="delMultiMessages">
+          <div class="right" :disabled="checkboxes.length === 0">
+            <div class="msg-action" :diabled="checkboxes.length === 0" @click="delMultiMessages">
               <OIcon class="icon"><DeleteIcon /></OIcon>
               删除
             </div>
-            <div class="msg-action" :diabled="checkedItems.length === 0" @click="markReadMultiMessages">
+            <div class="msg-action" :diabled="checkboxes.length === 0" @click="markReadMultiMessages">
               <OIcon class="icon"><ReadIcon /></OIcon>
               标记已读
             </div>
           </div>
         </div>
         <div class="list">
-          <OCollapse v-model="collapseExpanded">
-            <OCollapseItem :value="1">
-              <template #title>
-                <div style="display: flex; align-items: center; gap: 16px">
-                  <OCheckbox
-                    v-model="thisWeekCheckboxOps.parentCheckbox.value"
-                    :indeterminate="thisWeekCheckboxOps.indeterminate.value"
-                    :value="1"
-                    @click.capture.stop
-                  >
-                  </OCheckbox>
-                  <span>本周</span>
-                </div>
-              </template>
-              <div v-for="msg in thisWeekMessages" :key="msg.id" class="item">
-                <div class="checkbox-wrapper">
-                  <OCheckbox :value="msg.id" v-model="thisWeekCheckboxOps.checkboxes.value" />
-                </div>
-                <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
-              </div>
-            </OCollapseItem>
-            <OCollapseItem :value="2">
-              <template #title>
-                <div style="display: flex; align-items: center; gap: 16px">
-                  <OCheckbox
-                    v-model="aWeekAgoCheckboxOps.parentCheckbox.value"
-                    :indeterminate="aWeekAgoCheckboxOps.indeterminate.value"
-                    :value="1"
-                    @click.capture.stop
-                  >
-                  </OCheckbox>
-                  <span>一周前</span>
-                </div>
-              </template>
-              <template v-for="msg in aWeekAgoMessages" :key="msg.id">
-                <div class="item">
-                  <div class="checkbox-wrapper">
-                    <OCheckbox :value="msg.id" v-model="aWeekAgoCheckboxOps.checkboxes.value" />
-                  </div>
-                  <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
-                </div>
-              </template>
-            </OCollapseItem>
-          </OCollapse>
+          <div v-for="msg in messages" :key="msg.id" class="item">
+            <div class="checkbox-wrapper">
+              <OCheckbox :value="msg.id" v-model="checkboxes" />
+            </div>
+            <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
+          </div>
         </div>
       </template>
       <div v-else class="no-messages">
@@ -493,7 +388,7 @@ watch(selectedVal, (val) => {
       margin-top: 6px;
 
       @include hover {
-        background-color: var(--o-kleinblue-1);
+        background-color: rgb(var(--o-kleinblue-1));
       }
     }
   }
