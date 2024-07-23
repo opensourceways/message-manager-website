@@ -46,7 +46,7 @@ router.beforeEach(async () => {
   const userInfoStore = useUserInfoStore();
   if (!csrfToken) {
     userInfoStore.clearUserInfo();
-    // doLogin();
+    doLogin();
     return true;
   }
   if (!userInfoStore.username || !userInfoStore.photo) {
@@ -54,7 +54,7 @@ router.beforeEach(async () => {
       userInfoStore.setUserInfo(await queryUserInfo());
     } catch (error) {
       Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
-      // doLogin();
+      doLogin();
       return true;
     }
   }
