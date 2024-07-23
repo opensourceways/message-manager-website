@@ -42,7 +42,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async () => {
-  /* const csrfToken = getCsrfToken();
+  const csrfToken = getCsrfToken();
   const userInfoStore = useUserInfoStore();
   if (!csrfToken) {
     userInfoStore.clearUserInfo();
@@ -58,7 +58,7 @@ router.beforeEach(async () => {
       return true;
     }
   }
-  useUnreadMsgCountStore().updateCount(); */
+  useUnreadMsgCountStore().updateCount();
   return true;
 });
 
