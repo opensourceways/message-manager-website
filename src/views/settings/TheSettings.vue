@@ -37,7 +37,7 @@ const removeRecipient = () => {
             <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="removeRecipient">移除接收人</AppButton>
           </div>
           <div v-if="activeTab === 1" style="display: flex; gap: 8px; align-items: center">
-            <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="addRecipient">新增接收人</AppButton>
+            <AppButton variant="outline" round="pill" @click="addRecipient">新增接收人</AppButton>
             <OPopover :target="tipRef">
               <p class="tips">
                 新增接收人后，系统将自动<span>发送验证信息</span>到所填手机号和邮箱，通过验证<span>并在消息接收设置页面分配消息接收人</span>后，方可接受对应类别的消息

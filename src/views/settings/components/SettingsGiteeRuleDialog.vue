@@ -65,16 +65,14 @@ const actions: DialogActionT[] = [
     size: 'large',
     onClick: () => {
       data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-      console.log('???', data.mode_filter.repo_name);
-      
-      /* (props.type === 'add' ? postSubsRule : putSubsRule)({
+      (props.type === 'add' ? postSubsRule : putSubsRule)({
         ...data,
         source,
         event_type: props.eventType,
       }).then(() => {
         emit('confirm');
         onCancel();
-      }); */
+      });
     },
   },
   {
