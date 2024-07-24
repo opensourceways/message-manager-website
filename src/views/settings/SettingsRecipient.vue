@@ -1,36 +1,38 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import { OPagination, useMessage } from '@opensig/opendesign';
+import { useConfirmDialog } from '@vueuse/core';
 import type { RecipientT } from '@/@types/type-settings';
 import { deleteRecipient, getRecipients } from '@/api/api-settings';
-import { OPagination, useMessage } from '@opensig/opendesign';
-import { ref } from 'vue';
-import { useConfirmDialog } from '@vueuse/core';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import SettingsRecipientTable from './components/SettingsRecipientTable.vue';
+import { usePage } from '@/composables/usePage';
 
 const message = useMessage();
 const tableData = ref<RecipientT[]>([]);
 const tableLoading = ref(false);
-const pageSizes = ref([10, 20, 30, 50]);
-const currentPage = ref(1);
-const pageSize = ref(pageSizes.value[0]);
-const tableTotal = ref(0);
 
-const getData = () => {
+const getData = (page = 1, pageSize = 10) => {
   tableLoading.value = true;
-  getRecipients(currentPage.value, pageSize.value)
+  getRecipients(page, pageSize)
     .then(({ count, query_info }) => {
       tableData.value = query_info;
-      tableTotal.value = count;
+      total.value = count;
     })
     .catch(() => {
       tableData.value = [];
-      tableTotal.value = 0;
+      total.value = 0;
     })
     .finally(() => {
       tableLoading.value = false;
     });
 };
-getData();
+const {
+  page,
+  pageSize,
+  pageSizes,
+  total,
+} = usePage(getData);
 
 // ----------------新增接收人-------------------
 const isAddingRecipient = ref(false);
@@ -50,7 +52,7 @@ const deleteRow = async (recipient_id: string | number) => {
   if (!isCanceled) {
     try {
       await deleteRecipient(recipient_id as string);
-      getData();
+      getData(page.value, pageSize.value);
     } catch (error: any) {
       if (error?.response?.data?.error) {
         message.warning(error.response.data.error);
@@ -76,7 +78,7 @@ defineExpose({
     @updateData="getData"
     @deleteRow="deleteRow"
   ></SettingsRecipientTable>
-  <OPagination :total="tableTotal" v-model:page="currentPage" :pageSizes="pageSizes" v-model:page-size="pageSize" @change="getData" style="margin-top: 32px" />
+  <OPagination :total="total" v-model:page="page" :pageSizes="pageSizes" v-model:page-size="pageSize" style="margin-top: 32px" />
 </template>
 
 <style scoped lang="scss">

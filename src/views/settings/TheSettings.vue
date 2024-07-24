@@ -46,10 +46,10 @@ const removeRecipient = () => {
             <OIcon class="tip-icon" ref="tipRef"><TipIcon /></OIcon>
           </div>
         </template>
-        <OTabPane :value="0" :label="$t('config.receiveConfig')" style="--tab-nav-color-active: rgb(var(--o-kleinblue-6))">
+        <OTabPane :value="0" :label="$t('config.receiveConfig')">
           <SettingsSubscribe ref="subscribeSettings" />
         </OTabPane>
-        <OTabPane :value="1" :label="$t('config.receiverManagement')" style="--tab-nav-color-active: rgb(var(--o-kleinblue-6))">
+        <OTabPane :value="1" :label="$t('config.receiverManagement')">
           <SettingsRecipient ref="recipientSettings" />
         </OTabPane>
       </OTab>
@@ -58,6 +58,9 @@ const removeRecipient = () => {
 </template>
 
 <style scoped lang="scss">
+:deep(.o-tab-nav-active) {
+  --tab-nav-color-active: rgb(var(--o-kleinblue-6))
+}
 .page-body {
   width: 74vw;
   max-width: 1416px;

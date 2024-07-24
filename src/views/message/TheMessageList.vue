@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon, OPopover, OButton } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OPopover, OButton } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -22,6 +22,7 @@ import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import { usePage } from '@/composables/usePage';
+import AppLink from '@/components/AppLink.vue';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -74,8 +75,6 @@ const {
   total,
 } = usePage(getData);
 
-getData();
-
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
 
@@ -116,6 +115,9 @@ const delMessage = async (msg: MessageT) => {
  * 删除多条
  */
 const delMultiMessages = async () => {
+  if (checkboxes.value.length === 0) {
+    return;
+  }
   const set = new Set(checkboxes.value);
   confirmDialogOptions.title = '删除消息';
   confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
@@ -153,6 +155,9 @@ const markReadMessage = (msg: MessageT) => {
  * 已读多条
  */
 const markReadMultiMessages = () => {
+  if (checkboxes.value.length === 0) {
+    return;
+  }
   const set = new Set(checkboxes.value);
   readMessages(...messages.value.filter((item) => set.has(item.id)))
     .then(() => {
@@ -189,7 +194,9 @@ watch(selectedVal, (val) => {
     <aside>
       <div class="title">
         消息中心
-        <OIcon class="settings-icon" ref="settingsIcon" @click="toConfig"><SettingsIcon /></OIcon>
+        <AppLink ref="settingsIcon" @click="toConfig">
+          <template #suffix><SettingsIcon /></template>
+        </AppLink>
         <OPopover :target="settingsIcon" :visible="showTipPopOver" trigger="none">
           <div class="first-time-login-tip">
             <p>可在消息订阅管理中订阅你所关注的消息</p>
@@ -231,14 +238,14 @@ watch(selectedVal, (val) => {
             </OSelect>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
-            <div class="msg-action" :diabled="checkboxes.length === 0" @click="delMultiMessages">
-              <OIcon class="icon"><DeleteIcon /></OIcon>
+            <AppLink :disabled="checkboxes.length === 0" @click="delMultiMessages">
               删除
-            </div>
-            <div class="msg-action" :diabled="checkboxes.length === 0" @click="markReadMultiMessages">
-              <OIcon class="icon"><ReadIcon /></OIcon>
+              <template #suffix><DeleteIcon /></template>
+            </AppLink>
+            <AppLink :disabled="checkboxes.length === 0" @click="markReadMultiMessages">
               标记已读
-            </div>
+              <template #suffix><ReadIcon /></template>
+            </AppLink>
           </div>
         </div>
         <div class="list">
@@ -303,11 +310,6 @@ watch(selectedVal, (val) => {
 
 .settings-icon {
   font-size: 24px;
-  cursor: pointer;
-
-  @include hover {
-    color: rgb(var(--o-kleinblue-6));
-  }
 }
 
 .msg-action {

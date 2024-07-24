@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { h } from 'vue';
-import { OBadge, ODivider, OIcon } from '@opensig/opendesign';
+import { OBadge, ODivider } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
 
 import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue'
+import AppLink from '@/components/AppLink.vue';
 
-defineEmits<{
+const emits = defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
   (event: 'readMessage', msg: MessageT): void;
 }>();
-defineProps<{
+const props = defineProps<{
   msg: MessageT;
 }>();
 
@@ -40,6 +41,13 @@ const Title = (props: { msg: MessageT }) => {
     unread: !props.msg.is_read,
   }, title);
 };
+
+const onClickRead = () => {
+  if (!props.msg.is_read) {
+    return;
+  }
+  emits('readMessage', props.msg);
+}
 </script>
 
 <template>
@@ -58,8 +66,12 @@ const Title = (props: { msg: MessageT }) => {
       <p>仓库{{ msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <OIcon @click="$emit('deleteMessage', msg)" class="icon"><DeleteIcon/></OIcon>
-        <OIcon @click="$emit('readMessage', msg)" class="icon" v-if="!msg.is_read"><ReadIcon/></OIcon>
+        <AppLink @click="$emit('deleteMessage', msg)">
+          <template #suffix><DeleteIcon /></template>
+        </AppLink>
+        <AppLink @click="onClickRead" :disabled="msg.is_read">
+          <template #suffix><ReadIcon /></template>
+        </AppLink>
       </div>
     </div>
 
@@ -70,10 +82,10 @@ const Title = (props: { msg: MessageT }) => {
 <style scoped lang="scss">
 .msg-title {
   @include tip1;
-    max-width: 40vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.o-badge-dot) {
@@ -130,6 +142,11 @@ const Title = (props: { msg: MessageT }) => {
       @include hover {
         color: rgb(var(--o-kleinblue-6));
       }
+    }
+
+    .disabled {
+      font-size: 24px;
+      cursor: not-allowed;
     }
   }
 
