@@ -10,12 +10,12 @@ const activeTab = ref(0);
 const subscribeSettings = ref<InstanceType<typeof SettingsSubscribe>>();
 const recipientSettings = ref<InstanceType<typeof SettingsRecipient>>();
 const components = [subscribeSettings, recipientSettings];
-const currentComponent = computed(() => components[activeTab.value]);
-const btnsDisabled = computed(() => subscribeSettings.value && subscribeSettings.value.btnDisabled);
+const currentComponent = computed(() => components[activeTab.value].value);
+const btnsDisabled = computed(() => subscribeSettings.value?.btnDisabled);
 const tipRef = ref();
 
 const addRecipient = () => {
-  currentComponent.value.value?.addRecipient();
+  currentComponent.value?.addRecipient();
 };
 
 const removeRecipient = () => {

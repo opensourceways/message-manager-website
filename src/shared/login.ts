@@ -52,7 +52,7 @@ export function doLogin() {
 // token失效跳转首页
 export function tokenFailIndicateLogin() {
   Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
-  useUserInfoStore().clearUserInfo();
+  useUserInfoStore().$reset();
   goToHome();
 }
 

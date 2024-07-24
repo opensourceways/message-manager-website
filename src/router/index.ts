@@ -42,10 +42,10 @@ const router = createRouter({
 });
 
 router.beforeEach(async () => {
-  /* const csrfToken = getCsrfToken();
+  const csrfToken = getCsrfToken();
   const userInfoStore = useUserInfoStore();
   if (!csrfToken) {
-    userInfoStore.clearUserInfo();
+    userInfoStore.$reset();
     doLogin();
     return true;
   }
@@ -53,13 +53,13 @@ router.beforeEach(async () => {
     try {
       userInfoStore.setUserInfo(await queryUserInfo());
     } catch (error) {
-      // Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
-      // doLogin();
+      Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
+      doLogin();
       return true;
     }
   }
   useUnreadMsgCountStore().updateCount();
-  return true; */
+  return true;
 });
 
 router.afterEach(() => {});
