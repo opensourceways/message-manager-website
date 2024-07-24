@@ -362,6 +362,7 @@ watch(selectedVal, (val) => {
   .header {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 16px;
 
     .left {
       display: flex;
