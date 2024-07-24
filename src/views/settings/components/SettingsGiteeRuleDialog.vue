@@ -17,7 +17,6 @@ const props = defineProps<{
   subscribe?: SubscribeRuleT<GiteeModeFilterT> | null;
 }>();
 
-const source = 'https://gitee.com';
 const repoNameEditor = ref();
 const data = reactive({
   mode_name: '',

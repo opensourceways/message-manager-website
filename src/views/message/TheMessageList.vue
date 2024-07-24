@@ -357,6 +357,7 @@ watch(selectedVal, (val) => {
   background-color: var(--o-color-fill2);
   padding: 24px;
   height: 100%;
+  gap: 10px;
 
   .header {
     display: flex;
@@ -378,13 +379,12 @@ watch(selectedVal, (val) => {
   .list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 8px;
 
     .item {
       display: flex;
       border-radius: 4px;
       padding: 12px 2px;
-      margin-top: 6px;
 
       @include hover {
         background-color: rgb(var(--o-kleinblue-1));

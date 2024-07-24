@@ -70,7 +70,10 @@ const Title = (props: { msg: MessageT }) => {
 <style scoped lang="scss">
 .msg-title {
   @include tip1;
-  line-height: 22px;
+    max-width: 40vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 :deep(.o-badge-dot) {
@@ -90,7 +93,6 @@ const Title = (props: { msg: MessageT }) => {
     flex-direction: column;
     gap: 6px;
     @include tip1;
-    line-height: 22px;
 
     .user-info {
       display: flex;
@@ -106,8 +108,7 @@ const Title = (props: { msg: MessageT }) => {
     align-items: flex-end;
     gap: 10px;
     color: var(--o-color-info3);
-    font-size: var(--o-font_size-tip2);
-    line-height: var(--o-line_height-tip2);
+    @include tip2;
   }
 
   .list-item-right-hover {
