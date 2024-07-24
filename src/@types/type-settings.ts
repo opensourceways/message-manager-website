@@ -9,9 +9,8 @@ export type RecipientT = {
 }
 
 export interface EurModeFilterT {
-  name: string;
-  owner: string;
-  status: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 1000;
+  source_group: string[]; // 项目名称
+  status: number[]; // 构建状态
 }
 
 export interface GiteeModeFilterT {

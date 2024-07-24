@@ -3,39 +3,33 @@ import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { ODialog, OForm, OFormItem, OInput, OOption, OSelect, type DialogActionT } from '@opensig/opendesign';
 import { reactive, ref } from 'vue';
 import SettingsTagsEditor from './SettingsTagsEditor.vue';
-import { eurBuildStatus } from '@/data/subscribeSettings';
+import { EVENT_SOURCES, eurBuildStatus } from '@/data/subscribeSettings';
+import { postSubsRule, putSubsRule } from '@/api/api-settings';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
   (event: 'confirm'): void;
 }>();
 
-defineProps<{
+const props = defineProps<{
   show: boolean;
   type: 'edit' | 'add';
   eventType: string;
   subscribe?: SubscribeRuleT<EurModeFilterT> | null;
 }>();
 
-const data = reactive({
+const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
   mode_name: '',
   mode_filter: {
-    topic: 'start',
-    status: [],
-  }/*  as Partial<EurModeFilterT> */,
+    status: [] as number[],
+    source_group: [],
+  },
 });
 
 const projectNameEditor = ref();
 
 const onCancel = () => emit('update:show', false);
 const actions: DialogActionT[] = [
-  {
-    id: 'cancel',
-    label: '取消',
-    size: 'large',
-    round: 'pill',
-    onClick: onCancel,
-  },
   {
     id: 'ok',
     label: '确定',
@@ -44,9 +38,24 @@ const actions: DialogActionT[] = [
     round: 'pill',
     size: 'large',
     onClick: () => {
-      // TODO
-      onCancel();
+      data.mode_filter.source_group = projectNameEditor.value.getTagValues();
+      (props.type === 'add' ? postSubsRule : putSubsRule)({
+        ...data,
+        source: EVENT_SOURCES.EUR,
+        event_type: props.eventType,
+      }).then(() => {
+        emit('confirm');
+        onCancel();
+      });
     },
+  },
+  {
+    id: 'cancel',
+    label: '取消',
+    color: 'primary',
+    size: 'large',
+    round: 'pill',
+    onClick: onCancel,
   },
 ];
 </script>
@@ -65,11 +74,7 @@ const actions: DialogActionT[] = [
       <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
         <OFormItem label="项目名称" required>
           <div>
-            <SettingsTagsEditor
-              ref="projectNameEditor"
-              style="width: 100%"
-              placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入"
-            />
+            <SettingsTagsEditor ref="projectNameEditor" style="width: 100%" placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入" />
             <p class="reponame-tips">若需关注所有项目，使用“*”代替。示例：“lihua/testProject”、“lihua/*”</p>
           </div>
         </OFormItem>
@@ -86,7 +91,8 @@ const actions: DialogActionT[] = [
 <style scoped lang="scss">
 .reponame-tips {
   color: var(--o-color-info3);
-  font-size: var(--o-font_size-tip2);
+  // font-size: var(--o-font_size-tip2);
+  @include tip1;
   margin-left: 16px;
 }
 

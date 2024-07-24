@@ -21,6 +21,7 @@ import { useCheckbox } from '@/composables/useCheckbox';
 import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
+import { usePage } from '@/composables/usePage';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -49,17 +50,14 @@ const toConfig = () => router.push('/settings');
 const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(messages, (msg) => msg.id);
 
 // ------------------------获取数据------------------------
-const currentPage = ref(1);
-const pageSize = ref(10);
-const total = ref(0);
 const requestParams = reactive({
   source: '',
   eventType: '',
   isRead: undefined as 0 | 1 | undefined,
 });
 
-const getData = (pageOption = { page: 1, pageSize: 10 }) => {
-  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize).then((res) => {
+const getData = (page = 1, pageSize = 10) => {
+  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, page, pageSize).then((res) => {
     const { count, query_info } = res.data;
     total.value = count;
     for (const msg of query_info) {
@@ -70,6 +68,11 @@ const getData = (pageOption = { page: 1, pageSize: 10 }) => {
     messages.value = query_info;
   });
 };
+const {
+  page,
+  pageSize,
+  total,
+} = usePage(getData);
 
 getData();
 
@@ -85,7 +88,7 @@ watch(activeMenu, (menu) => {
     requestParams.source = source;
     requestParams.eventType = type;
   }
-  getData();
+  page.value = 1;
 });
 
 // ------------------------删除消息------------------------
@@ -100,7 +103,7 @@ const delMessage = async (msg: MessageT) => {
   const { isCanceled } = await reveal();
   if (!isCanceled) {
     deleteMessages(msg)
-      .then(() => getData())
+      .then(() => getData(page.value, pageSize.value))
       .catch((error) => {
         if (error?.response?.data?.message) {
           message.warning(error.response.data.message);
@@ -120,7 +123,7 @@ const delMultiMessages = async () => {
   if (!isCanceled) {
     deleteMessages(...messages.value.filter((item) => set.has(item.id)))
       .then(() => {
-        getData();
+        getData(page.value, pageSize.value);
       })
       .catch((error) => {
         if (error?.response?.data?.message) {
@@ -136,7 +139,7 @@ const unreadCountStore = useUnreadMsgCountStore();
 const markReadMessage = (msg: MessageT) => {
   readMessages(msg)
     .then(() => {
-      getData();
+      getData(page.value, pageSize.value);
       unreadCountStore.updateCount();
     })
     .catch((error) => {
@@ -153,7 +156,7 @@ const markReadMultiMessages = () => {
   const set = new Set(checkboxes.value);
   readMessages(...messages.value.filter((item) => set.has(item.id)))
     .then(() => {
-      getData();
+      getData(page.value, pageSize.value);
       unreadCountStore.updateCount();
     })
     .catch((error) => {
@@ -253,7 +256,7 @@ watch(selectedVal, (val) => {
       </div>
     </div>
   </div>
-  <OPagination :total="total" :page="currentPage" :pageSize="pageSize" :pageSizes="[10, 20, 30, 50]" show-total @change="getData" />
+  <OPagination :total="total" v-model:page="page" v-model:pageSize="pageSize" :pageSizes="[10, 20, 30, 50]" show-total />
 </template>
 
 <style scoped lang="scss">

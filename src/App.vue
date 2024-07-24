@@ -117,6 +117,7 @@ watch(
   display: flex;
   justify-content: center;
   padding-top: calc(var(--layout-header-height) * 2);
+  padding-bottom: 72px;
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
 }

@@ -67,7 +67,7 @@ const actions: DialogActionT[] = [
       data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
       (props.type === 'add' ? postSubsRule : putSubsRule)({
         ...data,
-        source,
+        source: EVENT_SOURCES.GITEE,
         event_type: props.eventType,
       }).then(() => {
         emit('confirm');

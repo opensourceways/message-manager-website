@@ -4,12 +4,13 @@ import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
 import SettingsSubsTable from './components/SettingsSubsTable.vue';
 import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
-import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
+import type { EurModeFilterT, GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useConfirmDialog } from '@vueuse/core';
 import { AxiosError } from 'axios';
 import { useMessage } from '@opensig/opendesign';
+import SettingsEurRuleDialog from './components/SettingsEurRuleDialog.vue';
 
 const events: Record<string, Record<string, SubscribeRuleT[]>> = {
   [EVENT_SOURCES.EUR]: {
@@ -24,31 +25,6 @@ const events: Record<string, Record<string, SubscribeRuleT[]>> = {
 };
 
 const tableRefs = ref<InstanceType<typeof SettingsSubsTable>[]>();
-
-// ------------------------编辑消息接收规则的弹窗里的数据------------------------
-const dialogData = reactive({
-  show: false,
-  dlgType: 'add' as 'add' | 'edit',
-  eventType: '',
-  subscribe: null as SubscribeRuleT | null,
-});
-
-// ------------------------弹窗显示控制------------------------
-const dialogSwitches = reactive({
-  [EVENT_SOURCES.GITEE]: false, // 新增/编Eur精细化订阅弹窗
-  [EVENT_SOURCES.EUR]: false, // 新增/编辑Gitee精细化订阅弹窗
-  recipient: false, // 新增/修改接收人弹窗
-});
-
-// 子组件点击新增/修改消息接收规则的按钮触发
-provide('onEditOrAdd', (dlgType: 'edit' | 'add', source: string, eventType: string, subscribe?: SubscribeRuleT) => {
-  dialogData.dlgType = dlgType;
-  dialogData.eventType = eventType;
-  if (subscribe) {
-    dialogData.subscribe = subscribe;
-  }
-  dialogSwitches[source] = true;
-});
 
 // 初始表格数据
 const initialData = reactive(events);
@@ -121,6 +97,31 @@ const getData = async () => {
   }
 };
 getData();
+
+// ------------------------编辑消息接收规则的弹窗里的数据------------------------
+const dialogData = reactive({
+  show: false,
+  dlgType: 'add' as 'add' | 'edit',
+  eventType: '',
+  subscribe: null as SubscribeRuleT | null,
+});
+
+// ------------------------弹窗显示控制------------------------
+const dialogSwitches = reactive({
+  [EVENT_SOURCES.GITEE]: false, // 新增/编Eur精细化订阅弹窗
+  [EVENT_SOURCES.EUR]: false, // 新增/编辑Gitee精细化订阅弹窗
+  recipient: false, // 新增/修改接收人弹窗
+});
+
+// 子组件点击新增/修改消息接收规则的按钮触发
+provide('onEditOrAdd', (dlgType: 'edit' | 'add', source: string, eventType: string, subscribe?: SubscribeRuleT) => {
+  dialogData.dlgType = dlgType;
+  dialogData.eventType = eventType;
+  if (subscribe) {
+    dialogData.subscribe = subscribe;
+  }
+  dialogSwitches[source] = true;
+});
 
 // ------------------------修改接收人相关------------------------
 const editRecipientsEffectedRows = ref<SubscribeRuleT[]>([]);
@@ -215,6 +216,13 @@ defineExpose({
 
 <template>
   <ConfirmDialog :show="isRevealed" @confirm="confirm" @cancel="cancel" title="删除条件" :content="`是否确定删除${deleteModeName}?`"></ConfirmDialog>
+
+  <SettingsEurRuleDialog 
+    v-model:show="dialogSwitches[EVENT_SOURCES.EUR]"
+    :type="dialogData.dlgType"
+    :eventType="dialogData.eventType"
+    :subscribe="(dialogData.subscribe as SubscribeRuleT<EurModeFilterT>)"
+  />
   <SettingsGiteeRuleDialog
     v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
     :type="dialogData.dlgType"
