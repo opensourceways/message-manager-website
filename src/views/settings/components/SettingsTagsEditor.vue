@@ -1,24 +1,27 @@
 <script setup lang="ts">
 import { ref, type Ref, onMounted, watch } from 'vue';
 
-const props = withDefaults(defineProps<{
-  width?: string | number;
-  height?: string | number;
-  placeholder?: string;
-  showAddButton?: boolean;
-  tags?: string[];
-}>(), {
-  placeholder: '',
-  width: 300,
-  height: 126
-});
+const props = withDefaults(
+  defineProps<{
+    width?: string | number;
+    height?: string | number;
+    placeholder?: string;
+    showAddButton?: boolean;
+    tags?: string[];
+  }>(),
+  {
+    placeholder: '',
+    width: 300,
+    height: 126,
+  }
+);
 const inputArea = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 const tagSet = ref(new Set<string>());
 
 const tagsRemovedObserver = new MutationObserver(([mut]) => {
   if (mut.removedNodes.length) {
-    mut.removedNodes.forEach(node => {
-      if (node instanceof HTMLSpanElement && node.classList.contains('tag')) {
+    mut.removedNodes.forEach((node) => {
+      if (node instanceof HTMLSpanElement && node.classList.contains('tag-wrapper')) {
         tagSet.value.delete(node.textContent as string);
       }
     });
@@ -27,27 +30,46 @@ const tagsRemovedObserver = new MutationObserver(([mut]) => {
 
 onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }));
 const showPlaceHolder = ref(true);
+const focused = ref(false);
 
-watch(() => tagSet.value.size, size => {
-  if (size === 0) {
+watch(
+  () => tagSet.value.size,
+  (size) => {
+    if (size === 0 && !focused.value) {
+      showPlaceHolder.value = true;
+    } else {
+      showPlaceHolder.value = false;
+    }
+  }
+);
+
+const onFocus = () => {
+  focused.value = true;
+  showPlaceHolder.value = false;
+};
+
+const onBlur = () => {
+  focused.value = false;
+  if (tagSet.value.size === 0) {
     showPlaceHolder.value = true;
-  } else {
-    showPlaceHolder.value = false;
   }
-});
+};
 
-watch(() => props.tags, tags => {
-  if (tags && tags.length) {
-    tagSet.value = new Set(tags);
-    inputArea.value.innerHTML = '';
-    tags.forEach(tag => appendTag(tag, inputArea.value));
+watch(
+  () => props.tags,
+  (tags) => {
+    if (tags && tags.length) {
+      tagSet.value = new Set(tags);
+      inputArea.value.innerHTML = '';
+      tags.forEach((tag) => appendTag(tag, inputArea.value));
+    }
   }
-});
+);
 
 const deleteTag = (event: MouseEvent) => {
   const tagWrapper = (event.target as HTMLImageElement).parentElement?.parentElement as HTMLSpanElement;
   inputArea.value.removeChild(tagWrapper);
-}
+};
 
 const addTag = (event?: KeyboardEvent) => {
   if (event) {
@@ -65,7 +87,7 @@ const addTag = (event?: KeyboardEvent) => {
   range.collapse(true);
   sel.removeAllRanges();
   sel.addRange(range);
-}
+};
 
 const appendTag = (text: string, focusNode?: Node) => {
   const wrapper = document.createElement('span');
@@ -89,7 +111,7 @@ const appendTag = (text: string, focusNode?: Node) => {
     inputArea.value.removeChild(focusNode);
   }
   return wrapper;
-}
+};
 
 const getWrapper = (node: Node): HTMLSpanElement | undefined => {
   let node_: any = node;
@@ -102,7 +124,7 @@ const getWrapper = (node: Node): HTMLSpanElement | undefined => {
     }
     node_ = node_.parentElement;
   }
-}
+};
 
 const onClick = () => {
   const sel = document.getSelection();
@@ -117,28 +139,20 @@ const onClick = () => {
     sel.removeAllRanges();
     sel.addRange(range);
   }
-}
-
-const onFocus = () => {
-  showPlaceHolder.value = false;
-}
-
-const onBlur = () => {
-  if (tagSet.value.size === 0) {
-    showPlaceHolder.value = true;
-  }
-}
+};
 
 const getTagValues = () => [...tagSet.value];
 
+const onClickPlaceholder = () => inputArea.value.focus();
+
 defineExpose({
   getTagValues,
-})
+});
 </script>
 
 <template>
   <div class="outer">
-    <p v-if="showPlaceHolder" class="placeholder">{{ placeholder }}</p>
+    <p v-if="showPlaceHolder" class="placeholder" @click="onClickPlaceholder">{{ placeholder }}</p>
     <div class="inputArea" ref="inputArea" contenteditable="true" @focus="onFocus" @blur="onBlur" @keydown.enter="addTag" @click="onClick"></div>
   </div>
 </template>
@@ -148,15 +162,11 @@ defineExpose({
   padding: 0 3px;
   white-space: nowrap;
 
-  &:first-child {
-    padding-left: 0;
-  }
-
   .tag {
     padding: 3px 12px;
     padding-right: 32px;
     max-width: 100%;
-    background-color: #DEDEE3;
+    background-color: #dedee3;
     border-radius: 4px;
     height: fit-content;
     font-size: 12px;

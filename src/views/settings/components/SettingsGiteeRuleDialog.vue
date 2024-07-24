@@ -57,13 +57,6 @@ const onCancel = () => emit('update:show', false);
 
 const actions: DialogActionT[] = [
   {
-    id: 'cancel',
-    label: '取消',
-    size: 'large',
-    round: 'pill',
-    onClick: onCancel,
-  },
-  {
     id: 'ok',
     label: '确定',
     color: 'primary',
@@ -72,15 +65,25 @@ const actions: DialogActionT[] = [
     size: 'large',
     onClick: () => {
       data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-      (props.type === 'add' ? postSubsRule : putSubsRule)({
+      console.log('???', data.mode_filter.repo_name);
+      
+      /* (props.type === 'add' ? postSubsRule : putSubsRule)({
         ...data,
         source,
         event_type: props.eventType,
       }).then(() => {
         emit('confirm');
         onCancel();
-      });
+      }); */
     },
+  },
+  {
+    id: 'cancel',
+    label: '取消',
+    color: 'primary',
+    size: 'large',
+    round: 'pill',
+    onClick: onCancel,
   },
 ];
 </script>

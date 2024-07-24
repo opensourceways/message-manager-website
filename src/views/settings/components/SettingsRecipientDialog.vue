@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { OButton, ODialog, OPagination, OScroller, useMessage } from '@opensig/opendesign';
+import { OButton, ODialog, OPagination, OScroller, useMessage, type DialogActionT } from '@opensig/opendesign';
 import { deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/api-settings';
 import type { PagedResponseT } from '@/@types/types-common';
 import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';
 import { eventSourceNames } from '@/data/subscribeSettings';
 import {} from '@/composables/useCheckbox';
 import SettingsRecipientTable from './SettingsRecipientTable.vue';
+import { AxiosError } from 'axios';
 
 const emit = defineEmits<{
   (event: 'update'): void;
@@ -27,6 +28,9 @@ const total = ref(0);
 const loading = ref(false);
 const defaultCheckboxes = ref<(string | number)[]>([]);
 
+const addSet = new Set<number | string>();
+const removeSet = new Set<number | string>();
+
 watch(
   () => props.show,
   (show) => {
@@ -34,6 +38,8 @@ watch(
       getData();
     } else {
       recipients.value = [];
+      addSet.clear();
+      removeSet.clear();
     }
   }
 );
@@ -72,39 +78,11 @@ const onCheckboxChange = (recipientId: number, checked: boolean) => {
     return;
   }
   if (checked) {
-    Promise.all(
-      rows.map((row) => {
-        return postPushConfg({
-          need_inner_message: row.need_inner_message,
-          need_mail: row.need_mail,
-          need_message: row.need_message,
-          need_phone: false,
-          recipient_id: Number(recipientId),
-          subscribe_id: Number(row.id),
-        });
-      })
-    )
-      .then(() => emit('update'))
-      .catch((error) => {
-        if (error.response?.data.error) {
-          message.warning(error.response.data.error);
-        }
-      });
+    addSet.add(recipientId);
+    removeSet.delete(recipientId);
   } else {
-    Promise.all(
-      rows.map((row) => {
-        return deletePushConfg({
-          recipient_id: Number(recipientId),
-          subscribe_id: Number(row.id),
-        });
-      })
-    )
-      .then(() => emit('update'))
-      .catch((error) => {
-        if (error.response?.data.error) {
-          message.warning(error.response.data.error);
-        }
-      });
+    addSet.delete(recipientId);
+    removeSet.add(recipientId);
   }
 };
 
@@ -117,10 +95,69 @@ const handleAddRecipient = () => {
   }
   isAdding.value = true;
 };
+
+// --------------------按钮--------------------
+const actions: DialogActionT[] = [
+  {
+    id: 'cancel',
+    color: 'primary',
+    variant: 'solid',
+    label: '确定',
+    size: 'large',
+    round: 'pill',
+    onClick: async () => {
+      const rules = props.effectedRows;
+      if (!rules || (!addSet.size && !removeSet.size)) {
+        return;
+      }
+      const addIds = [...addSet];
+      const removeIds = [...removeSet];
+      try {
+        await Promise.all(
+          rules.map((rule) => {
+            return addIds
+              .map((recipientId) =>
+                postPushConfg({
+                  need_inner_message: rule.need_inner_message,
+                  need_mail: rule.need_mail,
+                  need_message: rule.need_message,
+                  need_phone: false,
+                  recipient_id: Number(recipientId),
+                  subscribe_id: Number(rule.id),
+                })
+              )
+              .concat(
+                removeIds.map((recipientId) =>
+                  deletePushConfg({
+                    recipient_id: Number(recipientId),
+                    subscribe_id: Number(rule.id),
+                  })
+                )
+              );
+          })
+        );
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.data.error) {
+          message.warning(error.response.data.error);
+        }
+      }
+      emit('update:show', false);
+      emit('update');
+    },
+  },
+  {
+    id: 'ok',
+    label: '取消',
+    color: 'primary',
+    round: 'pill',
+    size: 'large',
+    onClick: () => emit('update:show', false),
+  },
+];
 </script>
 
 <template>
-  <ODialog :visible="show" @change="emit('update:show', $event)" :unmountOnHide="false">
+  <ODialog :visible="show" @change="emit('update:show', $event)" :unmountOnHide="false" :actions="actions">
     <OScroller class="recipient-editor-content">
       <div>
         <p v-if="effectedRows?.length === 1" style="font-size: 16px; font-weight: bold">
@@ -146,6 +183,10 @@ const handleAddRecipient = () => {
 </template>
 
 <style scoped lang="scss">
+:deep(.o-pagination-wrap) {
+  justify-content: end;
+}
+
 .recipient-editor-content {
   min-width: 866px;
   height: 716px;

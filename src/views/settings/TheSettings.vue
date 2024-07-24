@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { OButton, OIcon, OPopover, OTab, OTabPane } from '@opensig/opendesign';
-import TipIcon from '~icons/app/icon-tip.svg'
+import { OIcon, OPopover, OTab, OTabPane } from '@opensig/opendesign';
+import TipIcon from '~icons/app/icon-tip.svg';
 import SettingsRecipient from './SettingsRecipient.vue';
 import SettingsSubscribe from './SettingsSubscribe.vue';
+import AppButton from '@/components/AppButton.vue';
 
 const activeTab = ref(0);
 const subscribeSettings = ref<InstanceType<typeof SettingsSubscribe>>();
@@ -32,17 +33,17 @@ const removeRecipient = () => {
       <OTab v-model="activeTab" :line="false">
         <template #suffix>
           <div v-if="activeTab === 0" class="subs-config-btn-group">
-            <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'" @click="addRecipient">添加接收人</OButton>
-            <OButton variant="outline" round="pill" :disabled="btnsDisabled" :color="'primary'" @click="removeRecipient">移除接收人</OButton>
+            <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="addRecipient">添加接收人</AppButton>
+            <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="removeRecipient">移除接收人</AppButton>
           </div>
-          <div v-if="activeTab === 1" style="display: flex; gap: 8px; align-items: center;">
-            <OButton variant="outline" round="pill" :color="'primary'" @click="addRecipient"> 新增接收人 </OButton>
+          <div v-if="activeTab === 1" style="display: flex; gap: 8px; align-items: center">
+            <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="addRecipient">新增接收人</AppButton>
             <OPopover :target="tipRef">
               <p class="tips">
                 新增接收人后，系统将自动<span>发送验证信息</span>到所填手机号和邮箱，通过验证<span>并在消息接收设置页面分配消息接收人</span>后，方可接受对应类别的消息
               </p>
             </OPopover>
-            <OIcon class="tip-icon" ref="tipRef"><TipIcon/></OIcon>
+            <OIcon class="tip-icon" ref="tipRef"><TipIcon /></OIcon>
           </div>
         </template>
         <OTabPane :value="0" :label="$t('config.receiveConfig')" style="--tab-nav-color-active: rgb(var(--o-kleinblue-6))">

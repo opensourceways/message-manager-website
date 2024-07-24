@@ -8,7 +8,7 @@ import { reactive, ref } from 'vue';
 import { AxiosError } from 'axios';
 import { useCheckbox } from '@/composables/useCheckbox';
 
-type DisplayRecipientT = Pick<RecipientT, 'key' | 'id' | 'recipient_id' | 'mail' | 'phone' | 'remark'>;
+type DisplayRecipientT = Partial<RecipientT>;
 
 const props = defineProps<{
   data: DisplayRecipientT[];
@@ -277,7 +277,7 @@ const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange
 
 .recipient-table {
   margin-top: 12px;
-  border: 1px solid var(--o-color-control-light);
+  border: 1px solid var(--o-color-control4);
   border-radius: var(--table-radius);
   --table-head-bg: rgb(var(--o-kleinblue-2));
   --table-row-hover: rgb(var(--o-kleinblue-1));
