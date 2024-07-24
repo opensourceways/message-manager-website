@@ -53,8 +53,8 @@ router.beforeEach(async () => {
     try {
       userInfoStore.setUserInfo(await queryUserInfo());
     } catch (error) {
-      Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
-      doLogin();
+      // Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
+      // doLogin();
       return true;
     }
   }

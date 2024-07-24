@@ -85,7 +85,7 @@ const removeRecipient = () => {
 
 .tabs {
   --tab-nav-justify: left;
-  margin-top: 23px;
+  margin-top: 24px;
 }
 
 .row {
@@ -100,7 +100,6 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 24px;
   @include h1;
 }
 </style>

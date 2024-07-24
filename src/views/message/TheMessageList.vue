@@ -1,23 +1,11 @@
 <script setup lang="ts">
-import {  reactive, ref, watch, watchEffect } from 'vue';
+import { reactive, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import {
-  OCheckbox,
-  OMenu,
-  OMenuItem,
-  OPagination,
-  OSubMenu,
-  useMessage,
-  OSelect,
-  OOption,
-  OIcon,
-  OPopover,
-  OButton,
-} from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OIcon, OPopover, OButton } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -58,11 +46,7 @@ watchEffect(() => {
 const toConfig = () => router.push('/settings');
 
 // ------------------------多选框事件------------------------
-const {
-  checkboxes,
-  parentCheckbox,
-  indeterminate
-} = useCheckbox(messages, (msg) => msg.id);
+const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(messages, (msg) => msg.id);
 
 // ------------------------获取数据------------------------
 const currentPage = ref(1);
@@ -75,17 +59,16 @@ const requestParams = reactive({
 });
 
 const getData = (pageOption = { page: 1, pageSize: 10 }) => {
-  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize)
-    .then((res) => {
-      const { count, query_info } = res.data;
-      total.value = count;
-      for (const msg of query_info) {
-        msg.id = msg.source + msg.event_id;
-        const date = dayjs(msg.time);
-        msg.formattedTime = date.fromNow();
-      }
-      messages.value = query_info;
-    });
+  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, pageOption.page, pageOption.pageSize).then((res) => {
+    const { count, query_info } = res.data;
+    total.value = count;
+    for (const msg of query_info) {
+      msg.id = msg.source + msg.event_id;
+      const date = dayjs(msg.time);
+      msg.formattedTime = date.fromNow();
+    }
+    messages.value = query_info;
+  });
 };
 
 getData();
@@ -234,8 +217,14 @@ watch(selectedVal, (val) => {
         <div class="header">
           <div class="left">
             <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
-            <OSelect v-model="selectedVal" variant="text">
-              <OOption v-for="item in selectOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <OSelect v-model="selectedVal" variant="text" style="width: 112px">
+              <OOption
+                class="select-option"
+                v-for="item in selectOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </OSelect>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
@@ -268,10 +257,16 @@ watch(selectedVal, (val) => {
 </template>
 
 <style scoped lang="scss">
+.select-option {
+  width: 144px;
+  justify-content: center;
+}
+
 .menu-item {
   --menu-item-bg-color-selected: rgb(var(--o-kleinblue-1));
   --menu-item-bg-color-hover: rgb(var(--o-kleinblue-1));
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));
+  @include text1;
 }
 
 .submenu-title {
@@ -317,6 +312,7 @@ watch(selectedVal, (val) => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  @include tip1;
 
   .icon {
     font-size: 24px;
