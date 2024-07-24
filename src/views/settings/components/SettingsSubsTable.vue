@@ -7,8 +7,6 @@ import type { SubscribeRuleT } from '@/@types/type-settings';
 import { updateNeedStatus } from '@/api/api-settings';
 
 const emit = defineEmits<{
-  (event: 'addRule', source: string, type: string): void;
-  (event: 'editRule', source: string, type: string, modeName: string, modeFilter: { repo_name: string; is_bot: boolean }): void;
   (event: 'editRecipients', rule: SubscribeRuleT): void;
   (event: 'checkboxChange'): void;
   (event: 'deleteRule', rule: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>): void;
@@ -83,7 +81,7 @@ defineExpose({
             <td colspan="10" class="last-row"></td>
           </tr>
           <tr>
-            <td colspan="9">{{ eventTypeNames[source][type] }}</td>
+            <td colspan="9" class="mode-name-cell">{{ eventTypeNames[source][type] }}</td>
           </tr>
           <tr class="service-row" v-for="rule in rules" :key="rule.mode_name">
             <td class="checkbox-cell">
@@ -102,12 +100,12 @@ defineExpose({
                 {{ rule.displayRecipientNames }}
               </p>
             </td>
-            <td>
+            <td class="actions-td">
               <p class="actions">
                 <OLink color="primary" @click="$emit('editRecipients', rule)">修改接收人</OLink>
                 <template v-if="rule.mode_name">
                   <OLink color="primary" @click="editRule(type, rule)">修改规则</OLink>
-                  <OLink color="danger">删除</OLink>
+                  <OLink color="danger" @click="$emit('deleteRule', rule)">删除</OLink>
                 </template>
               </p>
             </td>
@@ -132,6 +130,11 @@ defineExpose({
 
 th, td {
   @include tip1;
+  padding-left: 0;
+}
+
+.mode-name-cell {
+  padding-left: 44px;
 }
 
 @mixin append-last {
@@ -141,6 +144,12 @@ th, td {
     width: 20px;
     @content;
   }
+}
+
+.checkbox-cell {
+  padding-left: 44px;
+  padding-right: 0;
+  width: var(--o-control_size-s);
 }
 
 .service-row {
@@ -154,21 +163,23 @@ th, td {
     }
   }
 
-  .checkbox-cell {
-    padding-right: 0;
-    width: var(--o-control_size-s);
-  }
-
   .recipient-names {
-    max-width: 180px;
+    width: 180px;
     word-break: break-all;
   }
 
-  .actions {
-    display: flex;
-    gap: 32px;
-    align-items: center;
+  .actions-td {
+    padding-left: 0;
+    padding-right: 0;
+
+    .actions {
+      width: 240px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
   }
+
 
   @include append-last;
 }
@@ -181,6 +192,7 @@ th, td {
 
 .first-cell {
   padding-left: 0;
+  width: 208px;;
 }
 
 .last-row {
