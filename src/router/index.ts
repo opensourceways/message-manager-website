@@ -42,7 +42,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async () => {
-  /* const csrfToken = getCsrfToken();
+  const csrfToken = getCsrfToken();
   const userInfoStore = useUserInfoStore();
   if (!csrfToken) {
     userInfoStore.$reset();
@@ -54,12 +54,12 @@ router.beforeEach(async () => {
       userInfoStore.setUserInfo(await queryUserInfo());
     } catch (error) {
       Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
-      doLogin();
+      // doLogin();
       return true;
     }
   }
   useUnreadMsgCountStore().updateCount();
-  return true; */
+  return true;
 });
 
 router.afterEach(() => {});
