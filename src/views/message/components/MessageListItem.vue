@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { h } from 'vue';
-import { OBadge, ODivider } from '@opensig/opendesign';
+import { OBadge } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
 
 import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue'
-import AppLink from '@/components/AppLink.vue';
+import IconLink from '@/components/IconLink.vue';
 
 const emits = defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
@@ -66,16 +66,14 @@ const onClickRead = () => {
       <p>仓库{{ msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <AppLink @click="$emit('deleteMessage', msg)">
+        <IconLink @click="$emit('deleteMessage', msg)">
           <template #suffix><DeleteIcon /></template>
-        </AppLink>
-        <AppLink @click="onClickRead" :disabled="msg.is_read">
+        </IconLink>
+        <IconLink @click="onClickRead" :disabled="msg.is_read">
           <template #suffix><ReadIcon /></template>
-        </AppLink>
+        </IconLink>
       </div>
     </div>
-
-    <ODivider style="position: absolute; bottom: 0; transform: translateY(28px); width: 100%;"/>
   </div>
 </template>
 

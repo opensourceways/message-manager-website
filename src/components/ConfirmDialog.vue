@@ -15,6 +15,8 @@ const actions: DialogActionT[] = [
   {
     id: 'cancel',
     label: '确定',
+    variant: 'outline',
+    color: 'primary',
     size: 'large',
     round: 'pill',
     onClick: () => emit('confirm'),
@@ -32,7 +34,7 @@ const actions: DialogActionT[] = [
 </script>
 
 <template>
-  <ODialog :visible="show" :actions="actions" size="small">
+  <ODialog :visible="show" :actions="actions" size="small" style="--dlg-radius: 4px">
     <template #header>{{ title }}</template>
     <div style="display: flex; justify-content: center">
       {{ content }}

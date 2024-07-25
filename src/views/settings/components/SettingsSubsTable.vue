@@ -70,8 +70,8 @@ defineExpose({
             <th>站内消息</th>
             <th>邮箱</th>
             <th>短信</th>
-            <th>电话</th>
-            <th>API钩子</th>
+            <th class="disabled-th">电话</th>
+            <th class="disabled-th">API钩子</th>
             <th>消息接收人</th>
             <th>操作</th>
           </tr>
@@ -80,27 +80,25 @@ defineExpose({
           <tr v-if="index !== 0">
             <td colspan="10" class="last-row"></td>
           </tr>
-          <tr>
+          <tr v-if="Object.keys(eventTypes).length > 1">
             <td colspan="9" class="mode-name-cell">{{ eventTypeNames[source][type] }}</td>
           </tr>
-          <tr class="service-row" v-for="rule in rules" :key="rule.mode_name">
+          <tr class="business-row" v-for="rule in rules" :key="rule.mode_name">
             <td class="checkbox-cell">
               <OCheckbox :value="rule.id" v-model="checkboxes" />
             </td>
-            <td class="first-cell">
-              {{ rule.mode_name || '全部消息（默认）' }}
-            </td>
+            <td class="first-cell">{{ rule.mode_name || '全部消息（默认）' }}</td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_inner_message" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_mail" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_message" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox :value="1" :disabled="true" /></td>
             <td><OCheckbox :value="1" :disabled="true" /></td>
-            <td>
+            <td class="recipient-names-cell">
               <p class="recipient-names">
                 {{ rule.displayRecipientNames }}
               </p>
             </td>
-            <td class="actions-td">
+            <td class="actions-cell">
               <p class="actions">
                 <OLink color="primary" @click="$emit('editRecipients', rule)">修改接收人</OLink>
                 <template v-if="rule.mode_name">
@@ -126,6 +124,13 @@ defineExpose({
 .o-table {
   --table-head-bg: rgb(var(--o-kleinblue-2));
   --table-radius: 4px;
+  --table-row-hover: transparent;
+
+  & .business-row {
+    @include hover {
+      background-color: var(--o-color-control2-light);
+    }
+  }
 }
 
 th, td {
@@ -137,11 +142,24 @@ th, td {
   padding-left: 44px;
 }
 
+.first-cell {
+  padding-left: 0;
+  word-break: break-all;
+  
+  @include respond-to('>laptop') {
+    width: 208px;
+  }
+
+  @include respond-to('<=laptop') {
+    width: 160px;
+  }
+}
+
 @mixin append-last {
   &::after {
     content: '';
     display: table-cell;
-    width: 20px;
+    width: 40px;
     @content;
   }
 }
@@ -152,7 +170,7 @@ th, td {
   width: var(--o-control_size-s);
 }
 
-.service-row {
+.business-row {
   td {
     &:not(.checkbox-cell) {
       border-bottom: 1px solid var(--o-color-control1-light);
@@ -163,23 +181,32 @@ th, td {
     }
   }
 
-  .recipient-names {
-    width: 180px;
-    word-break: break-all;
+  .recipient-names-cell {
+    @include respond-to('>laptop') {
+      width: 300px;
+    }
+
+    @include respond-to('<=laptop') {
+      width: 250px;
+    }
+
+    .recipient-names {
+      width: 90%;
+      word-break: break-all;
+    }
   }
 
-  .actions-td {
+  .actions-cell {
     padding-left: 0;
     padding-right: 0;
+    width: 240px;
 
     .actions {
-      width: 240px;
       display: flex;
       gap: 32px;
       align-items: center;
     }
   }
-
 
   @include append-last;
 }
@@ -188,11 +215,10 @@ th, td {
   @include append-last {
     background-color: var(--table-head-bg);
   }
-}
 
-.first-cell {
-  padding-left: 0;
-  width: 208px;;
+  .disabled-th {
+    color: var(--o-color-info4);
+  }
 }
 
 .last-row {

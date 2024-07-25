@@ -5,6 +5,7 @@ import TipIcon from '~icons/app/icon-tip.svg';
 import SettingsRecipient from './SettingsRecipient.vue';
 import SettingsSubscribe from './SettingsSubscribe.vue';
 import AppButton from '@/components/AppButton.vue';
+import SettingsBreadcrumbs from './components/SettingsBreadcrumbs.vue';
 
 const activeTab = ref(0);
 const subscribeSettings = ref<InstanceType<typeof SettingsSubscribe>>();
@@ -25,10 +26,10 @@ const removeRecipient = () => {
 
 <template>
   <div class="page-body">
+    <SettingsBreadcrumbs />
     <header>
       {{ $t('config.subscribeConfig') }}
     </header>
-
     <div class="tabs">
       <OTab v-model="activeTab" :line="false">
         <template #suffix>
@@ -59,11 +60,24 @@ const removeRecipient = () => {
 
 <style scoped lang="scss">
 :deep(.o-tab-nav-active) {
-  --tab-nav-color-active: rgb(var(--o-kleinblue-6))
+  --tab-nav-color-active: rgb(var(--o-kleinblue-6));
 }
+
+header {
+  margin-top: 26px;
+}
+
 .page-body {
-  width: 74vw;
+  margin-top: 26px;
   max-width: 1416px;
+
+  @include respond-to('>laptop') {
+    width: 1416px;
+  }
+
+  @include respond-to('<=laptop') {
+    width: 80vw;
+  }
 }
 
 .tips {
@@ -75,7 +89,7 @@ const removeRecipient = () => {
   }
 }
 .tip-icon {
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
 
   @include hover {

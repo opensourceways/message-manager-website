@@ -9,10 +9,10 @@ export const eventTypeNames: Record<string, Record<string, string>> = {
   },
   'https://gitee.com': {
     default: 'Gitee消息',
-    issue: 'Issue消息',
-    pr: 'Pull Request消息',
-    push: 'Push消息',
-    note: '评论消息',
+    issue: 'Issue',
+    pr: 'Pull Request',
+    push: 'Push',
+    note: '评论',
   },
 };
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { OButton, ODialog, OPagination, OScroller, useMessage, type DialogActionT } from '@opensig/opendesign';
+import { ODialog, OScroller, useMessage, type DialogActionT } from '@opensig/opendesign';
 import { deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg } from '@/api/api-settings';
 import type { PagedResponseT } from '@/@types/types-common';
 import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';
@@ -8,6 +8,7 @@ import { eventSourceNames } from '@/data/subscribeSettings';
 import {} from '@/composables/useCheckbox';
 import SettingsRecipientTable from './SettingsRecipientTable.vue';
 import { AxiosError } from 'axios';
+import AppButton from '@/components/AppButton.vue';
 
 const emit = defineEmits<{
   (event: 'update'): void;
@@ -21,15 +22,11 @@ const props = defineProps<{
 const message = useMessage();
 
 const recipients = ref<Partial<RecipientT>[]>([]);
-const pageSizes = [10, 20, 30, 50];
-const page = ref(1);
-const pageSize = ref(10);
-const total = ref(0);
 const loading = ref(false);
 const defaultCheckboxes = ref<(string | number)[]>([]);
 
-const addSet = new Set<number | string>();
-const removeSet = new Set<number | string>();
+const addIdSet = new Set<number | string>();
+const removeIdSet = new Set<number | string>();
 
 watch(
   () => props.show,
@@ -38,8 +35,8 @@ watch(
       getData();
     } else {
       recipients.value = [];
-      addSet.clear();
-      removeSet.clear();
+      addIdSet.clear();
+      removeIdSet.clear();
     }
   }
 );
@@ -51,10 +48,9 @@ const getData = async () => {
     if (props.type === 'remove') {
       requestPromise = await getSubscribedRecipients(props.effectedRows.map((row) => row.id));
     } else {
-      requestPromise = await getRecipients(page.value, pageSize.value);
+      requestPromise = await getRecipients(1, 1000);
     }
-    const { count, query_info } = requestPromise;
-    total.value = count ?? 0;
+    const { query_info } = requestPromise;
     for (const recipient of query_info) {
       recipient.id = Number(recipient.id);
     }
@@ -78,11 +74,11 @@ const onCheckboxChange = (recipientId: number, checked: boolean) => {
     return;
   }
   if (checked) {
-    addSet.add(recipientId);
-    removeSet.delete(recipientId);
+    addIdSet.add(recipientId);
+    removeIdSet.delete(recipientId);
   } else {
-    addSet.delete(recipientId);
-    removeSet.add(recipientId);
+    addIdSet.delete(recipientId);
+    removeIdSet.add(recipientId);
   }
 };
 
@@ -107,11 +103,11 @@ const actions: DialogActionT[] = [
     round: 'pill',
     onClick: async () => {
       const rules = props.effectedRows;
-      if (!rules || (!addSet.size && !removeSet.size)) {
+      if (!rules || (!addIdSet.size && !removeIdSet.size)) {
         return;
       }
-      const addIds = [...addSet];
-      const removeIds = [...removeSet];
+      const addIds = [...addIdSet];
+      const removeIds = [...removeIdSet];
       try {
         await Promise.all(
           rules.map((rule) => {
@@ -157,27 +153,24 @@ const actions: DialogActionT[] = [
 </script>
 
 <template>
-  <ODialog :visible="show" @change="emit('update:show', $event)" :unmountOnHide="false" :actions="actions">
-    <OScroller class="recipient-editor-content">
-      <div>
-        <p v-if="effectedRows?.length === 1" style="font-size: 16px; font-weight: bold">
-          消息类型：{{ eventSourceNames[effectedRows[0].source ?? 0] }}/{{ effectedRows[0].mode_name }}
-        </p>
-        <p style="width: fit-content">
-          <OButton variant="outline" round="pill" color="primary" @click="handleAddRecipient">新增接收人</OButton>
-        </p>
-        <SettingsRecipientTable
-          :data="recipients"
-          :loading="loading"
-          v-model:adding="isAdding"
-          :showCheckbox="true"
-          @checkboxChange="onCheckboxChange"
-          :defaultCheckboxes="defaultCheckboxes"
-          @updateData="getData"
-        ></SettingsRecipientTable>
-
-        <OPagination :pageSizes="pageSizes" :pageSize="pageSize" :page="page" :total="total" @change="getData"> </OPagination>
-      </div>
+  <ODialog :visible="show" @change="emit('update:show', $event)" :unmountOnHide="false" :actions="actions" style="--dlg-min-height: 780px; --dlg-max-height: 780px;">
+    <template #header>修改接收人</template>
+    <div>
+      <p v-if="effectedRows?.length === 1">
+        消息类型：{{ eventSourceNames[effectedRows[0].source ?? 0] }}{{ effectedRows[0].mode_name ? '/' + effectedRows[0].mode_name : '' }}
+      </p>
+      <AppButton @click="handleAddRecipient" style="margin-top: 12px;">新增接收人</AppButton>
+    </div>
+    <OScroller class="recipient-editor-content" show-type="hover">
+      <SettingsRecipientTable
+        :data="recipients"
+        :loading="loading"
+        v-model:adding="isAdding"
+        :showCheckbox="true"
+        @checkboxChange="onCheckboxChange"
+        :defaultCheckboxes="defaultCheckboxes"
+        @updateData="getData"
+      ></SettingsRecipientTable>
     </OScroller>
   </ODialog>
 </template>
@@ -189,7 +182,7 @@ const actions: DialogActionT[] = [
 
 .recipient-editor-content {
   min-width: 866px;
-  height: 716px;
+  height: 80%;
 
   div {
     gap: 12px;

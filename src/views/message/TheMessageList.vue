@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OPopover, OButton } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OPopover, OLink, ODivider } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -22,7 +22,7 @@ import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import { usePage } from '@/composables/usePage';
-import AppLink from '@/components/AppLink.vue';
+import IconLink from '@/components/IconLink.vue';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -69,11 +69,7 @@ const getData = (page = 1, pageSize = 10) => {
     messages.value = query_info;
   });
 };
-const {
-  page,
-  pageSize,
-  total,
-} = usePage(getData);
+const { page, pageSize, total } = usePage(getData);
 
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
@@ -194,13 +190,13 @@ watch(selectedVal, (val) => {
     <aside>
       <div class="title">
         消息中心
-        <AppLink ref="settingsIcon" @click="toConfig">
+        <IconLink ref="settingsIcon" @click="toConfig">
           <template #suffix><SettingsIcon /></template>
-        </AppLink>
+        </IconLink>
         <OPopover :target="settingsIcon" :visible="showTipPopOver" trigger="none">
           <div class="first-time-login-tip">
             <p>可在消息订阅管理中订阅你所关注的消息</p>
-            <OButton variant="text" @click="showTipPopOver = false">知道了</OButton>
+            <OLink variant="text" @click="showTipPopOver = false">知道了</OLink>
           </div>
         </OPopover>
       </div>
@@ -228,24 +224,18 @@ watch(selectedVal, (val) => {
           <div class="left">
             <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
             <OSelect v-model="selectedVal" variant="text" style="width: 112px">
-              <OOption
-                class="select-option"
-                v-for="item in selectOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
+              <OOption class="select-option" v-for="item in selectOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
-            <AppLink :disabled="checkboxes.length === 0" @click="delMultiMessages">
+            <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="checkboxes.length === 0" @click="delMultiMessages">
+              <template #prefix><DeleteIcon /></template>
               删除
-              <template #suffix><DeleteIcon /></template>
-            </AppLink>
-            <AppLink :disabled="checkboxes.length === 0" @click="markReadMultiMessages">
+            </IconLink>
+            <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="checkboxes.length === 0" @click="markReadMultiMessages">
+              <template #prefix><ReadIcon /></template>
               标记已读
-              <template #suffix><ReadIcon /></template>
-            </AppLink>
+            </IconLink>
           </div>
         </div>
         <div class="list">
@@ -254,6 +244,7 @@ watch(selectedVal, (val) => {
               <OCheckbox :value="msg.id" v-model="checkboxes" />
             </div>
             <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
+            <ODivider class="divider-line" />
           </div>
         </div>
       </template>
@@ -263,25 +254,30 @@ watch(selectedVal, (val) => {
       </div>
     </div>
   </div>
-  <OPagination :total="total" v-model:page="page" v-model:pageSize="pageSize" :pageSizes="[10, 20, 30, 50]" show-total />
+  <OPagination v-if="total > 0" :total="total" v-model:page="page" v-model:pageSize="pageSize" :pageSizes="[10, 20, 30, 50]" show-total />
 </template>
 
 <style scoped lang="scss">
+:deep(.message-delete-read) {
+  @include tip1;
+}
+
 .select-option {
   width: 144px;
   justify-content: center;
 }
 
 .menu-item {
-  --menu-item-bg-color-selected: rgb(var(--o-kleinblue-1));
-  --menu-item-bg-color-hover: rgb(var(--o-kleinblue-1));
+  --menu-item-bg-color-selected: var(--o-color-control3-light);
+  --menu-item-bg-color-hover: var(--o-color-control2-light);
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));
   @include text1;
 }
 
 .submenu-title {
-  --sub-menu-bg-color-hover: rgb(var(--o-kleinblue-1));
-  --sub-menu-bg-color-selected: rgb(var(--o-kleinblue-1));
+  margin-top: 2px;
+  --sub-menu-bg-color-hover: var(--o-color-control2-light);
+  --sub-menu-bg-color-selected: var(--o-color-control3-light);
 }
 
 .first-time-login-tip {
@@ -340,9 +336,13 @@ watch(selectedVal, (val) => {
 .messages-container {
   display: flex;
   gap: 32px;
-  width: 80vw;
   max-width: 1418px;
   min-height: 60vh;
+  margin-top: 64px;
+
+  @include respond-to('<=laptop') {
+    width: 80vw;
+  }
 
   aside {
     .title {
@@ -357,14 +357,19 @@ watch(selectedVal, (val) => {
 .message-list {
   flex-grow: 1;
   background-color: var(--o-color-fill2);
-  padding: 24px;
+  padding: 16px;
   height: 100%;
   gap: 10px;
+
+  @include respond-to('>laptop') {
+    width: 1120px;
+  }
 
   .header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
+    padding-left: 12px;
 
     .left {
       display: flex;
@@ -382,12 +387,23 @@ watch(selectedVal, (val) => {
   .list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
 
     .item {
+      height: 70px;
+      position: relative;
       display: flex;
       border-radius: 4px;
-      padding: 12px 2px;
+      padding: 0 12px;
+
+      .divider-line {
+        position: absolute;
+        bottom: 0;
+        transform: translateY(2px);
+        --o-divider-gap: 0;
+        width: calc(100% - 56px);
+        left: 56px;
+      }
 
       @include hover {
         background-color: rgb(var(--o-kleinblue-1));
@@ -401,7 +417,7 @@ watch(selectedVal, (val) => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  height: 900px;
   gap: 24px;
   font-size: 16px;
   color: var(--o-color-info3);
@@ -413,8 +429,7 @@ watch(selectedVal, (val) => {
 }
 
 .checkbox-wrapper {
-  margin-top: 14px;
-  height: 0;
+  height: 65%;
 }
 
 :deep(.o-collapse-item-body) {

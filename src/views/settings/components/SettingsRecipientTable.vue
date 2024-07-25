@@ -259,7 +259,6 @@ const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange
 <style scoped lang="scss">
 .td-p {
   word-break: break-all;
-  max-width: 160px;
   display: flex;
 }
 
@@ -281,5 +280,6 @@ const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange
   border-radius: var(--table-radius);
   --table-head-bg: rgb(var(--o-kleinblue-2));
   --table-row-hover: rgb(var(--o-kleinblue-1));
+  --table-text-size: 14px;
 }
 </style>

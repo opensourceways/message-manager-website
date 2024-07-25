@@ -21,14 +21,14 @@
    * @group kleinblue
    * @description 
    */
-  --o-kleinblue-1: 227, 234, 246;
+  --o-kleinblue-1: 235, 241, 250;
   /**
   * @name 
   * @type palette
   * @group kleinblue
   * @description 
   */
-  --o-kleinblue-2: 190, 206, 237;
+  --o-kleinblue-2: 206, 219, 245;
   /**
   * @name 
   * @type palette
@@ -1301,7 +1301,7 @@
    * @group fill
    * @description 一级填充：页面背景
    */
-  --o-color-fill1: rgb(var(--o-mixedgray-2));
+  --o-color-fill1: #F5F6F8;
   /**
    * @name 
    * @type color
@@ -1357,14 +1357,14 @@
    * @group control
    * @description 悬浮-浅，常用于背景
    */
-  --o-color-control2-light: rgb(var(--o-mixedgray-3));
+  --o-color-control2-light: #EBF1FA;
   /**
    * @name 
    * @type color
    * @group control
    * @description 激活-浅，常用于背景
    */
-  --o-color-control3-light: rgb(var(--o-mixedgray-4));
+  --o-color-control3-light: #CEDBF5;
   /**
    * @name 
    * @type color

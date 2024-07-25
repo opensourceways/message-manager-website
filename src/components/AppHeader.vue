@@ -33,7 +33,7 @@ import AppLogin from './AppLogin.vue';
   left: 0;
   z-index: 101;
   background: var(--o-color-fill2);
-  box-shadow: var(--o-shadow-1);
+  // box-shadow: var(--o-shadow-1);
 
   min-width: 1440px;
   .header-content {

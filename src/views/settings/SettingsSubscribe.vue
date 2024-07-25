@@ -12,7 +12,11 @@ import { AxiosError } from 'axios';
 import { useMessage } from '@opensig/opendesign';
 import SettingsEurRuleDialog from './components/SettingsEurRuleDialog.vue';
 
-const events: Record<string, Record<string, SubscribeRuleT[]>> = {
+const events: {
+  [eventSource: string]: {
+    [eventTypes: string]: SubscribeRuleT[];
+  };
+} = {
   [EVENT_SOURCES.EUR]: {
     build: [],
   },
@@ -167,12 +171,7 @@ const removeRecipient = () => {
 const btnDisabled = ref(true);
 
 // ------------------------删除规则------------------------
-const {
-  isRevealed,
-  reveal,
-  confirm,
-  cancel
-} = useConfirmDialog();
+const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const deleteModeName = ref('');
 
 const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) => {
@@ -188,7 +187,7 @@ const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | '
       useMessage().warning(error.response.data.message);
     }
   }
-}
+};
 
 /**
  * 表格组件上checkbox的改变
@@ -217,7 +216,7 @@ defineExpose({
 <template>
   <ConfirmDialog :show="isRevealed" @confirm="confirm" @cancel="cancel" title="删除条件" :content="`是否确定删除${deleteModeName}?`"></ConfirmDialog>
 
-  <SettingsEurRuleDialog 
+  <SettingsEurRuleDialog
     v-model:show="dialogSwitches[EVENT_SOURCES.EUR]"
     :type="dialogData.dlgType"
     :eventType="dialogData.eventType"
@@ -230,13 +229,13 @@ defineExpose({
     :subscribe="(dialogData.subscribe as SubscribeRuleT<GiteeModeFilterT>)"
   />
 
-  <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" @update="getData"/>
+  <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" @update="getData" />
 
   <SettingsSubsTable
     ref="tableRefs"
     v-for="(types, prop) in initialData"
     :key="prop"
-    :source="prop"
+    :source="(prop as string)"
     :eventTypes="types"
     style="margin-top: 24px; margin-bottom: 24px"
     @editRecipients="editRecipients"

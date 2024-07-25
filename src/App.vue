@@ -1,30 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { OBreadcrumb, OBreadcrumbItem, OScroller } from '@opensig/opendesign';
+import { OScroller } from '@opensig/opendesign';
 import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 
-const route = useRoute();
-
-const breadcrumbs = ref<{ text: string; name: string }[]>([]);
-
-watch(
-  () => route.name,
-  (name) => {
-    switch (name) {
-      case 'settings':
-        breadcrumbs.value = [
-          { text: '消息中心', name: 'home' },
-          { text: '消息订阅设置', name: 'settings' },
-        ];
-        break;
-      case 'home':
-        breadcrumbs.value = [];
-        break;
-    }
-  }
-);
 </script>
 
 <template>
@@ -32,11 +10,6 @@ watch(
   <OScroller show-type="hover">
     <main class="ly-main">
       <div class="inner-container">
-        <OBreadcrumb>
-          <OBreadcrumbItem v-for="(item, index) in breadcrumbs" :key="index" :to="{ name: item.name }">
-            {{ item.text }}
-          </OBreadcrumbItem>
-        </OBreadcrumb>
         <RouterView />
       </div>
     </main>
@@ -50,7 +23,7 @@ watch(
 
   min-width: 1200px;
 
-  --layout-header-height: 64px;
+  --layout-header-height: 80px;
   --layout-header-zIndex: 101;
   --layout-header-max-width: 1440px;
   --layout-header-padding: 12px;
@@ -116,7 +89,7 @@ watch(
 .ly-main {
   display: flex;
   justify-content: center;
-  padding-top: calc(var(--layout-header-height) * 2);
+  padding-top: var(--layout-header-height);
   padding-bottom: 72px;
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
