@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, type Ref, onMounted, watch } from 'vue';
+import IconClose from '@/assets/svg-icons/icon-close.svg';
 
 const props = withDefaults(
   defineProps<{
@@ -100,7 +101,7 @@ const appendTag = (text: string, focusNode?: Node) => {
   tag.contentEditable = 'false';
 
   const icon = document.createElement('img');
-  icon.src = '/src/assets/svg-icons/icon-close.svg';
+  icon.src = IconClose;
   icon.classList.add('close');
   icon.addEventListener('click', deleteTag);
   tag.appendChild(icon);
@@ -145,8 +146,14 @@ const getTagValues = () => [...tagSet.value];
 
 const onClickPlaceholder = () => inputArea.value.focus();
 
+const clear = () => {
+  inputArea.value.innerHTML = '';
+  tagSet.value.clear();
+}
+
 defineExpose({
   getTagValues,
+  clear,
 });
 </script>
 
