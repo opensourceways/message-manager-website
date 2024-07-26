@@ -31,7 +31,8 @@ export function getRecipients(page = 1, count_per_page = 10): Promise<PagedRespo
  * @returns 调用结果
  */
 export function addRecipient(data: Partial<RecipientT>, showError = false) {
-  return request.post('/message_center/config/recipient', { ...data, message: data.phone }, { showError });
+  const phone = data.phone?.startsWith('+86') ? data.phone : '+86' + data.phone;
+  return request.post('/message_center/config/recipient', { ...data, phone, message: data.phone }, { showError });
 }
 
 /**
@@ -49,7 +50,8 @@ export function deleteRecipient(recipient_id: string) {
  * @returns 调用结果
  */
 export function editRecipient(data: Partial<RecipientT>) {
-  return request.put('/message_center/config/recipient', { ...data, message: data.phone });
+  const phone = data.phone?.startsWith('+86') ? data.phone : '+86' + data.phone;
+  return request.put('/message_center/config/recipient', { ...data, phone, message: data.phone });
 }
 
 /**
