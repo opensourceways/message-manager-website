@@ -28,7 +28,7 @@ const emits = defineEmits<{
 }>();
 
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
-const PHONE_PATTERN = /^\+861[3-9]\d{9}$/;
+const PHONE_PATTERN = /^1[3-9]\d{9}$/;
 
 const innerData = ref<DisplayRecipientT[]>([]);
 const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(innerData, (r) => r.id as string);
@@ -156,6 +156,13 @@ const deleteRow = (recipient_id: number | string) => emits('deleteRow', recipien
 
 // ------------------------多选框状态改变------------------------
 const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange', recipientId, (ev.target as HTMLInputElement).checked);
+
+const phoneNumValidator = (num: string) => {
+  if (num.startsWith('+86')) {
+    return PHONE_PATTERN.test(num.slice(3));
+  }
+  return PHONE_PATTERN.test(num);
+};
 </script>
 
 <template>
@@ -220,7 +227,7 @@ const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange
       <WarningInput
         ref="phoneInput"
         v-if="editingData.id === row.id"
-        :regExp="PHONE_PATTERN"
+        :validator="phoneNumValidator"
         warningText="请输入正确的手机号码"
         v-model="editingData.phone"
         placeholder="请输入手机号码"
@@ -230,7 +237,7 @@ const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange
       <WarningInput
         ref="phoneInput"
         v-else-if="row.id === '_'"
-        :regExp="PHONE_PATTERN"
+        :validator="phoneNumValidator"
         warningText="请输入正确的手机号码"
         v-model="row.phone"
         placeholder="请输入手机号码"
@@ -257,6 +264,10 @@ const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange
 </template>
 
 <style scoped lang="scss">
+:deep(td) {
+  vertical-align: top;
+}
+
 .td-p {
   word-break: break-all;
   display: flex;
