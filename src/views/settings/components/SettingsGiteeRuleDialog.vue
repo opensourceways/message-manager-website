@@ -35,6 +35,7 @@ watch(
         repo_name: [],
         is_bot: false,
       };
+      repoNameEditor.value.clear();
     }
   }
 );

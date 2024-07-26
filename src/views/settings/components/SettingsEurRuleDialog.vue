@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { ODialog, OForm, OFormItem, OInput, OOption, OSelect, type DialogActionT } from '@opensig/opendesign';
-import { reactive, ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import SettingsTagsEditor from './SettingsTagsEditor.vue';
 import { EVENT_SOURCES, eurBuildStatus } from '@/data/subscribeSettings';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
@@ -24,6 +24,15 @@ const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
     status: [] as number[],
     source_group: [],
   },
+});
+
+watch(() => props.show, val => {
+  if (!val) {
+    data.mode_name = '',
+    data.mode_filter.status = [];
+    data.mode_filter.source_group = [];
+    projectNameEditor.value.clear();
+  }
 });
 
 const projectNameEditor = ref();
@@ -91,7 +100,6 @@ const actions: DialogActionT[] = [
 <style scoped lang="scss">
 .reponame-tips {
   color: var(--o-color-info3);
-  // font-size: var(--o-font_size-tip2);
   @include tip1;
   margin-left: 16px;
 }
