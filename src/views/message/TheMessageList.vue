@@ -29,7 +29,7 @@ const { locale } = useI18n();
 const router = useRouter();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const settingsIcon = ref();
-const expandedMenus = ref(events.map((_, index) => `${index}`));
+const expandedMenus = ref(Object.keys(eventSourceNames));
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
