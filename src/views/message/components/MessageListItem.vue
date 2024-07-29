@@ -121,7 +121,7 @@ const onClickRead = () => {
       transform: translateY(-14px);
     }
 
-    div {
+    & > div {
       display: flex;
       width: 0;
       flex: 1;
