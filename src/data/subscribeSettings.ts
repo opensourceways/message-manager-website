@@ -1,37 +1,23 @@
+export const EVENT_SOURCES = {
+  GITEE: 'https://gitee.com',
+  EUR: 'https://eur.openeuler.openatom.cn',
+};
+
 export const eventSourceNames: Record<string, string> = {
-  'https://eur.openeuler.openatom.cn': 'EUR消息',
-  'https://gitee.com': 'Gitee消息',
+  [EVENT_SOURCES.EUR]: 'EUR消息',
+  [EVENT_SOURCES.GITEE]: 'Gitee消息',
 };
 
 export const eventTypeNames: Record<string, Record<string, string>> = {
-  'https://eur.openeuler.openatom.cn': {
+  [EVENT_SOURCES.EUR]: {
     build: 'EUR消息',
   },
-  'https://gitee.com': {
-    default: 'Gitee消息',
+  [EVENT_SOURCES.GITEE]: {
     issue: 'Issue',
     pr: 'Pull Request',
     push: 'Push',
     note: '评论',
   },
-};
-
-export const events = [
-  { source: 'https://eur.openeuler.openatom.cn', event_type: 'build' },
-  {
-    source: 'https://gitee.com',
-    children: [
-      { source: 'https://gitee.com', event_type: 'issue' },
-      { source: 'https://gitee.com', event_type: 'pr' },
-      { source: 'https://gitee.com', event_type: 'push' },
-      { source: 'https://gitee.com', event_type: 'note' },
-    ],
-  },
-];
-
-export const EVENT_SOURCES = {
-  GITEE: 'https://gitee.com',
-  EUR: 'https://eur.openeuler.openatom.cn',
 };
 
 export const eurBuildStatus = [

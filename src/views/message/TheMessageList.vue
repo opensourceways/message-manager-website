@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch, watchEffect } from 'vue';
+import { provide, reactive, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -12,7 +12,7 @@ import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
 import SettingsIcon from '~icons/app/icon-setting.svg';
 
-import { events } from '@/data/subscribeSettings';
+import { eventSourceNames } from '@/data/subscribeSettings';
 import { eventTypeNames } from '@/data/subscribeSettings';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages } from '@/api/messages';
@@ -49,6 +49,7 @@ const toConfig = () => router.push('/settings');
 
 // ------------------------多选框事件------------------------
 const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(messages, (msg) => msg.id);
+provide('checkboxes', checkboxes);
 
 // ------------------------获取数据------------------------
 const requestParams = reactive({
@@ -202,16 +203,18 @@ watch(selectedVal, (val) => {
       </div>
       <OMenu v-model="activeMenu" :default-expanded="expandedMenus">
         <OMenuItem class="menu-item" value="all"> 全部消息 </OMenuItem>
-        <template v-for="(ev, index) in events" :key="ev.source + (ev.event_type ?? '')">
-          <OMenuItem class="menu-item" v-if="!ev.children" :value="`${ev.source}_${ev.event_type}`">
-            {{ eventTypeNames[ev.source][ev.event_type] }}
+        <template v-for="(evTypes, evSource) in eventTypeNames" :key="evSource">
+          <template v-if="Object.keys(evTypes).length === 1">
+            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${typeName}`">
+              {{ typeName }}
           </OMenuItem>
-          <OSubMenu class="submenu-title" v-else :value="`${index}`">
+          </template>
+          <OSubMenu class="submenu-title" v-else :value="`${evSource}`">
             <template #title>
-              <p>{{ eventTypeNames[ev.source].default }}</p>
+              <p>{{ eventSourceNames[evSource] }}</p>
             </template>
-            <OMenuItem class="menu-item" v-for="child in ev.children" :key="child.event_type" :value="`${ev.source}_${child.event_type}`">
-              {{ eventTypeNames[ev.source][child.event_type] }}
+            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${typeName}`">
+              {{ typeName }}
             </OMenuItem>
           </OSubMenu>
         </template>
@@ -289,45 +292,8 @@ watch(selectedVal, (val) => {
   }
 }
 
-:deep(.o-collapse-item) {
-  border: none;
-}
-
 :deep(.o-pagination-wrap) {
   justify-content: flex-end;
-}
-
-:deep(.o-collapse) {
-  padding: 0%;
-}
-
-.settings-icon {
-  font-size: 24px;
-}
-
-.msg-action {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  @include tip1;
-
-  .icon {
-    font-size: 24px;
-  }
-
-  @include hover {
-    color: rgb(var(--o-kleinblue-6));
-
-    .icon {
-      color: rgb(var(--o-kleinblue-6));
-    }
-  }
-
-  &[diabled='true'] {
-    opacity: 0.3;
-    color: #000;
-  }
 }
 
 .messages-container {
