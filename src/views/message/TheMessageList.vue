@@ -205,7 +205,7 @@ watch(selectedVal, (val) => {
         <OMenuItem class="menu-item" value="all"> 全部消息 </OMenuItem>
         <template v-for="(evTypes, evSource) in eventTypeNames" :key="evSource">
           <template v-if="Object.keys(evTypes).length === 1">
-            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${typeName}`">
+            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
               {{ typeName }}
           </OMenuItem>
           </template>
@@ -213,7 +213,7 @@ watch(selectedVal, (val) => {
             <template #title>
               <p>{{ eventSourceNames[evSource] }}</p>
             </template>
-            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${typeName}`">
+            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
               {{ typeName }}
             </OMenuItem>
           </OSubMenu>
