@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { h } from 'vue';
-import { OBadge } from '@opensig/opendesign';
+import { h, inject, type Ref } from 'vue';
+import { OBadge, OCheckbox } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
 
 import type { MessageT } from '@/@types/type-messages';
-import WordAvatar from '@/components/WordAvatar.vue'
+import WordAvatar from '@/components/WordAvatar.vue';
 import IconLink from '@/components/IconLink.vue';
 
 const emits = defineEmits<{
@@ -15,6 +15,8 @@ const emits = defineEmits<{
 const props = defineProps<{
   msg: MessageT;
 }>();
+
+const checkboxes = inject<Ref<(string | number)[]>>('checkboxes');
 
 const EXTRACT_REGEX = /<sourceUrl>(.*?)<sourceUrl>/;
 
@@ -28,18 +30,26 @@ const Title = (props: { msg: MessageT }) => {
   }
   const title = split.map((item, index) => {
     if (index === replaceIndex) {
-      return h('a', {
-        href: props.msg.source_url,
-        target: '_blank',
-        style: 'color: #002EA7',
-      }, ' ' + item);
+      return h(
+        'a',
+        {
+          href: props.msg.source_url,
+          target: '_blank',
+          style: 'color: #002EA7',
+        },
+        ' ' + item
+      );
     }
     return item;
   });
-  return h('p', {
-    class: 'msg-title',
-    unread: !props.msg.is_read,
-  }, title);
+  return h(
+    'p',
+    {
+      class: 'msg-title',
+      unread: !props.msg.is_read,
+    },
+    title
+  );
 };
 
 const onClickRead = () => {
@@ -47,20 +57,23 @@ const onClickRead = () => {
     return;
   }
   emits('readMessage', props.msg);
-}
+};
 </script>
 
 <template>
-  <div class="message-list-item" >
+  <div class="message-list-item">
     <div class="list-item-left">
-      <div class="user-info">
-        <OBadge :dot="true" v-if="!msg.is_read" color="danger">
-          <WordAvatar :name="msg.user" size="small" />
-        </OBadge>
-        <WordAvatar v-else :name="msg.user" size="small" />
-        <span>{{ msg.user }}</span>
+      <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxes" />
+      <div>
+        <p class="user-info">
+          <OBadge :dot="true" v-if="!msg.is_read" color="danger">
+            <WordAvatar :name="msg.user" size="small" />
+          </OBadge>
+          <WordAvatar v-else :name="msg.user" size="small" />
+          <span>{{ msg.user }}</span>
+        </p>
+        <Title :msg="msg" />
       </div>
-      <Title :msg="msg" />
     </div>
     <div class="list-item-right">
       <p>仓库{{ msg.source_group }}</p>
@@ -80,7 +93,6 @@ const onClickRead = () => {
 <style scoped lang="scss">
 .msg-title {
   @include tip1;
-  max-width: 40vw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -92,22 +104,36 @@ const onClickRead = () => {
 
 .message-list-item {
   position: relative;
-  margin-left: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-grow: 1;
 
   .list-item-left {
+    width: 0;
+    flex: 1;
+    margin-right: 124px;
     display: flex;
-    flex-direction: column;
     gap: 6px;
     @include tip1;
 
-    .user-info {
+    .checkbox {
+      transform: translateY(-14px);
+    }
+
+    div {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      width: 0;
+      flex: 1;
+      flex-direction: column;
+      gap: 6px;
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+      }
     }
   }
 

@@ -239,12 +239,9 @@ watch(selectedVal, (val) => {
           </div>
         </div>
         <div class="list">
-          <div v-for="msg in messages" :key="msg.id" class="item">
-            <div class="checkbox-wrapper">
-              <OCheckbox :value="msg.id" v-model="checkboxes" />
-            </div>
+          <div v-for="(msg, index) in messages" :key="msg.id" class="item">
             <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
-            <ODivider class="divider-line" />
+            <ODivider v-if="index < messages.length - 1" class="divider-line" />
           </div>
         </div>
       </template>
