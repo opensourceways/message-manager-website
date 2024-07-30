@@ -3,12 +3,12 @@ import { computed, ref } from 'vue';
 import { OIcon, OPopover, OTab, OTabPane } from '@opensig/opendesign';
 import TipIcon from '~icons/app/icon-tip.svg';
 import SettingsRecipient from './SettingsRecipient.vue';
-import SettingsSubscribe from './SettingsSubscribe.vue';
+import SettingsRules from './SettingsRules.vue';
 import AppButton from '@/components/AppButton.vue';
 import SettingsBreadcrumbs from './components/SettingsBreadcrumbs.vue';
 
 const activeTab = ref(0);
-const subscribeSettings = ref<InstanceType<typeof SettingsSubscribe>>();
+const subscribeSettings = ref<InstanceType<typeof SettingsRules>>();
 const recipientSettings = ref<InstanceType<typeof SettingsRecipient>>();
 const components = [subscribeSettings, recipientSettings];
 const currentComponent = computed(() => components[activeTab.value].value);
@@ -48,7 +48,7 @@ const removeRecipient = () => {
           </div>
         </template>
         <OTabPane :value="0" :label="$t('config.receiveConfig')">
-          <SettingsSubscribe ref="subscribeSettings" />
+          <SettingsRules ref="subscribeSettings" />
         </OTabPane>
         <OTabPane :value="1" :label="$t('config.receiverManagement')">
           <SettingsRecipient ref="recipientSettings" />

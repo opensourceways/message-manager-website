@@ -8,7 +8,7 @@ import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
 import type { EurModeFilterT, GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 
-import SettingsSubsTable from './components/SettingsSubsTable.vue';
+import SettingsRulesTable from './components/SettingsRulesTable.vue';
 import SettingsGiteeRuleDialog from './dialogs/SettingsGiteeRuleDialog.vue';
 import SettingsRecipientDialog from './dialogs/SettingsRecipientDialog.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -30,7 +30,7 @@ const events: {
   },
 };
 
-const tableRefs = ref<InstanceType<typeof SettingsSubsTable>[]>();
+const tableRefs = ref<InstanceType<typeof SettingsRulesTable>[]>();
 
 // 初始表格数据
 const initialData = reactive(events);
@@ -85,19 +85,19 @@ const getData = async () => {
     if (!item.source || !item.event_type) {
       continue;
     }
-    const row = initialData[item.source][item.event_type].find((sub) => sub.id === item.id);
-    if (row) {
-      row.needCheckboxes ??= [];
-      row.displayRecipientNames = item.recipients?.map((r) => r.name).join('、');
-      row.recipients = item.recipients;
+    const rule = initialData[item.source][item.event_type].find((rule) => rule.id === item.id);
+    if (rule) {
+      rule.needCheckboxes ??= [];
+      rule.displayRecipientNames = item.recipients?.map((r) => r.name).join('、');
+      rule.recipients = item.recipients;
       if (item.need_inner_message) {
-        row.needCheckboxes?.push('need_inner_message');
+        rule.needCheckboxes?.push('need_inner_message');
       }
       if (item.need_mail) {
-        row.needCheckboxes?.push('need_mail');
+        rule.needCheckboxes?.push('need_mail');
       }
       if (item.need_message) {
-        row.needCheckboxes?.push('need_message');
+        rule.needCheckboxes?.push('need_message');
       }
     }
   }
@@ -235,7 +235,7 @@ defineExpose({
 
   <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" @update="getData" />
 
-  <SettingsSubsTable
+  <SettingsRulesTable
     ref="tableRefs"
     v-for="(types, prop) in initialData"
     :key="prop"
