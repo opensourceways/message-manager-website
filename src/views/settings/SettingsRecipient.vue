@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { OPagination, useMessage } from '@opensig/opendesign';
-import { useConfirmDialog } from '@vueuse/core';
+import { OPagination } from '@opensig/opendesign';
 import type { RecipientT } from '@/@types/type-settings';
-import { deleteRecipient, getRecipients } from '@/api/api-settings';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { getRecipients } from '@/api/api-settings';
 import SettingsRecipientTable from './components/SettingsRecipientTable.vue';
 import { usePage } from '@/composables/usePage';
 
-const message = useMessage();
 const tableData = ref<RecipientT[]>([]);
 const tableLoading = ref(false);
 
@@ -44,31 +41,12 @@ const addRecipient = () => {
   isAddingRecipient.value = true;
 };
 
-// ----------------删除接收人-------------------
-const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
-
-const deleteRow = async (recipient_id: string | number) => {
-  const { isCanceled } = await reveal();
-  if (!isCanceled) {
-    try {
-      await deleteRecipient(recipient_id as string);
-      getData(page.value, pageSize.value);
-    } catch (error: any) {
-      if (error?.response?.data?.error) {
-        message.warning(error.response.data.error);
-      }
-    }
-  }
-};
-
 defineExpose({
   addRecipient,
 });
 </script>
 
 <template>
-  <ConfirmDialog :show="isRevealed" title="删除接收人" content="是否删除该接收人?" @confirm="confirm" @cancel="cancel" />
-
   <SettingsRecipientTable
     :data="tableData"
     v-model:adding="isAddingRecipient"
@@ -76,7 +54,6 @@ defineExpose({
     :showActions="true"
     :enableEdit="true"
     @updateData="getData"
-    @deleteRow="deleteRow"
   ></SettingsRecipientTable>
   <OPagination :total="total" v-model:page="page" :pageSizes="pageSizes" v-model:page-size="pageSize" style="margin-top: 32px" />
 </template>
