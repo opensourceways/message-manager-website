@@ -5,7 +5,7 @@ import { deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg 
 import type { PagedResponseT } from '@/@types/types-common';
 import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';
 import { eventSourceNames } from '@/data/subscribeSettings';
-import SettingsRecipientTable from './SettingsRecipientTable.vue';
+import SettingsRecipientTable from '../components/SettingsRecipientTable.vue';
 import { AxiosError } from 'axios';
 import AppButton from '@/components/AppButton.vue';
 

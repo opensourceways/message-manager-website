@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, inject, watch } from 'vue';
-import { useCheckbox } from '@/composables/useCheckbox';
+import { computed, watch } from 'vue';
 import { OCheckbox, OLink } from '@opensig/opendesign';
+
+import { useCheckbox } from '@/composables/useCheckbox';
 import { eventSourceNames, eventTypeNames } from '@/data/subscribeSettings';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 import { updateNeedStatus } from '@/api/api-settings';
 
 const emit = defineEmits<{
+  (event: 'editOrAddRule', type: 'add' | 'edit', source: string, eventType: string, rule?: SubscribeRuleT): void;
   (event: 'editRecipients', rule: SubscribeRuleT): void;
   (event: 'checkboxChange'): void;
   (event: 'deleteRule', rule: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>): void;
@@ -16,7 +18,6 @@ const props = defineProps<{
   eventTypes: Record<string, SubscribeRuleT[]>;
 }>();
 
-const editOrAddFn = inject<(dlgType: 'edit' | 'add', source: string, eventType: string, subscribe?: SubscribeRuleT) => void>('onEditOrAdd', () => {});
 
 const checkboxDataSource = computed(() => Object.values(props.eventTypes).flat());
 
@@ -25,11 +26,11 @@ const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(checkboxDataSo
 watch(checkboxes, () => emit('checkboxChange'));
 
 const addRule = (eventType: string) => {
-  editOrAddFn('add', props.source, eventType);
+  emit('editOrAddRule', 'add', props.source, eventType);
 };
 
-const editRule = (eventType: string, subs: SubscribeRuleT) => {
-  editOrAddFn('edit', props.source, eventType, subs);
+const editRule = (eventType: string, rule: SubscribeRuleT) => {
+  emit('editOrAddRule', 'edit', props.source, eventType, rule);
 };
 
 /**

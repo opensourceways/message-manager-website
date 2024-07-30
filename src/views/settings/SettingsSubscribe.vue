@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { provide, reactive, ref } from 'vue';
-import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
-import SettingsSubsTable from './components/SettingsSubsTable.vue';
-import SettingsGiteeRuleDialog from './components/SettingsGiteeRuleDialog.vue';
-import { EVENT_SOURCES } from '@/data/subscribeSettings';
-import type { EurModeFilterT, GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
-import SettingsRecipientDialog from './components/SettingsRecipientDialog.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { reactive, ref } from 'vue';
 import { useConfirmDialog } from '@vueuse/core';
 import { AxiosError } from 'axios';
 import { useMessage } from '@opensig/opendesign';
-import SettingsEurRuleDialog from './components/SettingsEurRuleDialog.vue';
+
+import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
+import { EVENT_SOURCES } from '@/data/subscribeSettings';
+import type { EurModeFilterT, GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
+
+import SettingsSubsTable from './components/SettingsSubsTable.vue';
+import SettingsGiteeRuleDialog from './dialogs/SettingsGiteeRuleDialog.vue';
+import SettingsRecipientDialog from './dialogs/SettingsRecipientDialog.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import SettingsEurRuleDialog from './dialogs/SettingsEurRuleDialog.vue';
 
 const events: {
   [eventSource: string]: {
@@ -107,7 +109,7 @@ const dialogData = reactive({
   show: false,
   dlgType: 'add' as 'add' | 'edit',
   eventType: '',
-  subscribe: null as SubscribeRuleT | null,
+  rule: null as SubscribeRuleT | null,
 });
 
 // ------------------------弹窗显示控制------------------------
@@ -118,14 +120,14 @@ const dialogSwitches = reactive({
 });
 
 // 子组件点击新增/修改消息接收规则的按钮触发
-provide('onEditOrAdd', (dlgType: 'edit' | 'add', source: string, eventType: string, subscribe?: SubscribeRuleT) => {
+const onEditOrAdd = (dlgType: 'edit' | 'add', source: string, eventType: string, rule?: SubscribeRuleT) => {
   dialogData.dlgType = dlgType;
   dialogData.eventType = eventType;
-  if (subscribe) {
-    dialogData.subscribe = subscribe;
+  if (rule) {
+    dialogData.rule = rule;
   }
   dialogSwitches[source] = true;
-});
+};
 
 // ------------------------修改接收人相关------------------------
 const editRecipientsEffectedRows = ref<SubscribeRuleT[]>([]);
@@ -220,13 +222,15 @@ defineExpose({
     v-model:show="dialogSwitches[EVENT_SOURCES.EUR]"
     :type="dialogData.dlgType"
     :eventType="dialogData.eventType"
-    :subscribe="(dialogData.subscribe as SubscribeRuleT<EurModeFilterT>)"
+    :rule="(dialogData.rule as SubscribeRuleT<EurModeFilterT>)"
+    @updateData="getData"
   />
   <SettingsGiteeRuleDialog
     v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
     :type="dialogData.dlgType"
     :eventType="dialogData.eventType"
-    :subscribe="(dialogData.subscribe as SubscribeRuleT<GiteeModeFilterT>)"
+    :rule="(dialogData.rule as SubscribeRuleT<GiteeModeFilterT>)"
+    @updateData="getData"
   />
 
   <SettingsRecipientDialog v-model:show="dialogSwitches.recipient" :effectedRows="editRecipientsEffectedRows" :type="recipientDlgType" @update="getData" />
@@ -240,6 +244,7 @@ defineExpose({
     style="margin-top: 24px; margin-bottom: 24px"
     @editRecipients="editRecipients"
     @checkboxChange="checkboxChange"
+    @editOrAddRule="onEditOrAdd"
     @deleteRule="deleteRule"
   />
 </template>

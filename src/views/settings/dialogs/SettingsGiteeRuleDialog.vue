@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { ODialog, OForm, OFormItem, OInput, ORadio, type DialogActionT } from '@opensig/opendesign';
-import SettingsTagsEditor from './SettingsTagsEditor.vue';
+import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
@@ -14,7 +14,7 @@ const props = defineProps<{
   show: boolean;
   type: 'edit' | 'add';
   eventType: string;
-  subscribe?: SubscribeRuleT<GiteeModeFilterT> | null;
+  rule?: SubscribeRuleT<GiteeModeFilterT> | null;
 }>();
 
 const repoNameEditor = ref();
@@ -41,7 +41,7 @@ watch(
 );
 
 watch(
-  () => props.subscribe,
+  () => props.rule,
   (subs) => {
     if (subs && subs.source === EVENT_SOURCES.GITEE) {
       data.mode_name = subs.mode_name;
@@ -101,7 +101,7 @@ const actions: DialogActionT[] = [
         <OFormItem label="仓库名称" required>
           <div>
             <SettingsTagsEditor
-              :tags="subscribe?.mode_filter.repo_name"
+              :tags="rule?.mode_filter.repo_name"
               ref="repoNameEditor"
               style="width: 100%"
               placeholder="请输入组织和仓库名称，按照“组织名/仓库名”的格式填写，按回车键结束输入"
