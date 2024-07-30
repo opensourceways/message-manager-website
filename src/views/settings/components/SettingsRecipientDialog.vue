@@ -5,7 +5,6 @@ import { deletePushConfg, getRecipients, getSubscribedRecipients, postPushConfg 
 import type { PagedResponseT } from '@/@types/types-common';
 import type { RecipientT, SubscribeRuleT } from '@/@types/type-settings';
 import { eventSourceNames } from '@/data/subscribeSettings';
-import {} from '@/composables/useCheckbox';
 import SettingsRecipientTable from './SettingsRecipientTable.vue';
 import { AxiosError } from 'axios';
 import AppButton from '@/components/AppButton.vue';
@@ -162,15 +161,17 @@ const actions: DialogActionT[] = [
       <AppButton @click="handleAddRecipient" style="margin-top: 12px;">新增接收人</AppButton>
     </div>
     <OScroller class="recipient-editor-content" show-type="hover">
-      <SettingsRecipientTable
-        :data="recipients"
-        :loading="loading"
-        v-model:adding="isAdding"
-        :showCheckbox="true"
-        @checkboxChange="onCheckboxChange"
-        :defaultCheckboxes="defaultCheckboxes"
-        @updateData="getData"
-      ></SettingsRecipientTable>
+      <div>
+        <SettingsRecipientTable
+          :data="recipients"
+          :loading="loading"
+          v-model:adding="isAdding"
+          :showCheckbox="true"
+          @checkboxChange="onCheckboxChange"
+          :defaultCheckboxes="defaultCheckboxes"
+          @updateData="getData"
+        ></SettingsRecipientTable>
+      </div>
     </OScroller>
   </ODialog>
 </template>

@@ -3,10 +3,12 @@ import type { RecipientT } from '@/@types/type-settings';
 import WarningInput from '@/components/WarningInput.vue';
 import { OCheckbox, OInput, OLink, OTable, useMessage } from '@opensig/opendesign';
 import { watch } from 'vue';
-import { addRecipient, editRecipient as putRecipient } from '@/api/api-settings';
+import { addRecipient, deleteRecipient, editRecipient as putRecipient } from '@/api/api-settings';
 import { reactive, ref } from 'vue';
 import { AxiosError } from 'axios';
 import { useCheckbox } from '@/composables/useCheckbox';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { useConfirmDialog } from '@vueuse/core';
 
 type DisplayRecipientT = Partial<RecipientT>;
 
@@ -152,7 +154,21 @@ const cancel = () => {
 };
 
 // ------------------------删除接收人------------------------
-const deleteRow = (recipient_id: number | string) => emits('deleteRow', recipient_id);
+const { isRevealed, reveal, confirm: dlgConfirm, cancel: dlgCancel } = useConfirmDialog();
+
+const deleteRow = async (recipient_id: string | number) => {
+  const { isCanceled } = await reveal();
+  if (!isCanceled) {
+    try {
+      await deleteRecipient(recipient_id as string);
+      emits('updateData');
+    } catch (error: any) {
+      if (error?.response?.data?.error) {
+        message.warning(error.response.data.error);
+      }
+    }
+  }
+};
 
 // ------------------------多选框状态改变------------------------
 const checkboxChange = (recipientId: number, ev: Event) => emits('checkboxChange', recipientId, (ev.target as HTMLInputElement).checked);
@@ -166,6 +182,10 @@ const phoneNumValidator = (num: string) => {
 </script>
 
 <template>
+  <Teleport to="body">
+    <ConfirmDialog :show="isRevealed" title="删除接收人" content="是否删除该接收人?" @confirm="dlgConfirm" @cancel="dlgCancel" />
+  </Teleport>
+
   <OTable :columns="columns" :loading="loading" :data="innerData" class="recipient-table">
     <template #th_recipient_id v-if="showCheckbox">
       <p class="td-p">

@@ -33,28 +33,19 @@ onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }
 const showPlaceHolder = ref(true);
 const focused = ref(false);
 
-watch(
-  () => tagSet.value.size,
-  (size) => {
-    if (size === 0 && !focused.value) {
+watch(focused, val => {
+  if (val) {
+    showPlaceHolder.value = false;
+  } else {
+    if (!inputArea.value.hasChildNodes()) {
       showPlaceHolder.value = true;
-    } else {
-      showPlaceHolder.value = false;
     }
   }
-);
+});
 
-const onFocus = () => {
-  focused.value = true;
-  showPlaceHolder.value = false;
-};
+const onFocus = () => focused.value = true;
 
-const onBlur = () => {
-  focused.value = false;
-  if (tagSet.value.size === 0) {
-    showPlaceHolder.value = true;
-  }
-};
+const onBlur = () => focused.value = false;
 
 watch(
   () => props.tags,
@@ -149,7 +140,7 @@ const onClickPlaceholder = () => inputArea.value.focus();
 const clear = () => {
   inputArea.value.innerHTML = '';
   tagSet.value.clear();
-}
+};
 
 defineExpose({
   getTagValues,
