@@ -134,12 +134,10 @@ interface UserPermissionResponseT {
  */
 export function queryUserInfo(community = 'openeuler') {
   const url = '/api-id/oneid/user/permission';
-  const token = getCsrfToken();
   return request
     .get<UserPermissionResponseT>(url, {
       params: { community },
       global: true,
-      headers: { token },
     })
     .then((res) => res.data.data);
 }

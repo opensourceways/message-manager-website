@@ -11,7 +11,7 @@ import setConfig from './setConfig';
 
 import { isBoolean, useLoading, useMessage, isNull, isUndefined } from '@opensig/opendesign';
 import type { LoadingPropsT } from '@opensig/opendesign/lib/loading/types';
-import { LOGIN_KEYS, doLogin, getCsrfToken } from '../login';
+import { LOGIN_KEYS, clearUserAuth, doLogin } from '../login';
 import { useUserInfoStore } from '@/stores/user';
 import Cookies from 'js-cookie';
 
@@ -22,7 +22,6 @@ interface RequestConfig<D = any> extends AxiosRequestConfig {
   ignoreError?: number; // 忽略某个状态码错误提示
   ignoreDuplicates?: boolean; // false: 取消重复请求； true: 允许重复请求
   global?: boolean; // 是否为全局请求，全局请求在清除请求池时，不清除
-  noCsrf?: boolean; // 是否禁用csrf防护，默认为false
 }
 
 interface RequestInstance extends AxiosInstance {
@@ -76,11 +75,7 @@ const getLoadingInstance = (showLoading: boolean | { opt?: Partial<LoadingPropsT
  */
 const requestInterceptorId = request.interceptors.request.use(
   (config: InternalRequestConfig) => {
-    const { showLoading, noCsrf } = config;
-    if (!noCsrf && !config.headers?.Token) {
-      config.headers.Token = getCsrfToken();
-    }
-
+    const { showLoading } = config;
     if (loadingCount === 0 && config.showLoading) {
       if (showLoading) {
         loadingInstance = getLoadingInstance(showLoading);
@@ -188,8 +183,7 @@ const responseInterceptorId = request.interceptors.response.use(
 
     // token过期，重新登录
     if (err.response?.status === 401) {
-      useUserInfoStore().$reset();
-      Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
+      clearUserAuth();
       doLogin();
     }
 

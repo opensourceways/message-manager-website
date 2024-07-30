@@ -1,23 +1,27 @@
 <script setup lang="ts">
-import { doLogin, getCsrfToken, logout } from '@/shared/login';
-import { useUnreadMsgCountStore } from '@/stores/common';
-import { useUserInfoStore } from '@/stores/user';
-import { OBadge, OIcon, OPopup } from '@opensig/opendesign';
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { OBadge, OIcon, OIconLoading, OPopup } from '@opensig/opendesign';
+
 import LoginIcon from '~icons/app/icon-login.svg';
 
+import { doLogin, logout } from '@/shared/login';
+import { useUnreadMsgCountStore } from '@/stores/common';
+import { useLoginStore, useUserInfoStore } from '@/stores/user';
+
+const router = useRouter();
 const userInfoStore = useUserInfoStore();
 const unreadCountStore = useUnreadMsgCountStore();
 const userInfo = ref();
-const csrfToken = getCsrfToken();
+const loginStore = useLoginStore();
 
 const toUserCenter = () => (window.location.href = import.meta.env.VITE_LOGIN_URL);
 
-const toMsgCenter = () => window.location.reload();
+const toMsgCenter = () => router.push('/');
 </script>
 
 <template>
-  <template v-if="csrfToken">
+  <template v-if="loginStore.isLogined">
     <div class="user-info" ref="userInfo">
       <OBadge color="danger" v-if="unreadCountStore.count > 0" :value="unreadCountStore.count">
         <img v-if="userInfoStore.photo" :src="userInfoStore.photo" />
@@ -39,6 +43,9 @@ const toMsgCenter = () => window.location.reload();
       </ul>
     </OPopup>
   </template>
+  <div v-else-if="loginStore.isLoggingIn" class="o-rotating">
+    <OIconLoading />
+  </div>
   <div v-else class="login-btn" @click="doLogin">
     <OIcon><LoginIcon /></OIcon>
   </div>

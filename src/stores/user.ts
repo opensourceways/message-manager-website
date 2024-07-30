@@ -1,7 +1,6 @@
 import type { UserInfoT } from '@/@types/type-user';
 import { LOGIN_STATUS, type LoginStatusT } from '@/shared/login';
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
 
 /**
  * 登录状态
