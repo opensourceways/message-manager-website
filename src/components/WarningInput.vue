@@ -59,6 +59,7 @@ defineExpose({
       @blur="doValidate"
       :color="isValid ? 'normal' : 'danger'"
       :placeholder="placeholder"
+      style="--input-radius: 4px;"
     >
       <template #prepend v-if="isPhoneNum">
         <span style="padding: 0 8px 0 7px">+86</span>

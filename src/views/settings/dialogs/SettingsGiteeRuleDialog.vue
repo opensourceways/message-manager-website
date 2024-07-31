@@ -91,13 +91,13 @@ const actions: DialogActionT[] = [
     <template #header>创建消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
-      <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
+      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="规则名称" required>
-          <OInput clearable v-model="data.mode_name" style="width: 100%" placeholder="请输入方便您区分的名称" />
+          <OInput class="input" clearable v-model="data.mode_name" placeholder="请输入方便您区分的名称" />
         </OFormItem>
       </OForm>
       <p class="dialog-content-title">消息接收规则设置</p>
-      <OForm class="form" has-required layout="h" label-align="top" label-justify="left" label-width="20%">
+      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="仓库名称" required>
           <div>
             <SettingsTagsEditor
@@ -127,18 +127,17 @@ const actions: DialogActionT[] = [
   margin-left: 16px;
 }
 
-.dialog-content {
-  width: 600px;
+.input {
+  --input-radius: 4px;
+  width: 100%;
+}
 
+.dialog-content {
   .dialog-content-title {
     @include text1;
     font-weight: bold;
     margin-top: 16px;
     margin-bottom: 16px;
-  }
-
-  .form {
-    width: 100%;
   }
 }
 </style>

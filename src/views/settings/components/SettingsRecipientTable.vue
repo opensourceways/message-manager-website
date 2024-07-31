@@ -202,7 +202,7 @@ const phoneNumValidator = (num: string) => {
         warningText="请输入姓名"
         v-model="editingData.recipient_id"
         placeholder="请输入姓名"
-        style="width: 160px"
+        style="width: 136px"
       />
       <!-- 用于新增 -->
       <WarningInput
@@ -212,7 +212,7 @@ const phoneNumValidator = (num: string) => {
         warningText="请输入姓名"
         v-model="row.recipient_id"
         placeholder="请输入姓名"
-        style="width: 160px"
+        style="width: 136px"
       />
       <p v-else class="td-p">
         <OCheckbox v-if="showCheckbox" v-model="checkboxes" :value="row.id" @change="(_, ev) => checkboxChange(row.id, ev)" />
@@ -228,7 +228,7 @@ const phoneNumValidator = (num: string) => {
         warningText="请输入正确的邮箱"
         v-model="editingData.mail"
         placeholder="请输入邮箱"
-        style="width: 160px"
+        style="width: 188px"
       />
       <!-- 用于新增 -->
       <WarningInput
@@ -238,7 +238,7 @@ const phoneNumValidator = (num: string) => {
         warningText="请输入正确的邮箱"
         v-model="row.mail"
         placeholder="请输入邮箱"
-        style="width: 160px"
+        style="width: 188px"
       />
       <p class="td-p" v-else>{{ row.mail }}</p>
     </template>
@@ -251,7 +251,7 @@ const phoneNumValidator = (num: string) => {
         warningText="请输入正确的手机号码"
         v-model="editingData.phone"
         placeholder="请输入手机号码"
-        style="width: 180px"
+        style="width: 188px"
       />
       <!-- 用于新增 -->
       <WarningInput
@@ -261,13 +261,13 @@ const phoneNumValidator = (num: string) => {
         warningText="请输入正确的手机号码"
         v-model="row.phone"
         placeholder="请输入手机号码"
-        style="width: 180px"
+        style="width: 188px"
       />
       <p class="td-p" v-else>{{ row.displayPhone }}</p>
     </template>
     <template #td_remark="{ row }">
-      <OInput v-if="editingData.id === row.id" v-model="editingData.remark" placeholder="请输入备注" clearable style="width: 160px" />
-      <OInput v-else-if="row.id === '_'" v-model="row.remark" placeholder="请输入备注" clearable style="width: 160px" />
+      <OInput v-if="editingData.id === row.id" v-model="editingData.remark" placeholder="请输入备注" clearable style="width: 136px" />
+      <OInput v-else-if="row.id === '_'" v-model="row.remark" placeholder="请输入备注" clearable style="width: 136px" />
       <p class="td-p" v-else>{{ row.remark }}</p>
     </template>
     <template #td_actions="{ row }">
@@ -312,5 +312,9 @@ const phoneNumValidator = (num: string) => {
   --table-head-bg: rgb(var(--o-kleinblue-2));
   --table-row-hover: rgb(var(--o-kleinblue-1));
   --table-text-size: 14px;
+
+  :deep(td:not(:first-child)) {
+    padding-left: 0;
+  }
 }
 </style>

@@ -21,7 +21,10 @@ import AppFooter from './components/AppFooter.vue';
 #app {
   --color-primary: #027ef2;
 
-  min-width: 1200px;
+  @include respond-to('>phone') {
+    min-width: 1200px;
+  }
+
 
   --layout-header-height: 80px;
   --layout-header-zIndex: 101;
@@ -66,7 +69,10 @@ import AppFooter from './components/AppFooter.vue';
 .inner-container {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+
+  @include respond-to('phone') {
+    width: 100%;
+  }
 }
 
 .ly-header {

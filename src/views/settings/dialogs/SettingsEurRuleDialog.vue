@@ -74,13 +74,13 @@ const actions: DialogActionT[] = [
     <template #header>创建消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
-      <OForm class="form" has-required layout="h" label-align="top" label-justify="left">
+      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="规则名称" required>
-          <OInput clearable v-model="data.mode_name" style="width: 100%" placeholder="请输入方便您区分的名称" />
+          <OInput class="input" clearable v-model="data.mode_name" placeholder="请输入方便您区分的名称" />
         </OFormItem>
       </OForm>
       <p class="dialog-content-title">消息接收规则设置</p>
-      <OForm class="form" has-required layout="h" label-align="top" label-justify="left">
+      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="项目名称" required>
           <div>
             <SettingsTagsEditor ref="projectNameEditor" style="width: 100%" placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入" />
@@ -88,7 +88,7 @@ const actions: DialogActionT[] = [
           </div>
         </OFormItem>
         <OFormItem label="构建状态" required>
-          <OSelect v-model="data.mode_filter.status" multiple variant="outline" placeholder="请选择构建状态" clearable>
+          <OSelect class="status-selector" v-model="data.mode_filter.status" multiple variant="outline" placeholder="请选择构建状态" clearable>
             <OOption v-for="item in eurBuildStatus" :key="item.value" :label="item.label" :value="item.value" />
           </OSelect>
         </OFormItem>
@@ -104,18 +104,22 @@ const actions: DialogActionT[] = [
   margin-left: 16px;
 }
 
-.dialog-content {
-  // width: 600px;
+.status-selector {
+  width: 100%;
+  border-radius: 4px;
+}
 
+.input {
+  --input-radius: 4px;
+  width: 100%;
+}
+
+.dialog-content {
   .dialog-content-title {
     font-size: 16px;
     font-weight: bold;
     margin-top: 16px;
     margin-bottom: 16px;
-  }
-
-  .form {
-    width: 100%;
   }
 }
 </style>

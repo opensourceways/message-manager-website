@@ -57,7 +57,7 @@ const toMsgCenter = () => router.push('/');
   gap: 8px;
   align-items: center;
   cursor: pointer;
-  height: 100%;
+  height: calc(100% - 20px);
 
   img {
     width: 24px;

@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, OPagination, OSubMenu, useMessage, OSelect, OOption, OPopover, OLink, ODivider } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, OSubMenu, useMessage, OSelect, OOption, OPopover, OLink, ODivider } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
@@ -23,6 +23,8 @@ import { getCsrfToken } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import { usePage } from '@/composables/usePage';
 import IconLink from '@/components/IconLink.vue';
+import { useScreen } from '@/composables/useScreen';
+import AppPagination from '@/components/AppPagination.vue';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -46,6 +48,8 @@ watchEffect(() => {
 });
 
 const toConfig = () => router.push('/settings');
+
+const { isPhone } = useScreen();
 
 // ------------------------多选框事件------------------------
 const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(messages, (msg) => msg.id);
@@ -188,7 +192,7 @@ watch(selectedVal, (val) => {
 <template>
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
   <div class="messages-container">
-    <aside>
+    <aside v-if="!isPhone">
       <div class="title">
         消息中心
         <IconLink ref="settingsIcon" @click="toConfig">
@@ -207,7 +211,7 @@ watch(selectedVal, (val) => {
           <template v-if="Object.keys(evTypes).length === 1">
             <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
               {{ typeName }}
-          </OMenuItem>
+            </OMenuItem>
           </template>
           <OSubMenu class="submenu-title" v-else :value="`${evSource}`">
             <template #title>
@@ -254,7 +258,7 @@ watch(selectedVal, (val) => {
       </div>
     </div>
   </div>
-  <OPagination v-if="total > 0" :total="total" v-model:page="page" v-model:pageSize="pageSize" :pageSizes="[10, 20, 30, 50]" show-total />
+  <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="page" v-model:pageSize="pageSize" />
 </template>
 
 <style scoped lang="scss">
@@ -303,8 +307,18 @@ watch(selectedVal, (val) => {
   min-height: 60vh;
   margin-top: 64px;
 
-  @include respond-to('<=laptop') {
+  @include respond-to('>laptop') {
+    width: 1416px;
+  }
+
+  @include respond-to('pad-laptop') {
     width: 80vw;
+    min-width: 960px;
+  }
+
+  @include respond-to('phone') {
+    margin-top: 0;
+    width: 100%;
   }
 
   aside {
@@ -323,10 +337,6 @@ watch(selectedVal, (val) => {
   padding: 16px;
   height: 100%;
   gap: 10px;
-
-  @include respond-to('>laptop') {
-    width: 1120px;
-  }
 
   .header {
     display: flex;

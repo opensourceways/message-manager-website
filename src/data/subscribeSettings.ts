@@ -21,15 +21,15 @@ export const eventTypeNames: Record<string, Record<string, string>> = {
 };
 
 export const eurBuildStatus = [
-  { label: 'failed', value: 0 },
-  { label: 'succeeded', value: 1 },
-  { label: 'canceled', value: 2 },
-  { label: 'running', value: 3 },
-  { label: 'pending', value: 4 },
-  { label: 'skipped', value: 5 },
-  { label: 'starting', value: 6 },
   { label: 'importing', value: 7 },
+  { label: 'pending', value: 4 },
+  { label: 'starting', value: 6 },
+  { label: 'running', value: 3 },
+  { label: 'succeeded', value: 1 },
   { label: 'forked', value: 8 },
+  { label: 'skipped', value: 5 },
+  { label: 'failed', value: 0 },
+  { label: 'canceled', value: 2 },
   { label: 'waiting', value: 9 },
   { label: 'unknown', value: 1000 },
 ];
