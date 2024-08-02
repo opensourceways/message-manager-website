@@ -1,11 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
-import { LOGIN_KEYS, doLogin, getCsrfToken, tryLogin } from '@/shared/login';
+import { doLogin, getCsrfToken, tryLogin } from '@/shared/login';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
-import { queryUserInfo } from '@/api/api-user';
-import { useUnreadMsgCountStore } from '@/stores/common';
-import Cookies from 'js-cookie';
+import { syncUserInfo } from '@/api/api-user';
 
 const routes = [
   {
@@ -52,10 +50,15 @@ router.beforeEach(async () => {
     return false;
   }
   try {
-    await tryLogin()
+    await tryLogin();
   } catch {
-    return false;
-  };
+    return { name: 'notFound' };
+  }
+
+  if (loginStore.isLogined) {
+    const userInfoStore = useUserInfoStore();
+    syncUserInfo(userInfoStore);
+  }
   return true;
 });
 

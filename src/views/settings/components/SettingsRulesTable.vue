@@ -1,29 +1,18 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
 import { OCheckbox, OLink } from '@opensig/opendesign';
 
-import { useCheckbox } from '@/composables/useCheckbox';
 import { eventSourceNames, eventTypeNames } from '@/data/subscribeSettings';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 import { updateNeedStatus } from '@/api/api-settings';
 
 const emit = defineEmits<{
   (event: 'editOrAddRule', type: 'add' | 'edit', source: string, eventType: string, rule?: SubscribeRuleT): void;
-  (event: 'editRecipients', rule: SubscribeRuleT): void;
-  (event: 'checkboxChange'): void;
   (event: 'deleteRule', rule: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>): void;
 }>();
 const props = defineProps<{
   source: string;
   eventTypes: Record<string, SubscribeRuleT[]>;
 }>();
-
-
-const checkboxDataSource = computed(() => Object.values(props.eventTypes).flat());
-
-const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(checkboxDataSource, (item) => item.id);
-
-watch(checkboxes, () => emit('checkboxChange'));
 
 const addRule = (eventType: string) => {
   emit('editOrAddRule', 'add', props.source, eventType);
@@ -33,29 +22,9 @@ const editRule = (eventType: string, rule: SubscribeRuleT) => {
   emit('editOrAddRule', 'edit', props.source, eventType, rule);
 };
 
-/**
- * 获取被勾选的消息接收规则
- */
-const getCheckedRules = () => {
-  const set = new Set(checkboxes.value);
-  return checkboxDataSource.value.filter((item) => set.has(item.id));
-};
-
-/**
- * 获取勾选状态的checkbox的数量
- */
-const getCheckedRulesCount = () => {
-  return checkboxes.value.length;
-};
-
 const needCheckboxChange = (rule: SubscribeRuleT) => {
   updateNeedStatus(rule)
 }
-
-defineExpose({
-  getCheckedRules,
-  getCheckedRulesCount
-});
 </script>
 
 <template>
@@ -64,44 +33,31 @@ defineExpose({
       <table>
         <thead>
           <tr class="head-row">
-            <th class="checkbox-cell">
-              <OCheckbox :value="1" v-model="parentCheckbox" :indeterminate="indeterminate" />
-            </th>
-            <th class="first-cell">{{ eventSourceNames[source] }}</th>
+            <th>{{ eventSourceNames[source] }}</th>
             <th>站内消息</th>
             <th>邮箱</th>
             <th>短信</th>
             <th class="disabled-th">电话</th>
             <th class="disabled-th">API钩子</th>
-            <th>消息接收人</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody v-for="(rules, type, index) in eventTypes" :key="type">
-          <tr v-if="index !== 0">
-            <td colspan="10" class="last-row"></td>
+          <tr v-if="index !== 0" class="empty-row">
+            <td colspan="10"></td>
           </tr>
-          <tr v-if="Object.keys(eventTypes).length > 1">
-            <td colspan="9" class="mode-name-cell">{{ eventTypeNames[source][type] }}</td>
+          <tr class="event-type" v-if="Object.keys(eventTypes).length > 1">
+            <td colspan="7">{{ eventTypeNames[source][type] }}</td>
           </tr>
           <tr class="business-row" v-for="rule in rules" :key="rule.mode_name">
-            <td class="checkbox-cell">
-              <OCheckbox :value="rule.id" v-model="checkboxes" />
-            </td>
-            <td class="first-cell">{{ rule.mode_name || '全部消息（默认）' }}</td>
+            <td>{{ rule.mode_name || '全部消息（默认）' }}</td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_inner_message" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_mail" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_message" v-model="rule.needCheckboxes" /></td>
             <td><OCheckbox :value="1" :disabled="true" /></td>
             <td><OCheckbox :value="1" :disabled="true" /></td>
-            <td class="recipient-names-cell">
-              <p class="recipient-names">
-                {{ rule.displayRecipientNames }}
-              </p>
-            </td>
             <td class="actions-cell">
               <p class="actions">
-                <OLink color="primary" @click="$emit('editRecipients', rule)">修改接收人</OLink>
                 <template v-if="rule.mode_name">
                   <OLink color="primary" @click="editRule(type, rule)">修改规则</OLink>
                   <OLink color="danger" @click="$emit('deleteRule', rule)">删除</OLink>
@@ -109,9 +65,8 @@ defineExpose({
               </p>
             </td>
           </tr>
-          <tr>
-            <td />
-            <td colspan="9" class="first-cell">
+          <tr class="last-row">
+            <td colspan="7">
               <OLink color="primary" @click="addRule(type)">创建消息接收规则</OLink>
             </td>
           </tr>
@@ -139,24 +94,14 @@ th, td {
   padding-left: 0;
 }
 
-.mode-name-cell {
-  padding-left: 44px;
-}
-
-.first-cell {
-  padding-left: 0;
-  word-break: break-all;
-  
-  @include respond-to('>laptop') {
-    width: 208px;
+@mixin append-before-after {
+  &::before {
+    content: '';
+    display: table-cell;
+    width: 48px;
+    @content;
   }
 
-  @include respond-to('<=laptop') {
-    width: 160px;
-  }
-}
-
-@mixin append-last {
   &::after {
     content: '';
     display: table-cell;
@@ -165,35 +110,26 @@ th, td {
   }
 }
 
-.checkbox-cell {
-  padding-left: 44px;
-  padding-right: 0;
-  width: var(--o-control_size-s);
+.empty-row {
+  td {
+    background-color: var(--o-color-fill1);
+    height: 8px;
+    padding: 0;
+  }
+}
+
+tr {
+  &:not(.empty-row) {
+    @include append-before-after;
+  }
 }
 
 .business-row {
   td {
-    &:not(.checkbox-cell) {
-      border-bottom: 1px solid var(--o-color-control1-light);
-    }
-
+    border-bottom: 1px solid var(--o-color-control1-light);
+    
     &:last-child {
       padding-right: 0;
-    }
-  }
-
-  .recipient-names-cell {
-    @include respond-to('>laptop') {
-      width: 300px;
-    }
-
-    @include respond-to('<=laptop') {
-      width: 250px;
-    }
-
-    .recipient-names {
-      width: 90%;
-      word-break: break-all;
     }
   }
 
@@ -208,23 +144,15 @@ th, td {
       align-items: center;
     }
   }
-
-  @include append-last;
 }
 
 .head-row {
-  @include append-last {
+  @include append-before-after {
     background-color: var(--table-head-bg);
   }
 
   .disabled-th {
     color: var(--o-color-info4);
   }
-}
-
-.last-row {
-  background-color: var(--o-color-fill1);
-  height: 8px;
-  padding: 0;
 }
 </style>

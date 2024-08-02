@@ -3,7 +3,7 @@ import { OBreadcrumb, OBreadcrumbItem } from '@opensig/opendesign';
 
 const breadcrumbs = [
   { text: '消息中心', name: 'home' },
-  { text: '消息订阅设置', name: 'settings' },
+  { text: '消息接收设置', name: 'settings' },
 ];
 </script>
 

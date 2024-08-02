@@ -1,26 +1,151 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { OIcon, OPopover, OTab, OTabPane } from '@opensig/opendesign';
-import TipIcon from '~icons/app/icon-tip.svg';
-import SettingsRecipient from './SettingsRecipient.vue';
-import SettingsRules from './SettingsRules.vue';
-import AppButton from '@/components/AppButton.vue';
+import { reactive, ref } from 'vue';
+import { useConfirmDialog } from '@vueuse/core';
+import { AxiosError } from 'axios';
+import { useMessage } from '@opensig/opendesign';
+
+import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
+import { EVENT_SOURCES } from '@/data/subscribeSettings';
+import type { EurModeFilterT, GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
+
+import SettingsRulesTable from './components/SettingsRulesTable.vue';
+import SettingsGiteeRuleDialog from './dialogs/SettingsGiteeRuleDialog.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import SettingsEurRuleDialog from './dialogs/SettingsEurRuleDialog.vue';
 import SettingsBreadcrumbs from './components/SettingsBreadcrumbs.vue';
 
-const activeTab = ref(0);
-const subscribeSettings = ref<InstanceType<typeof SettingsRules>>();
-const recipientSettings = ref<InstanceType<typeof SettingsRecipient>>();
-const components = [subscribeSettings, recipientSettings];
-const currentComponent = computed(() => components[activeTab.value].value);
-const btnsDisabled = computed(() => subscribeSettings.value?.btnDisabled);
-const tipRef = ref();
-
-const addRecipient = () => {
-  currentComponent.value?.addRecipient();
+const events: {
+  [eventSource: string]: {
+    [eventTypes: string]: SubscribeRuleT[];
+  };
+} = {
+  [EVENT_SOURCES.EUR]: {
+    build: [],
+  },
+  [EVENT_SOURCES.GITEE]: {
+    issue: [],
+    pr: [],
+    push: [],
+    note: [],
+  },
 };
 
-const removeRecipient = () => {
-  subscribeSettings.value?.removeRecipient();
+const tableRefs = ref<InstanceType<typeof SettingsRulesTable>[]>();
+
+// 初始表格数据
+const initialData = reactive(events);
+
+/**
+ * 聚合detail数据，主要是后端返回的数据中，如果一条消息接收规则有多个接收人，
+ *
+ * 则返回的形式是有多个id及其他字段相同，除了接收人id和姓名不同的消息接收规则，所以需要聚合成一个
+ */
+const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
+  const map = new Map<string, SubscribeRuleT>();
+  for (const item of data) {
+    let cached = map.get(item.id);
+    if (!cached) {
+      cached = item;
+      cached.recipients = [{ id: item.recipient_id, name: item.recipient_name }];
+      map.set(item.id, cached);
+    } else {
+      cached.recipients?.push({ id: item.recipient_id, name: item.recipient_name });
+    }
+  }
+  return Array.from(map.values());
+};
+
+// 重置表格数据
+const resetData = () => {
+  for (const prop in initialData) {
+    for (const innerProp in initialData[prop]) {
+      initialData[prop][innerProp] = [];
+    }
+  }
+};
+
+// ------------------------获取数据------------------------
+const getData = async () => {
+  const allSubsData = await getAllSubs();
+  resetData();
+  for (const item of allSubsData) {
+    if (!item.source || !item.event_type) {
+      continue;
+    }
+    if (!item.mode_name) {
+      // 如果没有mode_name，则是默认全部消息的精细化订阅，插入首位
+      initialData[item.source][item.event_type].unshift(item);
+      continue;
+    }
+    initialData[item.source][item.event_type].push(item);
+  }
+  const detailData = await getSubsDetail();
+  const aggregated = aggregateData(detailData);
+  for (const item of aggregated) {
+    if (!item.source || !item.event_type) {
+      continue;
+    }
+    const rule = initialData[item.source][item.event_type].find((rule) => rule.id === item.id);
+    if (rule) {
+      rule.needCheckboxes ??= [];
+      rule.displayRecipientNames = item.recipients?.map((r) => r.name).join('、');
+      rule.recipients = item.recipients;
+      if (item.need_inner_message) {
+        rule.needCheckboxes?.push('need_inner_message');
+      }
+      if (item.need_mail) {
+        rule.needCheckboxes?.push('need_mail');
+      }
+      if (item.need_message) {
+        rule.needCheckboxes?.push('need_message');
+      }
+    }
+  }
+};
+getData();
+
+// ------------------------编辑消息接收规则的弹窗里的数据------------------------
+const dialogData = reactive({
+  show: false,
+  dlgType: 'add' as 'add' | 'edit',
+  eventType: '',
+  rule: null as SubscribeRuleT | null,
+});
+
+// ------------------------弹窗显示控制------------------------
+const dialogSwitches = reactive({
+  [EVENT_SOURCES.GITEE]: false, // 新增/编Eur精细化订阅弹窗
+  [EVENT_SOURCES.EUR]: false, // 新增/编辑Gitee精细化订阅弹窗
+  recipient: false, // 新增/修改接收人弹窗
+});
+
+// 子组件点击新增/修改消息接收规则的按钮触发
+const onEditOrAdd = (dlgType: 'edit' | 'add', source: string, eventType: string, rule?: SubscribeRuleT) => {
+  dialogData.dlgType = dlgType;
+  dialogData.eventType = eventType;
+  if (rule) {
+    dialogData.rule = rule;
+  }
+  dialogSwitches[source] = true;
+};
+
+// ------------------------删除规则------------------------
+const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
+const deleteModeName = ref('');
+
+const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) => {
+  const { isCanceled } = await reveal();
+  if (isCanceled) {
+    return;
+  }
+  try {
+    await deleteSubsRule(param);
+    await getData();
+  } catch (error) {
+    if (error instanceof AxiosError && error?.response?.data?.message) {
+      useMessage().warning(error.response.data.message);
+    }
+  }
 };
 </script>
 
@@ -28,33 +153,35 @@ const removeRecipient = () => {
   <div class="page-body">
     <SettingsBreadcrumbs />
     <header>
-      {{ $t('config.subscribeConfig') }}
+      消息接收设置
     </header>
-    <div class="tabs">
-      <OTab v-model="activeTab" :line="false">
-        <template #suffix>
-          <div v-if="activeTab === 0" class="subs-config-btn-group">
-            <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="addRecipient">添加接收人</AppButton>
-            <AppButton variant="outline" round="pill" :disabled="btnsDisabled" @click="removeRecipient">移除接收人</AppButton>
-          </div>
-          <div v-if="activeTab === 1" style="display: flex; gap: 8px; align-items: center">
-            <AppButton variant="outline" round="pill" @click="addRecipient">新增接收人</AppButton>
-            <OPopover :target="tipRef">
-              <p class="tips">
-                新增接收人后，系统将自动<span>发送验证信息</span>到所填手机号和邮箱，通过验证<span>并在消息接收设置页面分配消息接收人</span>后，方可接受对应类别的消息
-              </p>
-            </OPopover>
-            <OIcon class="tip-icon" ref="tipRef"><TipIcon /></OIcon>
-          </div>
-        </template>
-        <OTabPane :value="0" :label="$t('config.receiveConfig')">
-          <SettingsRules ref="subscribeSettings" />
-        </OTabPane>
-        <OTabPane :value="1" :label="$t('config.receiverManagement')">
-          <SettingsRecipient ref="recipientSettings" />
-        </OTabPane>
-      </OTab>
-    </div>
+    <ConfirmDialog :show="isRevealed" @confirm="confirm" @cancel="cancel" title="删除条件" :content="`是否确定删除${deleteModeName}?`"></ConfirmDialog>
+
+    <SettingsEurRuleDialog
+      v-model:show="dialogSwitches[EVENT_SOURCES.EUR]"
+      :type="dialogData.dlgType"
+      :eventType="dialogData.eventType"
+      :rule="(dialogData.rule as SubscribeRuleT<EurModeFilterT>)"
+      @updateData="getData"
+    />
+    <SettingsGiteeRuleDialog
+      v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
+      :type="dialogData.dlgType"
+      :eventType="dialogData.eventType"
+      :rule="(dialogData.rule as SubscribeRuleT<GiteeModeFilterT>)"
+      @updateData="getData"
+    />
+
+    <SettingsRulesTable
+      ref="tableRefs"
+      v-for="(types, prop) in initialData"
+      :key="prop"
+      :source="(prop as string)"
+      :eventTypes="types"
+      style="margin-top: 24px; margin-bottom: 24px"
+      @editOrAddRule="onEditOrAdd"
+      @deleteRule="deleteRule"
+    />
   </div>
 </template>
 
@@ -78,41 +205,6 @@ header {
   @include respond-to('<=laptop') {
     width: 80vw;
   }
-}
-
-.tips {
-  max-width: 300px;
-  @include text1;
-
-  span {
-    font-weight: bold;
-  }
-}
-.tip-icon {
-  font-size: 20px;
-  cursor: pointer;
-
-  @include hover {
-    color: rgb(var(--o-kleinblue-6));
-  }
-}
-
-.subs-config-btn-group {
-  display: flex;
-  gap: 24px;
-}
-
-.tabs {
-  --tab-nav-justify: left;
-  margin-top: 24px;
-}
-
-.row {
-  display: flex;
-}
-
-.space-between {
-  justify-content: space-between;
 }
 
 header {

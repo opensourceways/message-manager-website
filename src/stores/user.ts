@@ -40,17 +40,11 @@ export const useLoginStore = defineStore('login', {
  * 用户基本信息
  */
 export const useUserInfoStore = defineStore('userInfo', {
-  state: () => ({
+  state: (): UserInfoT => ({
     photo: '',
     username: '',
+    email: '',
+    phoneCountryCode: '',
+    phone: '',
   }),
-  actions: {
-    setUserInfo(data?: UserInfoT) {
-      if (!data) {
-        return;
-      }
-      this.photo = data.photo || '';
-      this.username = data.username || '';
-    },
-  },
 });
