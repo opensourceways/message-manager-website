@@ -22,12 +22,12 @@ export function queryUserInfo() {
  * @param userInfo 用户信息
  */
 export function syncUserInfo(userInfo: UserInfoT) {
-  const gitee_login_name = userInfo.identities?.find((item) => item.identity === 'gitee')?.login_name;
+  const gitee_user_name = userInfo.identities?.find((item) => item.identity === 'gitee')?.user_name;
   return request.post('/message_center/config/recipient/sync', {
     mail: userInfo.email,
     phone: userInfo.phone,
     user_name: userInfo.username,
     country_code: userInfo.phoneCountryCode,
-    gitee_login_name,
+    gitee_user_name,
   });
 }
