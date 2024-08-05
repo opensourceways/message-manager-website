@@ -140,6 +140,9 @@ const delMultiMessages = async () => {
 const unreadCountStore = useUnreadMsgCountStore();
 
 const markReadMessage = (msg: MessageT) => {
+  if (msg.is_read) {
+    return;
+  }
   readMessages(msg)
     .then(() => {
       getData(page.value, pageSize.value);
@@ -247,7 +250,7 @@ watch(selectedVal, (val) => {
         </div>
         <div class="list">
           <div v-for="(msg, index) in messages" :key="msg.id" class="item">
-            <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
+            <MessageListItem :msg="msg" @deleteMessage="() => delMessage(msg)" @readMessage="() => markReadMessage(msg)" />
             <ODivider v-if="index < messages.length - 1" class="divider-line" />
           </div>
         </div>

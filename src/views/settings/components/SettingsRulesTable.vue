@@ -23,8 +23,8 @@ const editRule = (eventType: string, rule: SubscribeRuleT) => {
 };
 
 const needCheckboxChange = (rule: SubscribeRuleT) => {
-  updateNeedStatus(rule)
-}
+  updateNeedStatus(rule);
+};
 </script>
 
 <template>
@@ -89,8 +89,10 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
   }
 }
 
-th, td {
+th,
+td {
   @include tip1;
+  padding-right: 0;
   padding-left: 0;
 }
 
@@ -127,21 +129,38 @@ tr {
 .business-row {
   td {
     border-bottom: 1px solid var(--o-color-control1-light);
-    
-    &:last-child {
-      padding-right: 0;
+
+    &:first-child {
+      width: 392px;
+    }
+
+    &:nth-child(2) {
+      width: 144px;
+    }
+
+    &:nth-child(3) {
+      width: 112px;
+    }
+
+    &:nth-child(4) {
+      width: 112px;
+    }
+
+    &:nth-child(5) {
+      width: 112px;
+    }
+
+    &:nth-child(6) {
+      width: 316px;
     }
   }
 
   .actions-cell {
-    padding-left: 0;
-    padding-right: 0;
-    width: 240px;
-
     .actions {
       display: flex;
       gap: 32px;
       align-items: center;
+      white-space: nowrap;
     }
   }
 }

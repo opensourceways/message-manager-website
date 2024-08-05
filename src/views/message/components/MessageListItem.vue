@@ -8,11 +8,11 @@ import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue';
 import IconLink from '@/components/IconLink.vue';
 
-const emits = defineEmits<{
-  (event: 'deleteMessage', msg: MessageT): void;
-  (event: 'readMessage', msg: MessageT): void;
+defineEmits<{
+  (event: 'deleteMessage'): void;
+  (event: 'readMessage'): void;
 }>();
-const props = defineProps<{
+defineProps<{
   msg: MessageT;
 }>();
 
@@ -51,13 +51,6 @@ const Title = (props: { msg: MessageT }) => {
     title
   );
 };
-
-const onClickRead = () => {
-  if (!props.msg.is_read) {
-    return;
-  }
-  emits('readMessage', props.msg);
-};
 </script>
 
 <template>
@@ -79,10 +72,10 @@ const onClickRead = () => {
       <p>仓库{{ msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <IconLink @click="$emit('deleteMessage', msg)">
+        <IconLink @click="$emit('deleteMessage')">
           <template #suffix><DeleteIcon /></template>
         </IconLink>
-        <IconLink @click="onClickRead" :disabled="msg.is_read">
+        <IconLink @click="$emit('readMessage')" :disabled="msg.is_read">
           <template #suffix><ReadIcon /></template>
         </IconLink>
       </div>

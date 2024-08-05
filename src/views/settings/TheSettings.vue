@@ -196,6 +196,7 @@ header {
 
 .page-body {
   margin-top: 26px;
+  min-width: 900px;
   max-width: 1416px;
 
   @include respond-to('>laptop') {
