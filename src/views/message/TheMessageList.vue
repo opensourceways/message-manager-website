@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, reactive, ref, watch, watchEffect } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
@@ -29,6 +29,7 @@ import AppPagination from '@/components/AppPagination.vue';
 const message = useMessage();
 const { locale } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const settingsIcon = ref();
 const expandedMenus = ref(Object.keys(eventSourceNames));
@@ -63,15 +64,17 @@ const requestParams = reactive({
 });
 
 const getData = (page = 1, pageSize = 10) => {
-  getMessages(requestParams.source, requestParams.eventType, requestParams.isRead, page, pageSize).then((res) => {
+  getMessages(route.query?.source as string, route.query?.type as string, requestParams.isRead, page, pageSize).then((res) => {
     const { count, query_info } = res.data;
     total.value = count;
-    for (const msg of query_info) {
-      msg.id = msg.source + msg.event_id;
-      const date = dayjs(msg.time);
-      msg.formattedTime = date.fromNow();
+    if (query_info) {
+      for (const msg of query_info) {
+        msg.id = msg.source + msg.event_id;
+        const date = dayjs(msg.time);
+        msg.formattedTime = date.fromNow();
+      }
     }
-    messages.value = query_info;
+    messages.value = query_info ?? [];
   });
 };
 const { page, pageSize, total } = usePage(getData);
@@ -79,16 +82,23 @@ const { page, pageSize, total } = usePage(getData);
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
 
-watch(activeMenu, (menu) => {
+const onMenuChange = (menu: string) => {
   if (menu === 'all') {
-    requestParams.source = '';
-    requestParams.eventType = '';
+    router.push({ path: '/'});
   } else {
     const [source, type] = menu.split('_');
-    requestParams.source = source;
-    requestParams.eventType = type;
+    router.push({ path: '/', query: { source, type } });
   }
+};
+
+watch(() => route.query, (query) => {
   page.value = 1;
+  const { source, type } = query;
+  if (source && type) {
+    activeMenu.value = `${source}_${type}`;
+  } else {
+    activeMenu.value = 'all';
+  }
 });
 
 // ------------------------删除消息------------------------
@@ -211,7 +221,7 @@ watch(selectedVal, (val) => {
           </div>
         </OPopover>
       </div>
-      <OMenu v-model="activeMenu" :default-expanded="expandedMenus">
+      <OMenu v-model="activeMenu" :default-expanded="expandedMenus" @change="onMenuChange">
         <OMenuItem class="menu-item" value="all"> 全部消息 </OMenuItem>
         <template v-for="(evTypes, evSource) in eventTypeNames" :key="evSource">
           <template v-if="Object.keys(evTypes).length === 1">
