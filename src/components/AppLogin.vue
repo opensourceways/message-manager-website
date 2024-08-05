@@ -24,11 +24,11 @@ const toMsgCenter = () => router.push('/');
   <template v-if="loginStore.isLogined">
     <div class="user-info" ref="userInfo">
       <OBadge color="danger" v-if="unreadCountStore.count > 0" :value="unreadCountStore.count">
-        <img v-if="userInfoStore.photo" :src="userInfoStore.photo" />
+        <img :src="userInfoStore.photo" />
         {{ userInfoStore.username }}
       </OBadge>
       <template v-else>
-        <img v-if="userInfoStore.photo" :src="userInfoStore.photo" />
+        <img :src="userInfoStore.photo" />
         {{ userInfoStore.username }}
       </template>
     </div>

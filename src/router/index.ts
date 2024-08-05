@@ -4,6 +4,7 @@ import { scrollToTop } from '@/utils/common';
 import { doLogin, getCsrfToken, tryLogin } from '@/shared/login';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
 import { syncUserInfo } from '@/api/api-user';
+import { useUnreadMsgCountStore } from '@/stores/common';
 
 const routes = [
   {
@@ -41,7 +42,9 @@ const router = createRouter({
 
 router.beforeEach(async () => {
   const loginStore = useLoginStore();
+  const unreadCountStore = useUnreadMsgCountStore();
   if (loginStore.isLogined) {
+    unreadCountStore.updateCount();
     return true;
   }
 
@@ -58,6 +61,7 @@ router.beforeEach(async () => {
   if (loginStore.isLogined) {
     const userInfoStore = useUserInfoStore();
     syncUserInfo(userInfoStore);
+    unreadCountStore.updateCount();
   }
   return true;
 });
