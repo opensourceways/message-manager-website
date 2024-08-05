@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, reactive, ref, watch, watchEffect } from 'vue';
+import { computed, provide, reactive, ref, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -138,6 +138,9 @@ const delMultiMessages = async () => {
 
 // ------------------------标记已读消息------------------------
 const unreadCountStore = useUnreadMsgCountStore();
+const multiReadDisabled = computed(() => {
+  return checkboxes.value.length === 0 || messages.value.every((item) => item.is_read);
+});
 
 const markReadMessage = (msg: MessageT) => {
   if (msg.is_read) {
@@ -242,7 +245,7 @@ watch(selectedVal, (val) => {
               <template #prefix><DeleteIcon /></template>
               删除
             </IconLink>
-            <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="checkboxes.length === 0" @click="markReadMultiMessages">
+            <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="multiReadDisabled" @click="markReadMultiMessages">
               <template #prefix><ReadIcon /></template>
               标记已读
             </IconLink>
