@@ -1,18 +1,18 @@
-export const EVENT_SOURCES = {
+export const EventSources = {
   GITEE: 'https://gitee.com',
   EUR: 'https://eur.openeuler.openatom.cn',
 };
 
-export const eventSourceNames: Record<string, string> = {
-  [EVENT_SOURCES.EUR]: 'EUR消息',
-  [EVENT_SOURCES.GITEE]: 'Gitee消息',
+export const EventSourceNames: Record<string, string> = {
+  [EventSources.EUR]: 'EUR消息',
+  [EventSources.GITEE]: 'Gitee消息',
 };
 
-export const eventTypeNames: Record<string, Record<string, string>> = {
-  [EVENT_SOURCES.EUR]: {
-    build: 'EUR消息',
+export const EventTypeNames: Record<string, Record<string, string>> = {
+  [EventSources.EUR]: {
+    build: '构建状态',
   },
-  [EVENT_SOURCES.GITEE]: {
+  [EventSources.GITEE]: {
     issue: 'Issue',
     pr: 'Pull Request',
     push: 'Push',
@@ -20,7 +20,7 @@ export const eventTypeNames: Record<string, Record<string, string>> = {
   },
 };
 
-export const eurBuildStatus = [
+export const EUR_BUILD_STATUS = [
   { label: 'importing', value: 7 },
   { label: 'pending', value: 4 },
   { label: 'starting', value: 6 },
