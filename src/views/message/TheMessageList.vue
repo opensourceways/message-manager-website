@@ -202,7 +202,7 @@ const readStatus = ref('all');
 const readStatusOptions = ref([
   { value: 'all', label: '全部消息' },
   { value: 1, label: '已读消息' },
-  { value: 0, label: '已读消息' },
+  { value: 0, label: '未读消息' },
 ]);
 
 watch(readStatus, (val: string | number) => {
