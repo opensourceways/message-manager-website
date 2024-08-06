@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type Ref, onMounted, watch } from 'vue';
+import { ref, type Ref, onMounted, watch, computed } from 'vue';
 import IconClose from '@/assets/svg-icons/icon-close.svg';
 
 const props = withDefaults(
@@ -30,18 +30,8 @@ const tagsRemovedObserver = new MutationObserver(([mut]) => {
 });
 
 onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }));
-const showPlaceHolder = ref(true);
 const focused = ref(false);
-
-watch(focused, val => {
-  if (val) {
-    showPlaceHolder.value = false;
-  } else {
-    if (!inputArea.value.hasChildNodes()) {
-      showPlaceHolder.value = true;
-    }
-  }
-});
+const showPlaceHolder = computed(() => !focused.value && (!tagSet.value.size || !inputArea.value?.hasChildNodes()));
 
 const onFocus = () => focused.value = true;
 
@@ -53,7 +43,7 @@ watch(
     if (tags && tags.length) {
       tagSet.value = new Set(tags);
       inputArea.value.innerHTML = '';
-      tags.forEach((tag) => appendTag(tag, inputArea.value));
+      tags.forEach((tag) => appendTag(tag));
     }
   }
 );
@@ -101,6 +91,8 @@ const appendTag = (text: string, focusNode?: Node) => {
   if (focusNode) {
     inputArea.value.insertBefore(wrapper, focusNode);
     inputArea.value.removeChild(focusNode);
+  } else {
+    inputArea.value.appendChild(wrapper);
   }
   return wrapper;
 };

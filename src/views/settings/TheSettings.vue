@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { provide, reactive, ref } from 'vue';
 import { useConfirmDialog } from '@vueuse/core';
 import { AxiosError } from 'axios';
 import { useMessage } from '@opensig/opendesign';
 
 import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
 import { EVENT_SOURCES } from '@/data/subscribeSettings';
-import type { EurModeFilterT, GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
+import type { SubscribeRuleT } from '@/@types/type-settings';
 
 import SettingsRulesTable from './components/SettingsRulesTable.vue';
 import SettingsGiteeRuleDialog from './dialogs/SettingsGiteeRuleDialog.vue';
@@ -106,11 +106,12 @@ getData();
 
 // ------------------------编辑消息接收规则的弹窗里的数据------------------------
 const dialogData = reactive({
-  show: false,
-  dlgType: 'add' as 'add' | 'edit',
-  eventType: '',
-  rule: null as SubscribeRuleT | null,
+  dlgType: 'add' as 'add' | 'edit', // dialog类型，新增或编辑
+  eventType: '', // eventType
+  rule: null as SubscribeRuleT | null, // 精细化订阅对象
 });
+
+provide('dialogData', dialogData);
 
 // ------------------------弹窗显示控制------------------------
 const dialogSwitches = reactive({
@@ -159,16 +160,10 @@ const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | '
 
     <SettingsEurRuleDialog
       v-model:show="dialogSwitches[EVENT_SOURCES.EUR]"
-      :type="dialogData.dlgType"
-      :eventType="dialogData.eventType"
-      :rule="(dialogData.rule as SubscribeRuleT<EurModeFilterT>)"
       @updateData="getData"
     />
     <SettingsGiteeRuleDialog
       v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
-      :type="dialogData.dlgType"
-      :eventType="dialogData.eventType"
-      :rule="(dialogData.rule as SubscribeRuleT<GiteeModeFilterT>)"
       @updateData="getData"
     />
 

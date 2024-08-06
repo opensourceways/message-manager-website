@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { inject, reactive, ref, watch } from 'vue';
 import { ODialog, OForm, OFormItem, OInput, ORadio, type DialogActionT } from '@opensig/opendesign';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
@@ -8,13 +8,10 @@ import { EVENT_SOURCES } from '@/data/subscribeSettings';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
-  (event: 'confirm'): void;
+  (event: 'updateData'): void;
 }>();
 const props = defineProps<{
   show: boolean;
-  type: 'edit' | 'add';
-  eventType: string;
-  rule?: SubscribeRuleT<GiteeModeFilterT> | null;
 }>();
 
 const repoNameEditor = ref();
@@ -26,29 +23,31 @@ const data = reactive({
   },
 });
 
+const dialogData = inject<{
+  dlgType: 'add' | 'edit';
+  eventType: string;
+  rule: SubscribeRuleT<GiteeModeFilterT>;
+}>('dialogData');
+
 watch(
   () => props.show,
   (show) => {
-    if (!show) {
+    if (show) {
+      const rule = dialogData?.rule;
+      if (rule && rule.source === EVENT_SOURCES.GITEE) {
+        data.mode_name = rule.mode_name;
+        if (rule.mode_filter) {
+          data.mode_filter.repo_name = rule.mode_filter.repo_name;
+          data.mode_filter.is_bot = rule.mode_filter.is_bot;
+        }
+      }
+    } else {
       data.mode_name = '';
       data.mode_filter = {
         repo_name: [],
         is_bot: false,
       };
       repoNameEditor.value.clear();
-    }
-  }
-);
-
-watch(
-  () => props.rule,
-  (subs) => {
-    if (subs && subs.source === EVENT_SOURCES.GITEE) {
-      data.mode_name = subs.mode_name;
-      if (subs.mode_filter) {
-        data.mode_filter.repo_name = subs.mode_filter.repo_name;
-        data.mode_filter.is_bot = subs.mode_filter.is_bot;
-      }
     }
   }
 );
@@ -65,12 +64,12 @@ const actions: DialogActionT[] = [
     size: 'large',
     onClick: () => {
       data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-      (props.type === 'add' ? postSubsRule : putSubsRule)({
+      (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
         ...data,
         source: EVENT_SOURCES.GITEE,
-        event_type: props.eventType,
+        event_type: dialogData?.eventType,
       }).then(() => {
-        emit('confirm');
+        emit('updateData');
         onCancel();
       });
     },
@@ -88,7 +87,7 @@ const actions: DialogActionT[] = [
 
 <template>
   <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false" :actions="actions">
-    <template #header>创建消息接收规则</template>
+    <template #header>{{ dialogData?.dlgType === 'add'? '新增' : '编辑' }}消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
       <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
@@ -101,7 +100,7 @@ const actions: DialogActionT[] = [
         <OFormItem label="仓库名称" required>
           <div>
             <SettingsTagsEditor
-              :tags="rule?.mode_filter.repo_name"
+              :tags="dialogData?.rule?.mode_filter.repo_name"
               ref="repoNameEditor"
               style="width: 100%"
               placeholder="请输入组织和仓库名称，按照“组织名/仓库名”的格式填写，按回车键结束输入"

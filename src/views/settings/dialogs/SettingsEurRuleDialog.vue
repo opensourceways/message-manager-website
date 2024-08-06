@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { ODialog, OForm, OFormItem, OInput, OOption, OSelect, type DialogActionT } from '@opensig/opendesign';
-import { reactive, ref, watch } from 'vue';
+import { inject, reactive, ref, watch } from 'vue';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { EVENT_SOURCES, eurBuildStatus } from '@/data/subscribeSettings';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
@@ -13,9 +13,6 @@ const emit = defineEmits<{
 
 const props = defineProps<{
   show: boolean;
-  type: 'edit' | 'add';
-  eventType: string;
-  rule?: SubscribeRuleT<EurModeFilterT> | null;
 }>();
 
 const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
@@ -26,14 +23,32 @@ const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
   },
 });
 
-watch(() => props.show, val => {
-  if (!val) {
-    data.mode_name = '',
-    data.mode_filter.status = [];
-    data.mode_filter.source_group = [];
-    projectNameEditor.value.clear();
+const dialogData = inject<{
+  dlgType: 'add' | 'edit';
+  eventType: string;
+  rule: SubscribeRuleT<EurModeFilterT>;
+}>('dialogData');
+
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      const rule = dialogData?.rule;
+      if (rule && rule.source === EVENT_SOURCES.EUR) {
+        data.mode_name = rule.mode_name;
+        if (rule.mode_filter) {
+          data.mode_filter.status = rule.mode_filter.status;
+          data.mode_filter.source_group = rule.mode_filter.source_group;
+        }
+      }
+    } else {
+      data.mode_name = '';
+      data.mode_filter.status = [];
+      data.mode_filter.source_group = [];
+      projectNameEditor.value.clear();
+    }
   }
-});
+);
 
 const projectNameEditor = ref();
 
@@ -48,10 +63,10 @@ const actions: DialogActionT[] = [
     size: 'large',
     onClick: () => {
       data.mode_filter.source_group = projectNameEditor.value.getTagValues();
-      (props.type === 'add' ? postSubsRule : putSubsRule)({
+      (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
         ...data,
         source: EVENT_SOURCES.EUR,
-        event_type: props.eventType,
+        event_type: dialogData?.eventType,
       }).then(() => {
         emit('updateData');
         onCancel();
