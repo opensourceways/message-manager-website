@@ -46,5 +46,6 @@ export const useUserInfoStore = defineStore('userInfo', {
     email: '',
     phoneCountryCode: '',
     phone: '',
+    identities: [],
   }),
 });
