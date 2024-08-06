@@ -4,7 +4,7 @@ import { ODialog, OForm, OFormItem, OInput, ORadio, type DialogActionT } from '@
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
-import { EVENT_SOURCES } from '@/data/subscribeSettings';
+import { EventSources } from '@/data/subscribeSettings';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -34,7 +34,7 @@ watch(
   (show) => {
     if (show) {
       const rule = dialogData?.rule;
-      if (rule && rule.source === EVENT_SOURCES.GITEE) {
+      if (rule && rule.source === EventSources.GITEE) {
         data.mode_name = rule.mode_name;
         if (rule.mode_filter) {
           data.mode_filter.repo_name = rule.mode_filter.repo_name;
@@ -66,7 +66,7 @@ const actions: DialogActionT[] = [
       data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
       (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
         ...data,
-        source: EVENT_SOURCES.GITEE,
+        source: EventSources.GITEE,
         event_type: dialogData?.eventType,
       }).then(() => {
         emit('updateData');

@@ -2,7 +2,9 @@
 import { OScroller } from '@opensig/opendesign';
 import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
+import { useScreen } from './composables/useScreen';
 
+const { isPhone } = useScreen();
 </script>
 
 <template>
@@ -13,7 +15,7 @@ import AppFooter from './components/AppFooter.vue';
         <RouterView />
       </div>
     </main>
-    <AppFooter />
+    <AppFooter v-if="!isPhone" />
   </OScroller>
 </template>
 
@@ -56,7 +58,7 @@ import AppFooter from './components/AppFooter.vue';
   }
 
   @include respond-to('phone') {
-    --layout-header-padding: 24px;
+    --layout-header-padding: 16px;
 
     --layout-content-padding: 24px;
 
@@ -99,6 +101,10 @@ import AppFooter from './components/AppFooter.vue';
   padding-bottom: 72px;
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
+
+  @include respond-to('phone') {
+    padding: 0;
+  }
 }
 
 .ly-footer {

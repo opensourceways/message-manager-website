@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OCheckbox, OLink } from '@opensig/opendesign';
 
-import { eventSourceNames, eventTypeNames } from '@/data/subscribeSettings';
+import { EventSourceNames, EventTypeNames } from '@/data/subscribeSettings';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 import { updateNeedStatus } from '@/api/api-settings';
 
@@ -33,7 +33,7 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
       <table>
         <thead>
           <tr class="head-row">
-            <th>{{ eventSourceNames[source] }}</th>
+            <th>{{ EventSourceNames[source] }}</th>
             <th>站内消息</th>
             <th>邮箱</th>
             <th>短信</th>
@@ -47,7 +47,7 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
             <td colspan="10"></td>
           </tr>
           <tr class="event-type" v-if="Object.keys(eventTypes).length > 1">
-            <td colspan="7">{{ eventTypeNames[source][type] }}</td>
+            <td colspan="7">{{ EventTypeNames[source][type] }}</td>
           </tr>
           <tr class="business-row" v-for="rule in rules" :key="rule.mode_name">
             <td>{{ rule.mode_name || '全部消息（默认）' }}</td>

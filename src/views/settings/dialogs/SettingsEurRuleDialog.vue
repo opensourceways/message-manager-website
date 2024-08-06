@@ -3,7 +3,7 @@ import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { ODialog, OForm, OFormItem, OInput, OOption, OSelect, type DialogActionT } from '@opensig/opendesign';
 import { inject, reactive, ref, watch } from 'vue';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
-import { EVENT_SOURCES, eurBuildStatus } from '@/data/subscribeSettings';
+import { EventSources, EUR_BUILD_STATUS } from '@/data/subscribeSettings';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
 
 const emit = defineEmits<{
@@ -34,7 +34,7 @@ watch(
   (val) => {
     if (val) {
       const rule = dialogData?.rule;
-      if (rule && rule.source === EVENT_SOURCES.EUR) {
+      if (rule && rule.source === EventSources.EUR) {
         data.mode_name = rule.mode_name;
         if (rule.mode_filter) {
           data.mode_filter.status = rule.mode_filter.status;
@@ -65,7 +65,7 @@ const actions: DialogActionT[] = [
       data.mode_filter.source_group = projectNameEditor.value.getTagValues();
       (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
         ...data,
-        source: EVENT_SOURCES.EUR,
+        source: EventSources.EUR,
         event_type: dialogData?.eventType,
       }).then(() => {
         emit('updateData');
@@ -104,7 +104,7 @@ const actions: DialogActionT[] = [
         </OFormItem>
         <OFormItem label="构建状态" required>
           <OSelect class="status-selector" v-model="data.mode_filter.status" multiple variant="outline" placeholder="请选择构建状态" clearable>
-            <OOption v-for="item in eurBuildStatus" :key="item.value" :label="item.label" :value="item.value" />
+            <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :label="item.label" :value="item.value" />
           </OSelect>
         </OFormItem>
       </OForm>

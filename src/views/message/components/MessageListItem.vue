@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, inject, type Ref } from 'vue';
+import { computed, h, inject, type Ref } from 'vue';
 import { OBadge, OCheckbox } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
@@ -7,14 +7,19 @@ import ReadIcon from '~icons/app/icon-read.svg';
 import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue';
 import IconLink from '@/components/IconLink.vue';
+import { useScreen } from '@/composables/useScreen';
+import { EventSources } from '@/data/subscribeSettings';
+import { usePhoneStore } from '@/stores/phone';
 
 defineEmits<{
   (event: 'deleteMessage'): void;
   (event: 'readMessage'): void;
 }>();
-defineProps<{
+const props = defineProps<{
   msg: MessageT;
 }>();
+
+const { isPhone } = useScreen();
 
 const checkboxes = inject<Ref<(string | number)[]>>('checkboxes');
 
@@ -51,10 +56,39 @@ const Title = (props: { msg: MessageT }) => {
     title
   );
 };
+
+const sourceGroupTitle = computed(() => {
+  switch (props.msg.source_group) {
+    case EventSources.EUR:
+      return '项目';
+    default:
+      return '仓库';
+  }
+});
+
+// ------------------------移动端------------------------
+const phoneStore = usePhoneStore();
 </script>
 
 <template>
-  <div class="message-list-item">
+  <!-- 移动端 -->
+  <div v-if="isPhone" class="phone-message-list-item">
+    <OBadge :dot="true" v-if="!msg.is_read" color="danger">
+      <WordAvatar :name="msg.user" size="small" />
+    </OBadge>
+    <WordAvatar v-else :name="msg.user" size="small" />
+    <div class="msg-detail">
+      <div>
+        <p>{{ msg.user }}</p>
+        <Title :msg="msg" />
+        <p class="source-group">{{ sourceGroupTitle + msg.source_group }}</p>
+      </div>
+      <p class="time">{{ msg.formattedTime }}</p>
+    </div>
+    <OCheckbox v-if="phoneStore.isManaging" class="checkbox" :value="msg.id" v-model="checkboxes" />
+  </div>
+
+  <div v-else class="message-list-item">
     <div class="list-item-left">
       <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxes" />
       <div>
@@ -69,7 +103,7 @@ const Title = (props: { msg: MessageT }) => {
       </div>
     </div>
     <div class="list-item-right">
-      <p>仓库{{ msg.source_group }}</p>
+      <p>{{ sourceGroupTitle + msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
         <IconLink @click="$emit('deleteMessage')">
@@ -85,14 +119,49 @@ const Title = (props: { msg: MessageT }) => {
 
 <style scoped lang="scss">
 .msg-title {
-  @include tip1;
+  font-size: 14px;
+  line-height: 22px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-height: 44px;
+
+  @include respond-to('phone') {
+    white-space: inherit;
+  }
 }
 
 :deep(.o-badge-dot) {
   --badge-dot-size: 6px;
+}
+
+.phone-message-list-item {
+  display: flex;
+  align-items: center;
+  
+  .msg-detail {
+    flex-grow: 1;
+    display: flex;
+    margin-left: 16px;
+    width: calc(100% - 66px);
+
+    .source-group {
+      @include text1;
+      color: var(--o-color-info3);
+    }
+
+    .time {
+      white-space: nowrap;
+    }
+
+    span {
+      font-size: 12px;
+    }
+  }
+
+  :deep(.o-checkbox-wrap) {
+    flex-direction: row-reverse;
+  }
 }
 
 .message-list-item {

@@ -1,7 +1,6 @@
 import Cookies from 'js-cookie';
 import { queryUserInfo } from '../api/api-user';
 import { useLoginStore, useUserInfoStore } from '../stores/user';
-import type { UserInfoT } from '@/@types/type-user';
 
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
 

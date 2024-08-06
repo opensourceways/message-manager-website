@@ -1,11 +1,12 @@
-import { ref, watch, type Ref } from 'vue';
+import { computed, ref, watch, type Ref } from 'vue';
 
 export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T) => string | number) => {
   const checkboxes = ref<(string | number)[]>([]);
   const indeterminate = ref<boolean>(false);
   const parentCheckbox = ref<(string | number)[]>([]);
+  const isCheckedAll = computed(() => parentCheckbox.value.length > 0);
 
-  const setCheckAll = () => {
+  const checkAll = () => {
     indeterminate.value = false;
     parentCheckbox.value = [1];
   };
@@ -40,19 +41,18 @@ export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T)
     if (datasource.value.length === 0) {
       return;
     }
-    const parentCheckboxChecked = parentCheckbox.value.length > 0;
     if (val.length === datasource.value.length) {
-      if (!parentCheckboxChecked) {
+      if (!isCheckedAll.value) {
         parentCheckbox.value = [1];
       }
       indeterminate.value = false;
     } else if (val.length === 0) {
-      if (parentCheckboxChecked) {
+      if (isCheckedAll.value) {
         parentCheckbox.value = [];
       }
       indeterminate.value = false;
     } else {
-      if (parentCheckboxChecked) {
+      if (isCheckedAll.value) {
         parentCheckbox.value = [];
       }
       indeterminate.value = true;
@@ -63,7 +63,8 @@ export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T)
     checkboxes,
     indeterminate,
     parentCheckbox,
+    isCheckedAll,
     clearCheckboxes,
-    setCheckAll,
+    checkAll,
   };
 };

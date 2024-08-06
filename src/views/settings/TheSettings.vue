@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 import { useMessage } from '@opensig/opendesign';
 
 import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
-import { EVENT_SOURCES } from '@/data/subscribeSettings';
+import { EventSources } from '@/data/subscribeSettings';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 
 import SettingsRulesTable from './components/SettingsRulesTable.vue';
@@ -19,10 +19,10 @@ const events: {
     [eventTypes: string]: SubscribeRuleT[];
   };
 } = {
-  [EVENT_SOURCES.EUR]: {
+  [EventSources.EUR]: {
     build: [],
   },
-  [EVENT_SOURCES.GITEE]: {
+  [EventSources.GITEE]: {
     issue: [],
     pr: [],
     push: [],
@@ -115,8 +115,8 @@ provide('dialogData', dialogData);
 
 // ------------------------弹窗显示控制------------------------
 const dialogSwitches = reactive({
-  [EVENT_SOURCES.GITEE]: false, // 新增/编Eur精细化订阅弹窗
-  [EVENT_SOURCES.EUR]: false, // 新增/编辑Gitee精细化订阅弹窗
+  [EventSources.GITEE]: false, // 新增/编Eur精细化订阅弹窗
+  [EventSources.EUR]: false, // 新增/编辑Gitee精细化订阅弹窗
   recipient: false, // 新增/修改接收人弹窗
 });
 
@@ -159,11 +159,11 @@ const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | '
     <ConfirmDialog :show="isRevealed" @confirm="confirm" @cancel="cancel" title="删除条件" :content="`是否确定删除${deleteModeName}?`"></ConfirmDialog>
 
     <SettingsEurRuleDialog
-      v-model:show="dialogSwitches[EVENT_SOURCES.EUR]"
+      v-model:show="dialogSwitches[EventSources.EUR]"
       @updateData="getData"
     />
     <SettingsGiteeRuleDialog
-      v-model:show="dialogSwitches[EVENT_SOURCES.GITEE]"
+      v-model:show="dialogSwitches[EventSources.GITEE]"
       @updateData="getData"
     />
 

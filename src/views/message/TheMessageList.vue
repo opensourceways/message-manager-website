@@ -5,15 +5,15 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, OSubMenu, useMessage, OSelect, OOption, OPopover, OLink, ODivider } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, OSubMenu, useMessage, OSelect, OOption, OPopover, OLink, ODivider, OIcon } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
 import SettingsIcon from '~icons/app/icon-setting.svg';
 
-import { eventSourceNames } from '@/data/subscribeSettings';
-import { eventTypeNames } from '@/data/subscribeSettings';
+import { EventSourceNames } from '@/data/subscribeSettings';
+import { EventTypeNames } from '@/data/subscribeSettings';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages } from '@/api/messages';
 import { useConfirmDialog } from '@vueuse/core';
@@ -25,6 +25,8 @@ import { usePage } from '@/composables/usePage';
 import IconLink from '@/components/IconLink.vue';
 import { useScreen } from '@/composables/useScreen';
 import AppPagination from '@/components/AppPagination.vue';
+import { usePhoneStore } from '@/stores/phone';
+import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -32,7 +34,7 @@ const router = useRouter();
 const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const settingsIcon = ref();
-const expandedMenus = ref(Object.keys(eventSourceNames));
+const expandedMenus = ref(Object.keys(EventSourceNames));
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
@@ -53,18 +55,21 @@ const toConfig = () => router.push('/settings');
 const { isPhone } = useScreen();
 
 // ------------------------多选框事件------------------------
-const { checkboxes, parentCheckbox, indeterminate } = useCheckbox(messages, (msg) => msg.id);
+const {
+  checkboxes,
+  parentCheckbox,
+  indeterminate,
+  isCheckedAll,
+  checkAll,
+  clearCheckboxes
+} = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxes', checkboxes);
 
 // ------------------------获取数据------------------------
-const requestParams = reactive({
-  source: '',
-  eventType: '',
-  isRead: undefined as 0 | 1 | undefined,
-});
+const isRead = ref<0 | 1 | undefined>();
 
 const getData = (page = 1, pageSize = 10) => {
-  getMessages(route.query?.source as string, route.query?.type as string, requestParams.isRead, page, pageSize).then((res) => {
+  getMessages(route.query?.source as string, route.query?.type as string, isRead.value, page, pageSize).then((res) => {
     const { count, query_info } = res.data;
     total.value = count;
     if (query_info) {
@@ -74,6 +79,7 @@ const getData = (page = 1, pageSize = 10) => {
         msg.formattedTime = date.fromNow();
       }
     }
+    clearCheckboxes();
     messages.value = query_info ?? [];
   });
 };
@@ -84,22 +90,25 @@ const activeMenu = ref('all');
 
 const onMenuChange = (menu: string) => {
   if (menu === 'all') {
-    router.push({ path: '/'});
+    router.push({ path: '/' });
   } else {
     const [source, type] = menu.split('_');
     router.push({ path: '/', query: { source, type } });
   }
 };
 
-watch(() => route.query, (query) => {
-  page.value = 1;
-  const { source, type } = query;
-  if (source && type) {
-    activeMenu.value = `${source}_${type}`;
-  } else {
-    activeMenu.value = 'all';
+watch(
+  () => route.query,
+  (query) => {
+    page.value = 1;
+    const { source, type } = query;
+    if (source && type) {
+      activeMenu.value = `${source}_${type}`;
+    } else {
+      activeMenu.value = 'all';
+    }
   }
-});
+);
 
 // ------------------------删除消息------------------------
 const confirmDialogOptions = reactive({
@@ -189,24 +198,71 @@ const markReadMultiMessages = () => {
 };
 
 // ------------------------切换已读未读消息------------------------
-const selectedVal = ref('all');
-const selectOptions = ref([
+const readStatus = ref('all');
+const readStatusOptions = ref([
   { value: 'all', label: '全部消息' },
-  { value: 'read', label: '已读消息' },
+  { value: 1, label: '已读消息' },
+  { value: 0, label: '已读消息' },
 ]);
 
-watch(selectedVal, (val) => {
+watch(readStatus, (val: string | number) => {
   if (val === 'all') {
-    requestParams.isRead = undefined;
+    isRead.value = undefined;
   } else {
-    requestParams.isRead = 1;
+    isRead.value = val as 0 | 1;
   }
   getData();
 });
+
+// ------------------------移动端------------------------
+const phoneStore = usePhoneStore();
+
+watch(checkboxes, val => {
+  phoneStore.checkedCount = val.length;
+});
+
+watch(() => phoneStore.isManaging, val => {
+  if (!val) {
+    clearCheckboxes();
+  }
+});
+
+watch(
+  () => phoneStore.checkedAll,
+  (val) => {
+    if (val && !checkboxes.value.length) {
+      checkAll();
+      return;
+    }
+    if (!val && checkboxes.value.length) {
+      clearCheckboxes();
+    }
+  }
+);
+
+watch(isCheckedAll, (val) => {
+  if (val) {
+    phoneStore.checkedAll = true;
+  } else {
+    phoneStore.checkedAll = false;
+  }
+});
+
+const filterConfirm = (source: string, type: string) => {
+  if (!source && !type) {
+    router.push({ path: '/' });
+    return;
+  }
+  router.push({ path: '/', query: { source, type } });
+};
 </script>
 
 <template>
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
+
+  <!-- 移动端特有弹窗 -->
+  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="filterConfirm"></MessageListFilterDlg>
+
   <div class="messages-container">
     <aside v-if="!isPhone">
       <div class="title">
@@ -223,15 +279,15 @@ watch(selectedVal, (val) => {
       </div>
       <OMenu v-model="activeMenu" :default-expanded="expandedMenus" @change="onMenuChange">
         <OMenuItem class="menu-item" value="all"> 全部消息 </OMenuItem>
-        <template v-for="(evTypes, evSource) in eventTypeNames" :key="evSource">
+        <template v-for="(evTypes, evSource) in EventTypeNames" :key="evSource">
           <template v-if="Object.keys(evTypes).length === 1">
-            <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
-              {{ typeName }}
+            <OMenuItem v-for="(_, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
+              {{ EventSourceNames[prop] }}
             </OMenuItem>
           </template>
           <OSubMenu class="submenu-title" v-else :value="`${evSource}`">
             <template #title>
-              <p>{{ eventSourceNames[evSource] }}</p>
+              <p>{{ EventSourceNames[evSource] }}</p>
             </template>
             <OMenuItem v-for="(typeName, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
               {{ typeName }}
@@ -245,20 +301,23 @@ watch(selectedVal, (val) => {
       <template v-if="total > 0">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
-            <OSelect v-model="selectedVal" variant="text" style="width: 112px">
-              <OOption class="select-option" v-for="item in selectOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <OCheckbox v-if="!isPhone" v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
+            <OSelect class="select" v-model="readStatus" variant="text" style="width: 112px">
+              <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
-            <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="checkboxes.length === 0" @click="delMultiMessages">
-              <template #prefix><DeleteIcon /></template>
-              删除
-            </IconLink>
-            <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="multiReadDisabled" @click="markReadMultiMessages">
-              <template #prefix><ReadIcon /></template>
-              标记已读
-            </IconLink>
+            <template v-if="!isPhone">
+              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="checkboxes.length === 0" @click="delMultiMessages">
+                <template #prefix><DeleteIcon /></template>
+                删除
+              </IconLink>
+              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="multiReadDisabled" @click="markReadMultiMessages">
+                <template #prefix><ReadIcon /></template>
+                标记已读
+              </IconLink>
+            </template>
+            <OLink v-else-if="!phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink>
           </div>
         </div>
         <div class="list">
@@ -272,6 +331,22 @@ watch(selectedVal, (val) => {
         <img src="@/assets/svg-icons/icon-no-messages.svg" />
         <p>暂无消息</p>
       </div>
+
+      <template v-if="isPhone && phoneStore.isManaging">
+        <div style="height: 62px;"></div>
+        <Teleport to="body">
+          <div class="phone-footer">
+            <div @click="markReadMultiMessages">
+              <OIcon class="icon"><ReadIcon /></OIcon>
+              <p>标为已读</p>
+            </div>
+            <div @click="delMultiMessages">
+              <OIcon class="icon"><DeleteIcon /></OIcon>
+              <p>删除</p>
+            </div>
+          </div>
+        </Teleport>
+      </template>
     </div>
   </div>
   <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="page" v-model:pageSize="pageSize" />
@@ -282,9 +357,39 @@ watch(selectedVal, (val) => {
   @include tip1;
 }
 
-.select-option {
-  width: 144px;
+.phone-footer {
+  width: 100%;
+  position: fixed;
+  background-color: var(--o-color-fill2);
+  bottom: 0;
+  left: 0;
+  height: 62px;
+  gap: 68px;
+  display: flex;
   justify-content: center;
+  align-items: center;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .icon {
+      font-size: 24px;
+    }
+
+    p {
+      @include tip2;
+    }
+  }
+}
+
+.select-option {
+  justify-content: center;
+
+  @include respond-to('>phone') {
+    width: 144px;
+  }
 }
 
 .menu-item {
@@ -354,11 +459,31 @@ watch(selectedVal, (val) => {
   height: 100%;
   gap: 10px;
 
+  @include respond-to('phone') {
+    width: 100%;
+    padding-top: 0;
+  }
+
   .header {
+    // position: sticky;
+    // top: 0;
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
     padding-left: 12px;
+
+    @include respond-to('phone') {
+      margin-top: var(--layout-header-height);
+      width: 100%;
+      padding: 16px 0;
+      margin-bottom: 0;
+      background-color: var(--o-color-fill2);
+      z-index: 10;
+
+      .select {
+        --select-padding: 0;
+      }
+    }
 
     .left {
       display: flex;
@@ -385,6 +510,11 @@ watch(selectedVal, (val) => {
       border-radius: 4px;
       padding: 0 12px;
 
+      @include respond-to('phone') {
+        height: auto;
+        padding: 16px 0;
+      }
+
       .divider-line {
         position: absolute;
         bottom: 0;
@@ -410,6 +540,10 @@ watch(selectedVal, (val) => {
   gap: 24px;
   font-size: 16px;
   color: var(--o-color-info3);
+
+  @include respond-to('phone') {
+    height: 100vh;
+  }
 
   img {
     height: 162px;
