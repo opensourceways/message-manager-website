@@ -285,7 +285,7 @@ const filterConfirm = (source: string, type: string) => {
         <template v-for="(evTypes, evSource) in EventTypeNames" :key="evSource">
           <template v-if="Object.keys(evTypes).length === 1">
             <OMenuItem v-for="(_, prop) in evTypes" :key="prop" class="menu-item" :value="`${evSource}_${prop}`">
-              {{ EventSourceNames[prop] }}
+              {{ EventSourceNames[evSource] }}
             </OMenuItem>
           </template>
           <OSubMenu class="submenu-title" v-else :value="`${evSource}`">
