@@ -263,6 +263,9 @@ const filterConfirm = (source: string, type: string) => {
   <!-- 移动端特有弹窗 -->
   <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="filterConfirm"></MessageListFilterDlg>
 
+  <!-- 移动端特有弹窗 -->
+  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="filterConfirm"></MessageListFilterDlg>
+
   <div class="messages-container">
     <aside v-if="!isPhone">
       <div class="title">

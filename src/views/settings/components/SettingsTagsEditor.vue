@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type Ref, onMounted, watch, computed } from 'vue';
+import { ref, type Ref, onMounted, watch, computed, watchEffect } from 'vue';
 import IconClose from '@/assets/svg-icons/icon-close.svg';
 
 const props = withDefaults(
@@ -18,6 +18,7 @@ const props = withDefaults(
 );
 const inputArea = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 const tagSet = ref(new Set<string>());
+const hasTags = computed(() => tagSet.value.size > 0);
 
 const tagsRemovedObserver = new MutationObserver(([mut]) => {
   if (mut.removedNodes.length) {
@@ -31,11 +32,22 @@ const tagsRemovedObserver = new MutationObserver(([mut]) => {
 
 onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }));
 const focused = ref(false);
-const showPlaceHolder = computed(() => !focused.value && (!tagSet.value.size || !inputArea.value?.hasChildNodes()));
+// const showPlaceHolder = computed(() => !focused.value && (!tagSet.value.size || !inputArea.value?.hasChildNodes()));
+const showPlaceHolder = ref(true);
 
 const onFocus = () => focused.value = true;
 
 const onBlur = () => focused.value = false;
+
+watchEffect(() => {
+  if (focused.value || tagSet.value.size > 0) {
+    showPlaceHolder.value = false;
+  } else if (inputArea.value?.hasChildNodes()) {
+    showPlaceHolder.value = false;
+  } else {
+    showPlaceHolder.value = true;
+  }
+});
 
 watch(
   () => props.tags,
@@ -98,7 +110,7 @@ const appendTag = (text: string, focusNode?: Node) => {
 };
 
 const getWrapper = (node: Node): HTMLSpanElement | undefined => {
-  let node_: any = node;
+  let node_: Node | HTMLElement | null = node;
   while (node_) {
     if (node_ === inputArea.value) {
       return;
@@ -115,10 +127,10 @@ const onClick = () => {
   if (!sel || !sel.anchorNode) {
     return;
   }
-  const parent = getWrapper(sel.anchorNode);
-  if (parent) {
+  const tagWrapper = getWrapper(sel.anchorNode);
+  if (tagWrapper) {
     const range = document.createRange();
-    range.setStartAfter(parent);
+    range.setStartAfter(tagWrapper);
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
@@ -137,6 +149,7 @@ const clear = () => {
 defineExpose({
   getTagValues,
   clear,
+  hasTags
 });
 </script>
 

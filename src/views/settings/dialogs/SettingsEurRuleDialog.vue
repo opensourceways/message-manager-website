@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { computed, inject, reactive, ref, watch } from 'vue';
+import { OButton, ODialog, OForm, OFormItem, OInput, OOption, OSelect } from '@opensig/opendesign';
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
-import { ODialog, OForm, OFormItem, OInput, OOption, OSelect, type DialogActionT } from '@opensig/opendesign';
-import { inject, reactive, ref, watch } from 'vue';
-import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
-import { EventSources, EUR_BUILD_STATUS } from '@/data/subscribeSettings';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
+import { EventSources, EUR_BUILD_STATUS } from '@/data/subscribeSettings';
+import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -23,11 +23,14 @@ const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
   },
 });
 
+const projectNameEditor = ref();
 const dialogData = inject<{
   dlgType: 'add' | 'edit';
   eventType: string;
   rule: SubscribeRuleT<EurModeFilterT>;
 }>('dialogData');
+
+const btnDisabled = computed(() => !data.mode_name || !projectNameEditor.value?.hasTags);
 
 watch(
   () => props.show,
@@ -50,42 +53,24 @@ watch(
   }
 );
 
-const projectNameEditor = ref();
-
 const onCancel = () => emit('update:show', false);
-const actions: DialogActionT[] = [
-  {
-    id: 'ok',
-    label: '确定',
-    color: 'primary',
-    variant: 'solid',
-    round: 'pill',
-    size: 'large',
-    onClick: () => {
-      data.mode_filter.source_group = projectNameEditor.value.getTagValues();
-      (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
-        ...data,
-        source: EventSources.EUR,
-        event_type: dialogData?.eventType,
-      }).then(() => {
-        emit('updateData');
-        onCancel();
-      });
-    },
-  },
-  {
-    id: 'cancel',
-    label: '取消',
-    color: 'primary',
-    size: 'large',
-    round: 'pill',
-    onClick: onCancel,
-  },
-];
+
+const onConfirm = () => {
+  data.mode_filter.source_group = projectNameEditor.value.getTags();
+  (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+    ...data,
+    source: EventSources.EUR,
+    event_type: dialogData?.eventType,
+  }).then(() => {
+    emit('updateData');
+    onCancel();
+  });
+};
+
 </script>
 
 <template>
-  <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false" :actions="actions">
+  <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false">
     <template #header>创建消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
@@ -109,10 +94,25 @@ const actions: DialogActionT[] = [
         </OFormItem>
       </OForm>
     </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <OButton :disabled="btnDisabled" variant="solid" round="pill" size="large" color="primary" @click="onConfirm">确定</OButton>
+        <OButton class="right-btn" variant="outline" round="pill" size="large" color="primary" @click="onCancel">取消</OButton>
+      </div>
+    </template>
   </ODialog>
 </template>
 
 <style scoped lang="scss">
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+
+  .right-btn {
+    margin-left: 16px;
+  }
+}
+
 .reponame-tips {
   color: var(--o-color-info3);
   @include tip1;

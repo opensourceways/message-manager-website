@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { inject, reactive, ref, watch } from 'vue';
-import { ODialog, OForm, OFormItem, OInput, ORadio, type DialogActionT } from '@opensig/opendesign';
+import { OButton, ODialog, OForm, OFormItem, OInput, ORadio } from '@opensig/opendesign';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EventSources } from '@/data/subscribeSettings';
+import { computed } from 'vue';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -28,6 +29,8 @@ const dialogData = inject<{
   eventType: string;
   rule: SubscribeRuleT<GiteeModeFilterT>;
 }>('dialogData');
+
+const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags);
 
 watch(
   () => props.show,
@@ -54,39 +57,21 @@ watch(
 
 const onCancel = () => emit('update:show', false);
 
-const actions: DialogActionT[] = [
-  {
-    id: 'ok',
-    label: '确定',
-    color: 'primary',
-    variant: 'solid',
-    round: 'pill',
-    size: 'large',
-    onClick: () => {
-      data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-      (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
-        ...data,
-        source: EventSources.GITEE,
-        event_type: dialogData?.eventType,
-      }).then(() => {
-        emit('updateData');
-        onCancel();
-      });
-    },
-  },
-  {
-    id: 'cancel',
-    label: '取消',
-    color: 'primary',
-    size: 'large',
-    round: 'pill',
-    onClick: onCancel,
-  },
-];
+const onConfirm = () => {
+  data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
+  (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+    ...data,
+    source: EventSources.GITEE,
+    event_type: dialogData?.eventType,
+  }).then(() => {
+    emit('updateData');
+    onCancel();
+  });
+};
 </script>
 
 <template>
-  <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false" :actions="actions">
+  <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false">
     <template #header>{{ dialogData?.dlgType === 'add'? '新增' : '编辑' }}消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
@@ -116,10 +101,25 @@ const actions: DialogActionT[] = [
         </OFormItem>
       </OForm>
     </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <OButton :disabled="btnDisabled" variant="solid" round="pill" size="large" color="primary" @click="onConfirm">确定</OButton>
+        <OButton class="right-btn" variant="outline" round="pill" size="large" color="primary" @click="onCancel">取消</OButton>
+      </div>
+    </template>
   </ODialog>
 </template>
 
 <style scoped lang="scss">
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+
+  .right-btn {
+    margin-left: 16px;
+  }
+}
+
 .reponame-tips {
   color: var(--o-color-info3);
   font-size: var(--o-font_size-tip2);
