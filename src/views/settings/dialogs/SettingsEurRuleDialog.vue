@@ -30,7 +30,7 @@ const dialogData = inject<{
   rule: SubscribeRuleT<EurModeFilterT>;
 }>('dialogData');
 
-const btnDisabled = computed(() => !data.mode_name || !projectNameEditor.value?.hasTags);
+const btnDisabled = computed(() => !data.mode_name || !projectNameEditor.value?.hasTags || !data.mode_filter.status.length);
 
 watch(
   () => props.show,
@@ -56,7 +56,7 @@ watch(
 const onCancel = () => emit('update:show', false);
 
 const onConfirm = () => {
-  data.mode_filter.source_group = projectNameEditor.value.getTags();
+  data.mode_filter.source_group = projectNameEditor.value.getTagValues();
   (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
     ...data,
     source: EventSources.EUR,
