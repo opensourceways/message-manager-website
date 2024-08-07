@@ -85,7 +85,7 @@ const onConfirm = () => {
         <OFormItem label="仓库名称" required>
           <div>
             <SettingsTagsEditor
-              :tags="dialogData?.rule?.mode_filter.repo_name"
+              :tags="data.mode_filter.repo_name"
               ref="repoNameEditor"
               style="width: 100%"
               placeholder="请输入组织和仓库名称，按照“组织名/仓库名”的格式填写，按回车键结束输入"

@@ -32,7 +32,6 @@ const tagsRemovedObserver = new MutationObserver(([mut]) => {
 
 onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }));
 const focused = ref(false);
-// const showPlaceHolder = computed(() => !focused.value && (!tagSet.value.size || !inputArea.value?.hasChildNodes()));
 const showPlaceHolder = ref(true);
 
 const onFocus = () => focused.value = true;

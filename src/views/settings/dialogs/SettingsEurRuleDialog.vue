@@ -66,7 +66,6 @@ const onConfirm = () => {
     onCancel();
   });
 };
-
 </script>
 
 <template>
@@ -83,7 +82,12 @@ const onConfirm = () => {
       <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="项目名称" required>
           <div>
-            <SettingsTagsEditor ref="projectNameEditor" style="width: 100%" placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入" />
+            <SettingsTagsEditor
+              :tags="data.mode_filter.source_group"
+              ref="projectNameEditor"
+              style="width: 100%"
+              placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入"
+            />
             <p class="reponame-tips">若需关注所有项目，使用“*”代替。示例：“lihua/testProject”、“lihua/*”</p>
           </div>
         </OFormItem>
