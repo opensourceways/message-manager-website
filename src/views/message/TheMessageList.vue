@@ -37,7 +37,6 @@ import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import IconLink from '@/components/IconLink.vue';
-import { useScreen } from '@/composables/useScreen';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
 import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
@@ -79,10 +78,32 @@ provide('checkboxes', checkboxes);
 // ------------------------搜索------------------------
 const searchInput = ref('');
 
-// ------------------------消息过滤下拉多选------------------------
-const messageFilterSelectVal = ref<string[]>([]);
+const searchPlaceholder = computed(() => {
+  switch (route.query.source) {
+    case EventSources.EUR:
+      return '项目';
+    case EventSources.GITEE:
+      return '仓库';
+    default:
+      return '项目/仓库';
+  }
+});
 
-const messageFilterSelectOptions = computed(() => {
+// ------------------------消息过滤下拉多选------------------------
+const msgFilterSelectVal = ref<string[]>([]);
+
+const msgFilterSelectPlaceholder = computed(() => {
+  switch (route.query.source) {
+    case EventSources.EUR:
+      return '构建状态';
+    case EventSources.GITEE:
+      return '是否机器人';
+    default:
+      return '';
+  }
+});
+
+const msgFilterSelectOptions = computed(() => {
   switch (route.query.source) {
     case EventSources.EUR:
       return EUR_BUILD_STATUS;
@@ -120,7 +141,7 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
 };
 
 // ------------------------是否特别关注消息------------------------
-const isSpecial = ref<'true' | 'false'>('false');
+const isSpecial = ref<'true' | 'false'>('true');
 
 watch(isSpecial, () => getData());
 
@@ -129,7 +150,7 @@ const isRead = ref<0 | 1 | undefined>();
 
 const getData = () => {
   const { source, event_type } = route.query;
-  const filterValues = messageFilterSelectVal.value.length ? messageFilterSelectVal.value.join() : undefined;
+  const filterValues = msgFilterSelectVal.value.length ? msgFilterSelectVal.value.join() : undefined;
   getMessages({
     source: source as string,
     event_type: event_type as string,
@@ -165,8 +186,8 @@ const onMenuChange = (menu: string) => {
     router.push({ path: '/' });
   } else {
     // 清空过滤
-    if (messageFilterSelectVal.value.length) {
-      messageFilterSelectVal.value = [];
+    if (msgFilterSelectVal.value.length) {
+      msgFilterSelectVal.value = [];
     }
     // 清空gitee消息类型过滤
     if (giteeEventType.value.length) {
@@ -374,15 +395,15 @@ const filterConfirm = (source: string, event_type: string) => {
         </OPopover>
       </div>
       <OMenu v-model="activeMenu" @change="onMenuChange">
-        <OMenuItem class="menu-item" value="all"> 全部消息 </OMenuItem>
+        <OMenuItem class="menu-item" value="all"> 全部 </OMenuItem>
         <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url"> {{ EventSourceNames[url] }} </OMenuItem>
       </OMenu>
     </aside>
 
     <div class="message-list-wrap">
       <OTab variant="text" :line="false" v-model="isSpecial">
-        <OTabPane label="全部消息" value="false"></OTabPane>
         <OTabPane label="特别关注消息" value="true"></OTabPane>
+        <OTabPane label="全部消息" value="false"></OTabPane>
       </OTab>
       <div class="message-list">
         <div class="header">
@@ -394,7 +415,7 @@ const filterConfirm = (source: string, event_type: string) => {
             </OSelect>
             <template v-if="!isPhone">
               <!-- 仓库/项目名称搜索框 -->
-              <OInput v-model="searchInput" @pressEnter="getData">
+              <OInput v-model="searchInput" @pressEnter="getData" :placeholder="searchPlaceholder">
                 <template #suffix>
                   <div style="display: flex">
                     <IconSearch class="icon-search" @click="getData" />
@@ -402,8 +423,8 @@ const filterConfirm = (source: string, event_type: string) => {
                 </template>
               </OInput>
               <!-- 通用过滤下拉选择 -->
-              <OSelect :multiple="true" v-model="messageFilterSelectVal" @change="onFilterSelectChange">
-                <OOption v-for="item in messageFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
+              <OSelect :multiple="true" v-model="msgFilterSelectVal" @change="onFilterSelectChange" :placeholder="msgFilterSelectPlaceholder">
+                <OOption v-for="item in msgFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
                   {{ item.label }}
                 </OOption>
               </OSelect>

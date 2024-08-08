@@ -15,19 +15,10 @@ import SettingsEurRuleDialog from './dialogs/SettingsEurRuleDialog.vue';
 import SettingsBreadcrumbs from './components/SettingsBreadcrumbs.vue';
 
 const events: {
-  [eventSource: string]: {
-    [eventTypes: string]: SubscribeRuleT[];
-  };
+  [eventSource: string]: SubscribeRuleT[];
 } = {
-  [EventSources.EUR]: {
-    build: [],
-  },
-  [EventSources.GITEE]: {
-    issue: [],
-    pr: [],
-    push: [],
-    note: [],
-  },
+  [EventSources.EUR]: [],
+  [EventSources.GITEE]: [],
 };
 
 const tableRefs = ref<InstanceType<typeof SettingsRulesTable>[]>();
@@ -57,10 +48,8 @@ const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
 
 // 重置表格数据
 const resetData = () => {
-  for (const prop in initialData) {
-    for (const innerProp in initialData[prop]) {
-      initialData[prop][innerProp] = [];
-    }
+  for (const source in initialData) {
+    initialData[source] = [];
   }
 };
 
@@ -69,15 +58,10 @@ const getData = async () => {
   const allSubsData = await getAllSubs();
   resetData();
   for (const item of allSubsData) {
-    if (!item.source || !item.event_type) {
+    if (!item.mode_name || !item.source || !item.event_type) {
       continue;
     }
-    if (!item.mode_name) {
-      // 如果没有mode_name，则是默认全部消息的精细化订阅，插入首位
-      initialData[item.source][item.event_type].unshift(item);
-      continue;
-    }
-    initialData[item.source][item.event_type].push(item);
+    initialData[item.source]/* [item.event_type] */.push(item);
   }
   const detailData = await getSubsDetail();
   const aggregated = aggregateData(detailData);
@@ -85,7 +69,7 @@ const getData = async () => {
     if (!item.source || !item.event_type) {
       continue;
     }
-    const rule = initialData[item.source][item.event_type].find((rule) => rule.id === item.id);
+    const rule = initialData[item.source]/* [item.event_type] */.find((rule) => rule.id === item.id);
     if (rule) {
       rule.needCheckboxes ??= [];
       rule.displayRecipientNames = item.recipients?.map((r) => r.name).join('、');
@@ -107,7 +91,6 @@ getData();
 // ------------------------编辑消息接收规则的弹窗里的数据------------------------
 const dialogData = reactive({
   dlgType: 'add' as 'add' | 'edit', // dialog类型，新增或编辑
-  eventType: '', // eventType
   rule: null as SubscribeRuleT | null, // 精细化订阅对象
 });
 
@@ -121,11 +104,10 @@ const dialogSwitches = reactive({
 });
 
 // 子组件点击新增/修改消息接收规则的按钮触发
-const onEditOrAdd = (dlgType: 'edit' | 'add', source: string, eventType: string, rule?: SubscribeRuleT) => {
+const onEditOrAdd = (dlgType: 'edit' | 'add', source: string, editId?: string | number) => {
   dialogData.dlgType = dlgType;
-  dialogData.eventType = eventType;
-  if (rule) {
-    dialogData.rule = rule;
+  if (editId !== undefined) {
+    dialogData.rule = initialData[source].find(rule => rule.id === editId) as SubscribeRuleT;
   }
   dialogSwitches[source] = true;
 };
@@ -154,7 +136,7 @@ const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | '
   <div class="page-body">
     <SettingsBreadcrumbs />
     <header>
-      消息接收设置
+      特别关注设置
     </header>
     <ConfirmDialog :show="isRevealed" @confirm="confirm" @cancel="cancel" title="删除条件" :content="`是否确定删除${deleteModeName}?`"></ConfirmDialog>
 
@@ -169,10 +151,10 @@ const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | '
 
     <SettingsRulesTable
       ref="tableRefs"
-      v-for="(types, prop) in initialData"
+      v-for="(rules, prop) in initialData"
       :key="prop"
+      :rules="rules"
       :source="(prop as string)"
-      :eventTypes="types"
       style="margin-top: 24px; margin-bottom: 24px"
       @editOrAddRule="onEditOrAdd"
       @deleteRule="deleteRule"

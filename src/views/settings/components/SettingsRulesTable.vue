@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { OCheckbox, OLink } from '@opensig/opendesign';
 
-import { EventSourceNames, EventTypeNames } from '@/data/event';
+import { EventSourceNames } from '@/data/event';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 import { updateNeedStatus } from '@/api/api-settings';
 
 const emit = defineEmits<{
-  (event: 'editOrAddRule', type: 'add' | 'edit', source: string, eventType: string, rule?: SubscribeRuleT): void;
+  (event: 'editOrAddRule', type: 'add' | 'edit', source: string, editId?: string): void;
   (event: 'deleteRule', rule: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>): void;
 }>();
 const props = defineProps<{
   source: string;
-  eventTypes: Record<string, SubscribeRuleT[]>;
+  rules: SubscribeRuleT[];
 }>();
 
-const addRule = (eventType: string) => {
-  emit('editOrAddRule', 'add', props.source, eventType);
+const addRule = () => {
+  emit('editOrAddRule', 'add', props.source);
 };
 
-const editRule = (eventType: string, rule: SubscribeRuleT) => {
-  emit('editOrAddRule', 'edit', props.source, eventType, rule);
+const editRule = (rule: SubscribeRuleT) => {
+  emit('editOrAddRule', 'edit', props.source, rule.id);
 };
 
 const needCheckboxChange = (rule: SubscribeRuleT) => {
@@ -34,7 +34,7 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
         <thead>
           <tr class="head-row">
             <th>{{ EventSourceNames[source] }}</th>
-            <th>站内消息</th>
+            <th>特别关注列表</th>
             <th>邮箱</th>
             <th>短信</th>
             <th class="disabled-th">电话</th>
@@ -42,13 +42,7 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
             <th>操作</th>
           </tr>
         </thead>
-        <tbody v-for="(rules, type, index) in eventTypes" :key="type">
-          <tr v-if="index !== 0" class="empty-row">
-            <td colspan="10"></td>
-          </tr>
-          <tr class="event-type" v-if="Object.keys(eventTypes).length > 1">
-            <td colspan="7">{{ EventTypeNames[source][type] }}</td>
-          </tr>
+        <tbody>
           <tr class="business-row" v-for="rule in rules" :key="rule.mode_name">
             <td>{{ rule.mode_name || '全部消息（默认）' }}</td>
             <td><OCheckbox @change="needCheckboxChange(rule)" value="need_inner_message" v-model="rule.needCheckboxes" /></td>
@@ -59,7 +53,7 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
             <td class="actions-cell">
               <p class="actions">
                 <template v-if="rule.mode_name">
-                  <OLink color="primary" @click="editRule(type, rule)">修改规则</OLink>
+                  <OLink color="primary" @click="editRule(rule)">修改规则</OLink>
                   <OLink color="danger" @click="$emit('deleteRule', rule)">删除</OLink>
                 </template>
               </p>
@@ -67,7 +61,7 @@ const needCheckboxChange = (rule: SubscribeRuleT) => {
           </tr>
           <tr class="last-row">
             <td colspan="7">
-              <OLink color="primary" @click="addRule(type)">创建消息接收规则</OLink>
+              <OLink color="primary" @click="addRule()">创建消息接收规则</OLink>
             </td>
           </tr>
         </tbody>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { inject, reactive, ref, watch } from 'vue';
-import { OButton, ODialog, OForm, OFormItem, OInput, ORadio } from '@opensig/opendesign';
+import { OButton, OCheckbox, OCheckboxGroup, ODialog, OForm, OFormItem, OInput, OOption, ORadio, OSelect } from '@opensig/opendesign';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EventSources } from '@/data/event';
 import { computed } from 'vue';
+
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -20,17 +21,37 @@ const data = reactive({
   mode_name: '',
   mode_filter: {
     repo_name: [] as string[],
-    is_bot: false,
+    is_bot: false as boolean | undefined,
   },
 });
 
 const dialogData = inject<{
   dlgType: 'add' | 'edit';
-  eventType: string;
   rule: SubscribeRuleT<GiteeModeFilterT>;
 }>('dialogData');
 
 const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags);
+
+// --------------------事件类型下拉选择----------------
+const eventTypesOptions = [
+  { label: 'Push', value: 'push' },
+  { label: 'Pull Request', value: 'pr' },
+  { label: 'Issue', value: 'issue' },
+  { label: '评论', value: 'note' },
+];
+
+const eventType = ref<string[]>([]);
+
+// --------------------是否机器人----------------
+const isBot = ref<(1 | 0)[]>([]);
+
+const isBotCheckboxChange = (val: (string | number)[]) => {
+  if (val.length === 2 || val.length === 0) {
+    data.mode_filter.is_bot = undefined;
+    return;
+  }
+  data.mode_filter.is_bot = !!val[0];
+};
 
 watch(
   () => props.show,
@@ -42,6 +63,13 @@ watch(
         if (rule.mode_filter) {
           data.mode_filter.repo_name = rule.mode_filter.repo_name;
           data.mode_filter.is_bot = rule.mode_filter.is_bot;
+          if (rule.mode_filter.is_bot === true) {
+            isBot.value = [1];
+          } else if (rule.mode_filter.is_bot === false) {
+            isBot.value = [0];
+          } else {
+            isBot.value = [1, 0];
+          }
         }
       }
     } else {
@@ -51,6 +79,8 @@ watch(
         is_bot: false,
       };
       repoNameEditor.value.clear();
+      isBot.value = [];
+      eventType.value = [];
     }
   }
 );
@@ -59,14 +89,20 @@ const onCancel = () => emit('update:show', false);
 
 const onConfirm = () => {
   data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-  (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+  console.log({
     ...data,
     source: EventSources.GITEE,
-    event_type: dialogData?.eventType,
+    event_type: eventType.value.length ? eventType.value.join() : undefined,
+  });
+  
+  /* (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+    ...data,
+    source: EventSources.GITEE,
+    event_type: eventType.value.length ? eventType.value.join() : undefined,
   }).then(() => {
     emit('updateData');
     onCancel();
-  });
+  }); */
 };
 </script>
 
@@ -94,10 +130,19 @@ const onConfirm = () => {
           </div>
         </OFormItem>
         <OFormItem label="提交人" required>
-          <div style="display: flex; gap: 16px">
+          <!-- <div style="display: flex; gap: 16px">
             <ORadio v-model="data.mode_filter.is_bot" :value="true">机器人</ORadio>
             <ORadio v-model="data.mode_filter.is_bot" :value="false">非机器人</ORadio>
-          </div>
+          </div> -->
+          <OCheckboxGroup v-model="isBot" @change="isBotCheckboxChange">
+            <OCheckbox :value="1">机器人</OCheckbox>
+            <OCheckbox :value="0">非机器人</OCheckbox>
+          </OCheckboxGroup>
+        </OFormItem>
+        <OFormItem label="消息类型" required>
+          <OCheckboxGroup v-model="eventType">
+            <OCheckbox v-for="item in eventTypesOptions" :key="item.value" :value="item.value">{{ item.label }}</OCheckbox>
+          </OCheckboxGroup>
         </OFormItem>
       </OForm>
     </div>

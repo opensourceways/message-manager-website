@@ -4,8 +4,8 @@ export const EventSources = {
 };
 
 export const EventSourceNames: Record<string, string> = {
-  [EventSources.EUR]: 'EUR消息',
-  [EventSources.GITEE]: 'Gitee消息',
+  [EventSources.EUR]: 'EUR',
+  [EventSources.GITEE]: 'Gitee',
 };
 
 export const EventTypeNames: Record<string, Record<string, string>> = {

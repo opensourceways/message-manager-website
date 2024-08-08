@@ -4,16 +4,16 @@ import IconClose from '@/assets/svg-icons/icon-close.svg';
 
 const props = withDefaults(
   defineProps<{
-    width?: string | number;
-    height?: string | number;
+    width?: string;
+    height?: string;
     placeholder?: string;
     showAddButton?: boolean;
     tags?: string[];
   }>(),
   {
     placeholder: '',
-    width: 300,
-    height: 126,
+    width: '300px',
+    height: '126px',
   }
 );
 const inputArea = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
@@ -153,7 +153,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="outer">
+  <div class="outer" :style="{ width, minHeight: height }">
     <p v-if="showPlaceHolder" class="placeholder" @click="onClickPlaceholder">{{ placeholder }}</p>
     <div class="inputArea" ref="inputArea" contenteditable="true" @focus="onFocus" @blur="onBlur" @keydown.enter="addTag" @click="onClick"></div>
   </div>
@@ -191,8 +191,8 @@ defineExpose({
 .outer {
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 4px;
-  width: 300px;
-  min-height: 126px;
+  // width: 300px;
+  // min-height: 126px;
   padding: 8px 16px;
   position: relative;
   display: flex;
