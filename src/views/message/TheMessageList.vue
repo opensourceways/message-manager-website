@@ -63,7 +63,7 @@ provide('checkboxes', checkboxes);
 // ------------------------搜索------------------------
 const searchInput = ref('');
 
-// ------------------------下拉多选------------------------
+// ------------------------消息过滤下拉多选------------------------
 const messageFilterSelectVal = ref<string[]>([]);
 
 const messageFilterSelectOptions = computed(() => {
@@ -82,6 +82,7 @@ const messageFilterSelectOptions = computed(() => {
 
 watch(messageFilterSelectVal, () => getData());
 
+// ------------------------gitee消息类型过滤下拉多选------------------------
 const giteeEventType = ref<string[]>([]);
 
 const giteeEventTypeOptions = [
@@ -106,7 +107,7 @@ const isRead = ref<0 | 1 | undefined>();
 
 const getData = () => {
   const { source, event_type } = route.query;
-  const selectValues = messageFilterSelectVal.value.length ? messageFilterSelectVal.value.join() : undefined;
+  const filterValues = messageFilterSelectVal.value.length ? messageFilterSelectVal.value.join() : undefined;
   getMessages({
     source: source as string,
     event_type: event_type as string,
@@ -114,8 +115,8 @@ const getData = () => {
     page: page.value,
     count_per_page: pageSize.value,
     key_word: searchInput.value || undefined,
-    build_status: source === EventSources.EUR ? selectValues : undefined,
-    is_bot: source === EventSources.GITEE ? selectValues : undefined,
+    build_status: source === EventSources.EUR ? filterValues : undefined,
+    is_bot: source === EventSources.GITEE ? filterValues : undefined,
   }).then((res) => {
     const { count, query_info } = res.data;
     total.value = count;
@@ -140,6 +141,10 @@ const onMenuChange = (menu: string) => {
   if (menu === 'all') {
     router.push({ path: '/' });
   } else {
+    // 清空过滤
+    messageFilterSelectVal.value = [];
+    // 清空gitee消息类型过滤
+    giteeEventType.value = [];
     router.push({
       path: '/',
       query: {
