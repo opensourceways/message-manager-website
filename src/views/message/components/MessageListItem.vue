@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, inject, ref, type Ref } from 'vue';
+import { computed, h, inject, type Ref } from 'vue';
 import { OBadge, OCheckbox } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
@@ -18,7 +18,7 @@ const props = defineProps<{
   msg: MessageT;
 }>();
 
-const isPhone = inject<Ref<boolean>>('isPhone', ref(false));
+const isPhone = inject<Ref<boolean>>('isPhone');
 
 const checkboxes = inject<Ref<(string | number)[]>>('checkboxes');
 

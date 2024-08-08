@@ -3,8 +3,10 @@ import { OScroller } from '@opensig/opendesign';
 import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 import { useScreen } from './composables/useScreen';
+import { provide } from 'vue';
 
 const { isPhone } = useScreen();
+provide('isPhone', isPhone)
 </script>
 
 <template>

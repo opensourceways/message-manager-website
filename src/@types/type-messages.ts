@@ -27,6 +27,8 @@ export interface CommonMsgQueryParamT {
   count_per_page?: number;
   /** 搜索gitee仓库/eur项目关键字 */
   key_word?: string;
+  /** 是否特别关注消息 */
+  is_special?: string;
 }
 
 export interface EurMsgQueryParamT extends CommonMsgQueryParamT {

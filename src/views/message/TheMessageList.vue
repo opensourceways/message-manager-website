@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, provide, reactive, ref, watch, watchEffect } from 'vue';
+import { computed, inject, nextTick, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -18,6 +18,8 @@ import {
   OIcon,
   OInput,
   type SelectValueT,
+  OTab,
+  OTabPane,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -67,7 +69,7 @@ watchEffect(() => {
 
 const toConfig = () => router.push('/settings');
 
-const { isPhone } = useScreen();
+const isPhone = inject<Ref<boolean>>('isPhone');
 provide('isPhone', isPhone);
 
 // ------------------------多选框事件------------------------
@@ -117,11 +119,15 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
   });
 };
 
+// ------------------------是否特别关注消息------------------------
+const isSpecial = ref<'true' | 'false'>('false');
+
+watch(isSpecial, () => getData());
+
 // ------------------------获取数据------------------------
 const isRead = ref<0 | 1 | undefined>();
 
-const getData = (from?: string) => {
-  console.log('from', from);
+const getData = () => {
   const { source, event_type } = route.query;
   const filterValues = messageFilterSelectVal.value.length ? messageFilterSelectVal.value.join() : undefined;
   getMessages({
@@ -133,6 +139,7 @@ const getData = (from?: string) => {
     key_word: searchInput.value || undefined,
     build_status: source === EventSources.EUR ? filterValues : undefined,
     is_bot: source === EventSources.GITEE ? filterValues : undefined,
+    is_special: isSpecial.value,
   }).then((res) => {
     const { count, query_info } = res.data;
     total.value = count;
@@ -148,7 +155,7 @@ const getData = (from?: string) => {
   });
 };
 
-watch([page, pageSize], () => getData('pageCHange'));
+watch([page, pageSize], () => getData());
 
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
@@ -181,7 +188,7 @@ watch(
     if (page.value !== 1) {
       page.value = 1;
     } else {
-      getData('queryChange');
+      getData();
     }
     const source = route.query.source as string;
     if (source && source !== activeMenu.value) {
@@ -294,7 +301,7 @@ watch(readStatus, (val: string | number) => {
   } else {
     isRead.value = val as 0 | 1;
   }
-  getData('readStatusChange');
+  getData();
 });
 
 // ------------------------移动端------------------------
@@ -372,43 +379,47 @@ const filterConfirm = (source: string, event_type: string) => {
       </OMenu>
     </aside>
 
-    <div>
-      
+    <div class="message-list-wrap">
+      <OTab variant="text" :line="false" v-model="isSpecial">
+        <OTabPane label="全部消息" value="false"></OTabPane>
+        <OTabPane label="特别关注消息" value="true"></OTabPane>
+      </OTab>
       <div class="message-list">
         <div class="header">
           <div class="left">
-            <template v-if="total > 0">
-              <OCheckbox v-if="!isPhone" v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
-              <OSelect class="select" v-model="readStatus" variant="text" style="width: 112px">
-                <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
+            <!-- 已读状态筛选 -->
+            <OSelect class="select" v-model="readStatus" variant="text" style="width: 112px">
+              <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </OSelect>
+            <template v-if="!isPhone">
+              <!-- 仓库/项目名称搜索框 -->
+              <OInput v-model="searchInput" @pressEnter="getData">
+                <template #suffix>
+                  <div style="display: flex">
+                    <IconSearch class="icon-search" @click="getData" />
+                  </div>
+                </template>
+              </OInput>
+              <!-- 通用过滤下拉选择 -->
+              <OSelect :multiple="true" v-model="messageFilterSelectVal" @change="onFilterSelectChange">
+                <OOption v-for="item in messageFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
+                  {{ item.label }}
+                </OOption>
+              </OSelect>
+              <!-- gitee消息类型下拉选择 -->
+              <OSelect
+                v-if="route.query.source === EventSources.GITEE"
+                :multiple="true"
+                v-model="giteeEventType"
+                placeholder="消息类型"
+                @change="onGiteeEventTypeChange"
+              >
+                <OOption v-for="item in giteeEventTypeOptions" :key="item.value" :value="item.value" :label="item.label">
+                  {{ item.label }}
+                </OOption>
               </OSelect>
             </template>
-            <!-- 仓库/项目名称搜索框 -->
-            <OInput v-model="searchInput" @pressEnter="getData">
-              <template #suffix>
-                <div style="display: flex">
-                  <IconSearch class="icon-search" @click="getData" />
-                </div>
-              </template>
-            </OInput>
-            <!-- 通用过滤下拉选择 -->
-            <OSelect :multiple="true" v-model="messageFilterSelectVal" @change="onFilterSelectChange">
-              <OOption v-for="item in messageFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
-                {{ item.label }}
-              </OOption>
-            </OSelect>
-            <!-- gitee消息类型下拉选择 -->
-            <OSelect
-              v-if="route.query.source === EventSources.GITEE"
-              :multiple="true"
-              v-model="giteeEventType"
-              placeholder="消息类型"
-              @change="onGiteeEventTypeChange"
-            >
-              <OOption v-for="item in giteeEventTypeOptions" :key="item.value" :value="item.value" :label="item.label">
-                {{ item.label }}
-              </OOption>
-            </OSelect>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
             <template v-if="!isPhone">
@@ -528,20 +539,21 @@ const filterConfirm = (source: string, event_type: string) => {
   }
 }
 
-:deep(.o-pagination-wrap) {
-  justify-content: flex-end;
-}
-
 .messages-container {
   display: flex;
   max-width: 1418px;
   min-height: 60vh;
   margin-top: 64px;
 
-  & > :nth-child(2) {
+  & > :last-child {
     margin-left: 32px;
     height: 100%;
     flex-grow: 1;
+    
+    @include respond-to('phone') {
+      margin-top: var(--layout-header-height);
+      margin-left: 0;
+    }
   }
 
   @include respond-to('>laptop') {
@@ -589,7 +601,6 @@ const filterConfirm = (source: string, event_type: string) => {
     padding-left: 12px;
 
     @include respond-to('phone') {
-      margin-top: var(--layout-header-height);
       width: 100%;
       padding: 16px 0;
       margin-bottom: 0;

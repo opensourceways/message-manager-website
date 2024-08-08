@@ -8,12 +8,12 @@ import IconMultiSel from '~icons/app/icon-multi-select.svg';
 import IconX from '~icons/app/icon-x.svg';
 
 import AppLogin from './AppLogin.vue';
-import { useScreen } from '@/composables/useScreen';
 import { OButton, OIcon } from '@opensig/opendesign';
 import { storeToRefs } from 'pinia';
 import { usePhoneStore } from '@/stores/phone';
+import { inject, type Ref } from 'vue';
 
-const { isPhone } = useScreen();
+const isPhone = inject<Ref<boolean>>('isPhone');
 const { isManaging, checkedAll, checkedCount, isFiltering } = storeToRefs(usePhoneStore());
 
 const onSelectAll = () => checkedAll.value = !checkedAll.value;
