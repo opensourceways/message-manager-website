@@ -96,8 +96,9 @@ export function getUrlParams(url: string) {
  */
 export function generateQuery(queries: Record<string, any>): string {
   const parseResultArr = Object.entries(queries).reduce((arr, [key, value]) => {
-    if (value === undefined || value === null || value === '') return arr;
-    arr.push(`${key}=${value}`);
+    if (value !== undefined && value !== null && value !== '') {
+      arr.push(`${key}=${value}`);
+    }
     return arr;
   }, [] as string[]);
   if (parseResultArr && parseResultArr.length) {

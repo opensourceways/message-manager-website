@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ToggleGroup from '@/components/ToggleGroup.vue';
-import { EventSourceNames, EventSources, EventTypeNames } from '@/data/subscribeSettings';
+import { EventSourceNames, EventSources, EventTypeNames } from '@/data/event';
 import { OButton, ODialog, ODivider } from '@opensig/opendesign';
 import { computed, ref } from 'vue';
 

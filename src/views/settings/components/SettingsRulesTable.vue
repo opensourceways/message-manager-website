@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OCheckbox, OLink } from '@opensig/opendesign';
 
-import { EventSourceNames, EventTypeNames } from '@/data/subscribeSettings';
+import { EventSourceNames, EventTypeNames } from '@/data/event';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 import { updateNeedStatus } from '@/api/api-settings';
 

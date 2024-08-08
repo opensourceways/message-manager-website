@@ -3,7 +3,7 @@ import { computed, inject, reactive, ref, watch } from 'vue';
 import { OButton, ODialog, OForm, OFormItem, OInput, OOption, OSelect } from '@opensig/opendesign';
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
-import { EventSources, EUR_BUILD_STATUS } from '@/data/subscribeSettings';
+import { EventSources, EUR_BUILD_STATUS } from '@/data/event';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 
 const emit = defineEmits<{

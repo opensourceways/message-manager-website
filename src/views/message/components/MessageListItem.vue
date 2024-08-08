@@ -8,7 +8,7 @@ import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue';
 import IconLink from '@/components/IconLink.vue';
 import { useScreen } from '@/composables/useScreen';
-import { EventSources } from '@/data/subscribeSettings';
+import { EventSources } from '@/data/event';
 import { usePhoneStore } from '@/stores/phone';
 
 defineEmits<{

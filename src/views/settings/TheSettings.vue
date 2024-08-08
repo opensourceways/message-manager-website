@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 import { useMessage } from '@opensig/opendesign';
 
 import { deleteSubsRule, getAllSubs, getSubsDetail } from '@/api/api-settings';
-import { EventSources } from '@/data/subscribeSettings';
+import { EventSources } from '@/data/event';
 import type { SubscribeRuleT } from '@/@types/type-settings';
 
 import SettingsRulesTable from './components/SettingsRulesTable.vue';

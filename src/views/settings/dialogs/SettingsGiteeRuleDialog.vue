@@ -4,7 +4,7 @@ import { OButton, ODialog, OForm, OFormItem, OInput, ORadio } from '@opensig/ope
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
-import { EventSources } from '@/data/subscribeSettings';
+import { EventSources } from '@/data/event';
 import { computed } from 'vue';
 
 const emit = defineEmits<{
