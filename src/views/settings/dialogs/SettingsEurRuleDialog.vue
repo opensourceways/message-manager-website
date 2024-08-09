@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, inject, reactive, ref, watch } from 'vue';
-import { OButton, ODialog, OForm, OFormItem, OInput, OOption, OSelect } from '@opensig/opendesign';
+import { OButton, ODialog, OForm, OFormItem, OInput, OOption, OSelect, useMessage } from '@opensig/opendesign';
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
-import { postSubsRule, putSubsRule } from '@/api/api-settings';
+import { postPushConfig, postSubsRule, putSubsRule } from '@/api/api-settings';
 import { EventSources, EUR_BUILD_STATUS } from '@/data/event';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
+import { useUserInfoStore } from '@/stores/user';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -14,6 +15,9 @@ const emit = defineEmits<{
 const props = defineProps<{
   show: boolean;
 }>();
+
+const userInfoStore = useUserInfoStore();
+const message = useMessage();
 
 const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
   mode_name: '',
@@ -55,16 +59,22 @@ watch(
 
 const onCancel = () => emit('update:show', false);
 
-const onConfirm = () => {
+const onConfirm = async () => {
   data.mode_filter.source_group = projectNameEditor.value.getTagValues();
-  (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
-    ...data,
-    source: EventSources.EUR,
-    event_type: dialogData?.eventType,
-  }).then(() => {
+  try {
+    const newId = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+      ...data,
+      source: EventSources.EUR,
+      event_type: dialogData?.eventType,
+    });
+    if (newId) {
+      postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id: newId });
+    }
     emit('updateData');
     onCancel();
-  });
+  } catch {
+    message.danger({ content: '添加失败' });
+  }
 };
 </script>
 

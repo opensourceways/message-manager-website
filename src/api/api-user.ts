@@ -20,14 +20,17 @@ export function queryUserInfo() {
 /**
  * 同步当前登录的用户信息到消息中心后端
  * @param userInfo 用户信息
+ * @returns 用户的recipient_id
  */
 export function syncUserInfo(userInfo: UserInfoT) {
   const gitee_user_name = userInfo.identities?.find((item) => item.identity === 'gitee')?.user_name;
-  return request.post('/message_center/config/recipient/sync', {
-    mail: userInfo.email,
-    phone: userInfo.phone,
-    user_name: userInfo.username,
-    country_code: userInfo.phoneCountryCode,
-    gitee_user_name,
-  });
+  return request
+    .post<{ newId: number }>('/message_center/config/recipient/sync', {
+      mail: userInfo.email,
+      phone: userInfo.phone,
+      user_name: userInfo.username,
+      country_code: userInfo.phoneCountryCode,
+      gitee_user_name,
+    })
+    .then((res) => res.data.newId);
 }

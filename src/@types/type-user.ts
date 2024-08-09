@@ -15,4 +15,5 @@ export interface UserInfoT {
   phoneCountryCode: string, // 区号
   phone: string, // 手机号
   identities: Identity[]; // 身份
+  recipientId?: number; // 接收人id
 }

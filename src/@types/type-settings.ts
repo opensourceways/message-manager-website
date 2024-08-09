@@ -15,7 +15,7 @@ export interface EurModeFilterT {
 
 export interface GiteeModeFilterT {
   repo_name: string[]; // 仓库名
-  is_bot: boolean; // 是否是机器人
+  is_bot?: boolean; // 是否是机器人
 }
 
 export type ModeFilterT = EurModeFilterT | GiteeModeFilterT;

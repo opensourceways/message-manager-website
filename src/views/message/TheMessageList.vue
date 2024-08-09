@@ -31,7 +31,7 @@ import IconSearch from '~icons/app/icon-search.svg';
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages } from '@/api/messages';
-import { useConfirmDialog } from '@vueuse/core';
+import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useUserInfoStore } from '@/stores/user';
 import { getCsrfToken } from '@/shared/login';
@@ -117,7 +117,7 @@ const msgFilterSelectOptions = computed(() => {
   }
 });
 
-const onFilterSelectChange = () => nextTick(getData);
+const onFilterSelectChange = () => nextTick(debouncedGetData);
 
 // ------------------------gitee消息类型过滤下拉多选------------------------
 const giteeEventType = ref<string[]>([]);
@@ -131,6 +131,7 @@ const giteeEventTypeOptions = [
 
 const onGiteeEventTypeChange = (val: SelectValueT) => {
   const types = val as string[];
+  shouldDebounce = true;
   router.push({
     path: '/',
     query: {
@@ -143,7 +144,7 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
 // ------------------------是否特别关注消息------------------------
 const isSpecial = ref<'true' | 'false'>('true');
 
-watch(isSpecial, () => getData());
+watch(isSpecial, () => debouncedGetData());
 
 // ------------------------获取数据------------------------
 const isRead = ref<0 | 1 | undefined>();
@@ -161,20 +162,26 @@ const getData = () => {
     build_status: source === EventSources.EUR ? filterValues : undefined,
     is_bot: source === EventSources.GITEE ? filterValues : undefined,
     is_special: isSpecial.value,
-  }).then((res) => {
-    const { count, query_info } = res.data;
-    total.value = count;
-    if (query_info) {
-      for (const msg of query_info) {
-        msg.id = msg.source + msg.event_id;
-        const date = dayjs(msg.time);
-        msg.formattedTime = date.fromNow();
+  })
+    .then((res) => {
+      const { count, query_info } = res.data;
+      total.value = count;
+      if (query_info) {
+        for (const msg of query_info) {
+          msg.id = msg.source + msg.event_id;
+          const date = dayjs(msg.time);
+          msg.formattedTime = date.fromNow();
+        }
       }
-    }
-    clearCheckboxes();
-    messages.value = query_info ?? [];
-  });
+      clearCheckboxes();
+      messages.value = query_info ?? [];
+    })
+    .finally(() => (shouldDebounce = false));
 };
+
+const debouncedGetData = useDebounceFn(getData, 300);
+
+let shouldDebounce = false;
 
 watch([page, pageSize], () => getData());
 
@@ -209,13 +216,20 @@ watch(
     if (page.value !== 1) {
       page.value = 1;
     } else {
-      getData();
+      shouldDebounce ? debouncedGetData() : getData();
     }
-    const source = route.query.source as string;
+    const { source, event_type } = route.query;
     if (source && source !== activeMenu.value) {
-      activeMenu.value = source;
+      activeMenu.value = source as string;
     } else if (!source && activeMenu.value !== 'all') {
       activeMenu.value = 'all';
+    }
+    if (event_type) {
+      switch (source) {
+        case EventSources.GITEE:
+          giteeEventType.value = (event_type as string).split(',');
+          break;
+      }
     }
   },
   { immediate: true }
@@ -570,7 +584,7 @@ const filterConfirm = (source: string, event_type: string) => {
     margin-left: 32px;
     height: 100%;
     flex-grow: 1;
-    
+
     @include respond-to('phone') {
       margin-top: var(--layout-header-height);
       margin-left: 0;

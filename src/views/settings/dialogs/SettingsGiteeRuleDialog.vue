@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { inject, reactive, ref, watch } from 'vue';
-import { OButton, OCheckbox, OCheckboxGroup, ODialog, OForm, OFormItem, OInput, OOption, ORadio, OSelect } from '@opensig/opendesign';
+import { OButton, OCheckbox, OCheckboxGroup, ODialog, OForm, OFormItem, OInput, useMessage } from '@opensig/opendesign';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
-import { postSubsRule, putSubsRule } from '@/api/api-settings';
+import { postPushConfig, postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EventSources } from '@/data/event';
 import { computed } from 'vue';
+import { useUserInfoStore } from '@/stores/user';
 
 
 const emit = defineEmits<{
@@ -15,6 +16,9 @@ const emit = defineEmits<{
 const props = defineProps<{
   show: boolean;
 }>();
+
+const userInfoStore = useUserInfoStore();
+const message = useMessage();
 
 const repoNameEditor = ref();
 const data = reactive({
@@ -87,22 +91,22 @@ watch(
 
 const onCancel = () => emit('update:show', false);
 
-const onConfirm = () => {
+const onConfirm = async () => {
   data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
-  console.log({
-    ...data,
-    source: EventSources.GITEE,
-    event_type: eventType.value.length ? eventType.value.join() : undefined,
-  });
-  
-  /* (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
-    ...data,
-    source: EventSources.GITEE,
-    event_type: eventType.value.length ? eventType.value.join() : undefined,
-  }).then(() => {
-    emit('updateData');
-    onCancel();
-  }); */
+  try {
+    const newId = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+      ...data,
+      source: EventSources.GITEE,
+      event_type: eventType.value.length ? eventType.value.join() : undefined,
+    });
+    if (newId) {
+      postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id: newId });
+      emit('updateData');
+      onCancel();
+    }
+  } catch {
+    message.danger({ content: '添加失败' });
+  }
 };
 </script>
 

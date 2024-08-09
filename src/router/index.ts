@@ -60,7 +60,8 @@ router.beforeEach(async () => {
 
   if (loginStore.isLogined) {
     const userInfoStore = useUserInfoStore();
-    syncUserInfo(userInfoStore);
+    const recipientId = await syncUserInfo(userInfoStore);
+    userInfoStore.recipientId = recipientId;
     unreadCountStore.updateCount();
   }
   return true;
