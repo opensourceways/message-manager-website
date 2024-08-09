@@ -65,7 +65,7 @@ const onConfirm = async () => {
     const newId = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
       ...data,
       source: EventSources.EUR,
-      event_type: dialogData?.eventType,
+      event_type: 'build',
     });
     if (newId) {
       postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id: newId });

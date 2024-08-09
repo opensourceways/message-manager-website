@@ -31,10 +31,9 @@ import IconSearch from '~icons/app/icon-search.svg';
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages } from '@/api/messages';
-import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
+import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
-import { useUserInfoStore } from '@/stores/user';
-import { getCsrfToken } from '@/shared/login';
+import { useLoginStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import IconLink from '@/components/IconLink.vue';
 import AppPagination from '@/components/AppPagination.vue';
@@ -46,18 +45,19 @@ const { locale } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
+const loginStore = useLoginStore();
+
 const settingsIcon = ref();
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
-const userInfoStore = useUserInfoStore();
 
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
 watchEffect(() => {
-  if (getCsrfToken() && userInfoStore.username && userInfoStore.photo) {
+  if (loginStore.isLogined) {
     const showTipCount = Number(sessionStorage.getItem('showTipCount') ?? '0');
     if (Number(showTipCount) < 1) {
       showTipPopOver.value = true;
@@ -72,7 +72,14 @@ const isPhone = inject<Ref<boolean>>('isPhone');
 provide('isPhone', isPhone);
 
 // ------------------------多选框事件------------------------
-const { checkboxes, parentCheckbox, indeterminate, isCheckedAll, checkAll, clearCheckboxes } = useCheckbox(messages, (msg) => msg.id);
+const {
+  checkboxes,
+  parentCheckbox,
+  indeterminate,
+  isCheckedAll,
+  checkAll,
+  clearCheckboxes
+} = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxes', checkboxes);
 
 // ------------------------搜索------------------------
@@ -117,7 +124,7 @@ const msgFilterSelectOptions = computed(() => {
   }
 });
 
-const onFilterSelectChange = () => nextTick(debouncedGetData);
+const onFilterSelectChange = () => nextTick(getData);
 
 // ------------------------gitee消息类型过滤下拉多选------------------------
 const giteeEventType = ref<string[]>([]);
@@ -131,7 +138,6 @@ const giteeEventTypeOptions = [
 
 const onGiteeEventTypeChange = (val: SelectValueT) => {
   const types = val as string[];
-  shouldDebounce = true;
   router.push({
     path: '/',
     query: {
@@ -142,9 +148,9 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
 };
 
 // ------------------------是否特别关注消息------------------------
-const isSpecial = ref<'true' | 'false'>('true');
+const isSpecial = ref<'true' | ''>('true');
 
-watch(isSpecial, () => debouncedGetData());
+watch(isSpecial, () => getData());
 
 // ------------------------获取数据------------------------
 const isRead = ref<0 | 1 | undefined>();
@@ -176,12 +182,7 @@ const getData = () => {
       clearCheckboxes();
       messages.value = query_info ?? [];
     })
-    .finally(() => (shouldDebounce = false));
 };
-
-const debouncedGetData = useDebounceFn(getData, 300);
-
-let shouldDebounce = false;
 
 watch([page, pageSize], () => getData());
 
@@ -216,7 +217,7 @@ watch(
     if (page.value !== 1) {
       page.value = 1;
     } else {
-      shouldDebounce ? debouncedGetData() : getData();
+      getData();
     }
     const { source, event_type } = route.query;
     if (source && source !== activeMenu.value) {
@@ -417,7 +418,7 @@ const filterConfirm = (source: string, event_type: string) => {
     <div class="message-list-wrap">
       <OTab variant="text" :line="false" v-model="isSpecial">
         <OTabPane label="特别关注消息" value="true"></OTabPane>
-        <OTabPane label="全部消息" value="false"></OTabPane>
+        <OTabPane label="全部消息" value=""></OTabPane>
       </OTab>
       <div class="message-list">
         <div class="header">

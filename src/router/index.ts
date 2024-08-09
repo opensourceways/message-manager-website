@@ -40,11 +40,13 @@ const router = createRouter({
   },
 });
 
-router.beforeEach(async () => {
+router.beforeEach(async (to, from) => {
   const loginStore = useLoginStore();
   const unreadCountStore = useUnreadMsgCountStore();
   if (loginStore.isLogined) {
-    unreadCountStore.updateCount();
+    if (to.name !== from.name) {
+      unreadCountStore.updateCount();
+    }
     return true;
   }
 
@@ -62,7 +64,9 @@ router.beforeEach(async () => {
     const userInfoStore = useUserInfoStore();
     const recipientId = await syncUserInfo(userInfoStore);
     userInfoStore.recipientId = recipientId;
-    unreadCountStore.updateCount();
+    if (to.name !== from.name) {
+      unreadCountStore.updateCount();
+    }
   }
   return true;
 });

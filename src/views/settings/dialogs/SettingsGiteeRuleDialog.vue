@@ -34,7 +34,7 @@ const dialogData = inject<{
   rule: SubscribeRuleT<GiteeModeFilterT>;
 }>('dialogData');
 
-const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags);
+const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags || !eventType.value.length);
 
 // --------------------事件类型下拉选择----------------
 const eventTypesOptions = [

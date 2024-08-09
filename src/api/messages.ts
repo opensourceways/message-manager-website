@@ -8,7 +8,7 @@ import type { PagedResponseT } from "@/@types/types-common";
  * @returns { Promise<MessageT[]> } 所有消息
  */
 export function getMessages(params: MsgQueryParamT) {
-  return request.get<PagedResponseT<MessageT>>(`/message_center/inner`, { params });
+  return request.get<PagedResponseT<MessageT>>(`/message_center/inner`, { params, ignoreDuplicates: true });
 }
 
 /**
