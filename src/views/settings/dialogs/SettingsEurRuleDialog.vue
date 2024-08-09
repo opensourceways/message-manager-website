@@ -3,7 +3,7 @@ import { computed, inject, reactive, ref, watch } from 'vue';
 import { OButton, ODialog, OForm, OFormItem, OInput, OOption, OSelect, useMessage } from '@opensig/opendesign';
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { postPushConfig, postSubsRule, putSubsRule } from '@/api/api-settings';
-import { EventSources, EUR_BUILD_STATUS } from '@/data/event';
+import { EventSources, EUR_BUILD_STATUS, REPO_PROJ_NAME_PATTERN } from '@/data/event';
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { useUserInfoStore } from '@/stores/user';
 
@@ -68,7 +68,7 @@ const onConfirm = async () => {
       event_type: 'build',
     });
     if (newId) {
-      postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id: newId });
+      newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
     }
     emit('updateData');
     onCancel();
@@ -97,6 +97,7 @@ const onConfirm = async () => {
               ref="projectNameEditor"
               style="width: 100%"
               placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入"
+              :regExp="REPO_PROJ_NAME_PATTERN"
             />
             <p class="reponame-tips">若需关注所有项目，使用“*”代替。示例：“lihua/testProject”、“lihua/*”</p>
           </div>

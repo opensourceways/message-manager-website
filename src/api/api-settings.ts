@@ -25,7 +25,7 @@ export const getAllSubs = () => {
  * @returns 新增项的id
  */
 export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConfig) {
-  return request.post<{ newId: number }>('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config).then((res) => res.data.newId);
+  return request.post<{ newId: number[] }>('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config).then((res) => res.data.newId);
 }
 
 /**
@@ -60,7 +60,7 @@ export function updateNeedStatus(rule: SubscribeRuleT) {
     need_mail: false,
     need_message: false,
     need_phone: false,
-    recipient_id: rule.recipients?.map((r) => r.id.toString()),
+    recipient_id: rule.recipient_id.toString(),
     subscribe_id: Number(rule.id),
   };
   rule.needCheckboxes?.forEach((item) => (data[item] = true));

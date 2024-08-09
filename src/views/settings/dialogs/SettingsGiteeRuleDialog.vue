@@ -4,7 +4,7 @@ import { OButton, OCheckbox, OCheckboxGroup, ODialog, OForm, OFormItem, OInput, 
 import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postPushConfig, postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
-import { EventSources } from '@/data/event';
+import { EventSources, REPO_PROJ_NAME_PATTERN } from '@/data/event';
 import { computed } from 'vue';
 import { useUserInfoStore } from '@/stores/user';
 
@@ -100,10 +100,10 @@ const onConfirm = async () => {
       event_type: eventType.value.length ? eventType.value.join() : undefined,
     });
     if (newId) {
-      postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id: newId });
-      emit('updateData');
-      onCancel();
+      newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
     }
+    emit('updateData');
+    onCancel();
   } catch {
     message.danger({ content: '添加失败' });
   }
@@ -128,16 +128,13 @@ const onConfirm = async () => {
               :tags="data.mode_filter.repo_name"
               ref="repoNameEditor"
               style="width: 100%"
+              :regExp="REPO_PROJ_NAME_PATTERN"
               placeholder="请输入组织和仓库名称，按照“组织名/仓库名”的格式填写，按回车键结束输入"
             />
             <p class="reponame-tips">若需关注所有仓库，使用“*”代替。示例：“openeuler/gcc”、“openeuler/*”</p>
           </div>
         </OFormItem>
         <OFormItem label="提交人" required>
-          <!-- <div style="display: flex; gap: 16px">
-            <ORadio v-model="data.mode_filter.is_bot" :value="true">机器人</ORadio>
-            <ORadio v-model="data.mode_filter.is_bot" :value="false">非机器人</ORadio>
-          </div> -->
           <OCheckboxGroup v-model="isBot" @change="isBotCheckboxChange">
             <OCheckbox :value="1">机器人</OCheckbox>
             <OCheckbox :value="0">非机器人</OCheckbox>

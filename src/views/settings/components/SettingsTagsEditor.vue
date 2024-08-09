@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, type Ref, onMounted, watch, computed, watchEffect } from 'vue';
 import IconClose from '@/assets/svg-icons/icon-close.svg';
+import { useMessage } from '@opensig/opendesign';
 
 const props = withDefaults(
   defineProps<{
@@ -9,6 +10,7 @@ const props = withDefaults(
     placeholder?: string;
     showAddButton?: boolean;
     tags?: string[];
+    regExp?: RegExp;
   }>(),
   {
     placeholder: '',
@@ -16,6 +18,8 @@ const props = withDefaults(
     height: '126px',
   }
 );
+
+const message = useMessage();
 const inputArea = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 const tagSet = ref(new Set<string>());
 const hasTags = computed(() => tagSet.value.size > 0);
@@ -71,6 +75,10 @@ const addTag = (event?: KeyboardEvent) => {
   const sel = window.getSelection();
   const text = sel?.focusNode?.textContent;
   if (!text || tagSet.value.has(text)) {
+    return;
+  }
+  if (props.regExp && !props.regExp.test(text)) {
+    message.warning({ content: '格式不正确' });
     return;
   }
   tagSet.value.add(text);
