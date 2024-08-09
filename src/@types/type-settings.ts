@@ -37,7 +37,6 @@ export interface SubscribeRuleT<T = ModeFilterT> {
   need_mail?: boolean; // 接收邮件多选框状态
   need_inner_message?: boolean; // 接收站内消息多选框状态
   
-  recipients?: { id: number; name: string; }[]; // 接收人数组，非后端字段，用于前端处理填充后展示
-  displayRecipientNames?: string; // 用于前端展示的接收人名称，等于recipientNames.join('、')
+  eventTypes?: string[];
   needCheckboxes?: string[]; // 站内消息、电话、短信等多选框的数组，非后端字段，用于前端处理展示
 }

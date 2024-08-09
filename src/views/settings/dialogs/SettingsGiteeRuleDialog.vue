@@ -64,6 +64,9 @@ watch(
       const rule = dialogData?.rule;
       if (rule && rule.source === EventSources.GITEE) {
         data.mode_name = rule.mode_name;
+        if (rule.eventTypes?.length) {
+          eventType.value = rule.eventTypes;
+        }
         if (rule.mode_filter) {
           data.mode_filter.repo_name = rule.mode_filter.repo_name;
           data.mode_filter.is_bot = rule.mode_filter.is_bot;

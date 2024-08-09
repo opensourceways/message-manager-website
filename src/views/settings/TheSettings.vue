@@ -27,21 +27,23 @@ const tableRefs = ref<InstanceType<typeof SettingsRulesTable>[]>();
 const initialData = reactive(events);
 
 /**
- * 聚合detail数据，主要是后端返回的数据中，如果一条消息接收规则有多个接收人，
- *
- * 则返回的形式是有多个id及其他字段相同，除了接收人id和姓名不同的消息接收规则，所以需要聚合成一个
+ * 聚合数据，主要是后端返回的数据中，如果一条设置覆盖多个事件类型，则接口会返回多个名字相同的设置，且各具有不同的event_type，所以要合并成一条
  */
 const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
   const map = new Map<string, SubscribeRuleT>();
   for (const item of data) {
-    let cached = map.get(item.id);
+    if (!item.source || !item.mode_name) {
+      continue;
+    }
+    const key = item.source + item.mode_name;
+    let cached = map.get(key);
     if (!cached) {
       cached = item;
-      cached.recipients = [{ id: item.recipient_id, name: item.recipient_name }];
-      map.set(item.id, cached);
-    } else {
-      cached.recipients?.push({ id: item.recipient_id, name: item.recipient_name });
+      cached.eventTypes = [item.event_type];
+      map.set(key, cached);
+      continue;
     }
+    cached.eventTypes?.push(item.event_type);
   }
   return Array.from(map.values());
 };
@@ -55,25 +57,22 @@ const resetData = () => {
 
 // ------------------------获取数据------------------------
 const getData = async () => {
-  const allSubsData = await getAllSubs();
+  const allSubsData = aggregateData(await getAllSubs());
   resetData();
   for (const item of allSubsData) {
     if (!item.mode_name || !item.source || !item.event_type) {
       continue;
     }
-    initialData[item.source]/* [item.event_type] */.push(item);
+    initialData[item.source].push(item);
   }
   const detailData = await getSubsDetail();
-  const aggregated = aggregateData(detailData);
-  for (const item of aggregated) {
+  for (const item of detailData) {
     if (!item.source || !item.event_type) {
       continue;
     }
-    const rule = initialData[item.source]/* [item.event_type] */.find((rule) => rule.id === item.id);
+    const rule = initialData[item.source].find((rule) => rule.id === item.id);
     if (rule) {
       rule.needCheckboxes ??= [];
-      rule.displayRecipientNames = item.recipients?.map((r) => r.name).join('、');
-      rule.recipients = item.recipients;
       if (item.need_inner_message) {
         rule.needCheckboxes?.push('need_inner_message');
       }
