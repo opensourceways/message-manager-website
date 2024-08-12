@@ -150,7 +150,13 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
 // ------------------------是否特别关注消息------------------------
 const isSpecial = ref<'true' | ''>('true');
 
-watch(isSpecial, () => page.value = 1);
+watch(isSpecial, () => {
+  if (page.value === 1) {
+    getData();
+  } else {
+    page.value = 1;
+  }
+});
 
 // ------------------------获取数据------------------------
 const isRead = ref<0 | 1 | undefined>();
