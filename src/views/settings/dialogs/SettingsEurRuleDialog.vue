@@ -62,13 +62,13 @@ const onCancel = () => emit('update:show', false);
 const onConfirm = async () => {
   data.mode_filter.source_group = projectNameEditor.value.getTagValues();
   try {
-    const newId = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+    const res = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
       ...data,
       source: EventSources.EUR,
       event_type: 'build',
     });
-    if (newId) {
-      newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
+    if (res && res.newId) {
+      res.newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
     }
     emit('updateData');
     onCancel();

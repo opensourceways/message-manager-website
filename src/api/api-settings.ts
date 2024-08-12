@@ -25,7 +25,7 @@ export const getAllSubs = () => {
  * @returns 新增项的id
  */
 export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConfig) {
-  return request.post<{ newId: number[] }>('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config).then((res) => res.data.newId);
+  return request.post<{ newId: number[] }>('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config).then((res) => res.data);
 }
 
 /**
@@ -33,8 +33,8 @@ export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConf
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function putSubsRule(data: Partial<SubscribeRuleT>): Promise<undefined> {
-  return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
+export function putSubsRule(data: Partial<SubscribeRuleT>) {
+  request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
 }
 
 /**
@@ -42,8 +42,14 @@ export function putSubsRule(data: Partial<SubscribeRuleT>): Promise<undefined> {
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function deleteSubsRule(data: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) {
-  return request.delete('/message_center/config/subs', { data });
+export function deleteSubsRule(data: SubscribeRuleT) {
+  return request.delete('/message_center/config/subs', {
+    data: {
+      source: data.source,
+      type: data.eventTypes?.join(),
+      mode_name: data.mode_name,
+    },
+  });
 }
 
 /**
@@ -55,13 +61,13 @@ export function deleteSubsRule(data: Pick<SubscribeRuleT, 'mode_name' | 'source'
  * @returns 调用结果
  */
 export function updateNeedStatus(rule: SubscribeRuleT) {
-  const data: any = {
+  const data: Record<string, any> = {
     need_inner_message: false,
     need_mail: false,
     need_message: false,
     need_phone: false,
     recipient_id: rule.recipient_id.toString(),
-    subscribe_id: Number(rule.id),
+    subscribe_id: rule.ids.map(Number),
   };
   rule.needCheckboxes?.forEach((item) => (data[item] = true));
   return request.put('/message_center/config/push', data);

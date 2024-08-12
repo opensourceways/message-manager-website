@@ -95,13 +95,13 @@ const onConfirm = async () => {
   data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
   data.mode_filter.is_bot = isBot.value.length === 2 ? undefined : isBot.value[0];
   try {
-    const newId = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
+    const res = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
       ...data,
       source: EventSources.GITEE,
       event_type: eventType.value.length ? eventType.value.join() : undefined,
     });
-    if (newId) {
-      newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
+    if (res && res.newId) {
+      res.newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
     }
     emit('updateData');
     onCancel();

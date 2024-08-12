@@ -7,7 +7,7 @@ import { updateNeedStatus } from '@/api/api-settings';
 
 const emit = defineEmits<{
   (event: 'editOrAddRule', type: 'add' | 'edit', source: string, editId?: string): void;
-  (event: 'deleteRule', rule: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>): void;
+  (event: 'deleteRule', rule: SubscribeRuleT): void;
 }>();
 const props = defineProps<{
   source: string;

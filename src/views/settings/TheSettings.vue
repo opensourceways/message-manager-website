@@ -40,10 +40,12 @@ const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
     if (!cached) {
       cached = item;
       cached.eventTypes = [item.event_type];
+      cached.ids = [item.id];
       map.set(key, cached);
       continue;
     }
     cached.eventTypes?.push(item.event_type);
+    cached.ids?.push(item.id);
   }
   return Array.from(map.values());
 };
@@ -72,6 +74,7 @@ const getData = async () => {
     }
     const rule = initialData[item.source].find((rule) => rule.id === item.id);
     if (rule) {
+      rule.recipient_id = item.recipient_id;
       rule.needCheckboxes ??= [];
       if (item.need_inner_message) {
         rule.needCheckboxes?.push('need_inner_message');
@@ -115,7 +118,7 @@ const onEditOrAdd = (dlgType: 'edit' | 'add', source: string, editId?: string | 
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const deleteModeName = ref('');
 
-const deleteRule = async (param: Pick<SubscribeRuleT, 'mode_name' | 'source' | 'event_type'>) => {
+const deleteRule = async (param: SubscribeRuleT) => {
   const { isCanceled } = await reveal();
   if (isCanceled) {
     return;

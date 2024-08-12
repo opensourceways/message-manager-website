@@ -37,6 +37,7 @@ export interface SubscribeRuleT<T = ModeFilterT> {
   need_mail?: boolean; // 接收邮件多选框状态
   need_inner_message?: boolean; // 接收站内消息多选框状态
   
-  eventTypes?: string[];
+  eventTypes?: string[]; // 非后端字段，用于前端处理展示
   needCheckboxes?: string[]; // 站内消息、电话、短信等多选框的数组，非后端字段，用于前端处理展示
+  ids: string[]; // 多个事件类型的数据合并到一条后，记录多个的id，非后端字段，用于前端处理
 }
