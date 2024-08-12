@@ -136,7 +136,7 @@ const onConfirm = async () => {
           </div>
         </OFormItem>
         <OFormItem label="提交人" required>
-          <OCheckboxGroup v-model="isBot" @change="isBotCheckboxChange">
+          <OCheckboxGroup v-model="isBot">
             <OCheckbox value="true">机器人</OCheckbox>
             <OCheckbox value="false">非机器人</OCheckbox>
           </OCheckboxGroup>
