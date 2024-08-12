@@ -250,11 +250,14 @@ const confirmDialogOptions = reactive({
 
 const delMessage = async (msg: MessageT) => {
   confirmDialogOptions.title = '删除消息';
-  confirmDialogOptions.content = `是否确定删除1条消息`;
+  confirmDialogOptions.content = `是否确定删除此消息`;
   const { isCanceled } = await reveal();
   if (!isCanceled) {
     deleteMessages(msg)
-      .then(() => getData())
+      .then(() => {
+        message.success({ content: '删除成功' });
+        getData();
+      })
       .catch((error) => {
         if (error?.response?.data?.message) {
           message.warning(error.response.data.message);
