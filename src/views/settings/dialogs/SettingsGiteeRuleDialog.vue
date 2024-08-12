@@ -25,7 +25,7 @@ const data = reactive({
   mode_name: '',
   mode_filter: {
     repo_name: [] as string[],
-    is_bot: false as boolean | undefined,
+    is_bot: 'false' as "false" | "true" | undefined
   },
 });
 
@@ -47,15 +47,7 @@ const eventTypesOptions = [
 const eventType = ref<string[]>([]);
 
 // --------------------是否机器人----------------
-const isBot = ref<(1 | 0)[]>([]);
-
-const isBotCheckboxChange = (val: (string | number)[]) => {
-  if (val.length === 2 || val.length === 0) {
-    data.mode_filter.is_bot = undefined;
-    return;
-  }
-  data.mode_filter.is_bot = !!val[0];
-};
+const isBot = ref<('true' | 'false')[]>([]);
 
 watch(
   () => props.show,
@@ -70,25 +62,25 @@ watch(
           }
           if (rule.mode_filter) {
             data.mode_filter.repo_name = rule.mode_filter.repo_name;
-            data.mode_filter.is_bot = rule.mode_filter.is_bot === 'true';
+            // data.mode_filter.is_bot = rule.mode_filter.is_bot;
             if (rule.mode_filter.is_bot === 'true') {
-              isBot.value = [1];
+              isBot.value = ['true'];
             } else if (rule.mode_filter.is_bot === 'false') {
-              isBot.value = [0];
+              isBot.value = ['false'];
             } else {
-              isBot.value = [1, 0];
+              isBot.value = ['true', 'false'];
             }
           }
         }
       }
       if (dialogData?.dlgType === 'add') {
-        isBot.value = [1, 0];
+        isBot.value = ['true', 'false'];
       }
     } else {
       data.mode_name = '';
       data.mode_filter = {
         repo_name: [],
-        is_bot: false,
+        is_bot: 'false',
       };
       repoNameEditor.value.clear();
       isBot.value = [];
@@ -101,6 +93,7 @@ const onCancel = () => emit('update:show', false);
 
 const onConfirm = async () => {
   data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
+  data.mode_filter.is_bot = isBot.value.length === 2 ? undefined : isBot.value[0];
   try {
     const newId = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
       ...data,
@@ -144,8 +137,8 @@ const onConfirm = async () => {
         </OFormItem>
         <OFormItem label="提交人" required>
           <OCheckboxGroup v-model="isBot" @change="isBotCheckboxChange">
-            <OCheckbox :value="1">机器人</OCheckbox>
-            <OCheckbox :value="0">非机器人</OCheckbox>
+            <OCheckbox value="true">机器人</OCheckbox>
+            <OCheckbox value="false">非机器人</OCheckbox>
           </OCheckboxGroup>
         </OFormItem>
         <OFormItem label="消息类型" required>
