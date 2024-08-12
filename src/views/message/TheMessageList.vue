@@ -272,11 +272,21 @@ const delMultiMessages = async () => {
   }
   const set = new Set(checkboxes.value);
   confirmDialogOptions.title = '删除消息';
-  confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
+  if (set.size > 1) {
+    confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
+  } else {
+    confirmDialogOptions.content = `是否确定删除此消息`;
+  }
   const { isCanceled } = await reveal();
   if (!isCanceled) {
     deleteMessages(...messages.value.filter((item) => set.has(item.id)))
       .then(() => {
+        if (set.size > 1) {
+          message.success({ content: '批量删除成功' });
+        } else {
+          message.success({ content: '删除成功' });
+        }
+        checkboxes.value = [];
         getData();
       })
       .catch((error) => {
