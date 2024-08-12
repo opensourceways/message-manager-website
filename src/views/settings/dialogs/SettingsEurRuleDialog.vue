@@ -39,7 +39,7 @@ const btnDisabled = computed(() => !data.mode_name || !projectNameEditor.value?.
 watch(
   () => props.show,
   (val) => {
-    if (val) {
+    if (val && dialogData?.dlgType === 'edit') {
       const rule = dialogData?.rule;
       if (rule && rule.source === EventSources.EUR) {
         data.mode_name = rule.mode_name;
@@ -80,24 +80,24 @@ const onConfirm = async () => {
 
 <template>
   <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false">
-    <template #header>创建消息接收规则</template>
+    <template #header>{{ dialogData?.dlgType === 'add' ? '创建' : '修改' }}消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
-      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
+      <OForm has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="规则名称" required>
           <OInput class="input" clearable v-model="data.mode_name" placeholder="请输入方便您区分的名称" />
         </OFormItem>
       </OForm>
       <p class="dialog-content-title">消息接收规则设置</p>
-      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
+      <OForm has-required layout="h" label-align="top" label-justify="left" label-width="80px">
         <OFormItem label="项目名称" required>
           <div>
             <SettingsTagsEditor
               :tags="data.mode_filter.source_group"
               ref="projectNameEditor"
-              style="width: 100%"
               placeholder="请按照“User/Project”的格式填写关注的项目，按回车键结束输入"
               :regExp="REPO_PROJ_NAME_PATTERN"
+              width="480px"
             />
             <p class="reponame-tips">若需关注所有项目，使用“*”代替。示例：“lihua/testProject”、“lihua/*”</p>
           </div>
@@ -132,16 +132,17 @@ const onConfirm = async () => {
   color: var(--o-color-info3);
   @include tip1;
   margin-left: 16px;
+  width: 480px;
 }
 
 .status-selector {
-  width: 100%;
   border-radius: 4px;
+  width: 480px;
 }
 
 .input {
   --input-radius: 4px;
-  width: 100%;
+  width: 480px;
 }
 
 .dialog-content {

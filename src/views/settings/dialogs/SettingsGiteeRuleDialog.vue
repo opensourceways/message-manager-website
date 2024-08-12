@@ -34,7 +34,7 @@ const dialogData = inject<{
   rule: SubscribeRuleT<GiteeModeFilterT>;
 }>('dialogData');
 
-const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags || !eventType.value.length);
+const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags || !eventType.value.length || !isBot.value.length);
 
 // --------------------事件类型下拉选择----------------
 const eventTypesOptions = [
@@ -61,23 +61,28 @@ watch(
   () => props.show,
   (show) => {
     if (show) {
-      const rule = dialogData?.rule;
-      if (rule && rule.source === EventSources.GITEE) {
-        data.mode_name = rule.mode_name;
-        if (rule.eventTypes?.length) {
-          eventType.value = rule.eventTypes;
-        }
-        if (rule.mode_filter) {
-          data.mode_filter.repo_name = rule.mode_filter.repo_name;
-          data.mode_filter.is_bot = rule.mode_filter.is_bot;
-          if (rule.mode_filter.is_bot === true) {
-            isBot.value = [1];
-          } else if (rule.mode_filter.is_bot === false) {
-            isBot.value = [0];
-          } else {
-            isBot.value = [1, 0];
+      if (dialogData?.dlgType === 'edit') {
+        const rule = dialogData?.rule;
+        if (rule && rule.source === EventSources.GITEE) {
+          data.mode_name = rule.mode_name;
+          if (rule.eventTypes?.length) {
+            eventType.value = rule.eventTypes;
+          }
+          if (rule.mode_filter) {
+            data.mode_filter.repo_name = rule.mode_filter.repo_name;
+            data.mode_filter.is_bot = rule.mode_filter.is_bot === 'true';
+            if (rule.mode_filter.is_bot === 'true') {
+              isBot.value = [1];
+            } else if (rule.mode_filter.is_bot === 'false') {
+              isBot.value = [0];
+            } else {
+              isBot.value = [1, 0];
+            }
           }
         }
+      }
+      if (dialogData?.dlgType === 'add') {
+        isBot.value = [1, 0];
       }
     } else {
       data.mode_name = '';
@@ -130,9 +135,9 @@ const onConfirm = async () => {
             <SettingsTagsEditor
               :tags="data.mode_filter.repo_name"
               ref="repoNameEditor"
-              style="width: 100%"
               :regExp="REPO_PROJ_NAME_PATTERN"
               placeholder="请输入组织和仓库名称，按照“组织名/仓库名”的格式填写，按回车键结束输入"
+              width="480px"
             />
             <p class="reponame-tips">若需关注所有仓库，使用“*”代替。示例：“openeuler/gcc”、“openeuler/*”</p>
           </div>
@@ -173,11 +178,12 @@ const onConfirm = async () => {
   color: var(--o-color-info3);
   font-size: var(--o-font_size-tip2);
   margin-left: 16px;
+  width: 480px;
 }
 
 .input {
   --input-radius: 4px;
-  width: 100%;
+  width: 480px;
 }
 
 .dialog-content {

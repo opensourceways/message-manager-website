@@ -105,7 +105,7 @@ const dialogSwitches = reactive({
 // 子组件点击新增/修改消息接收规则的按钮触发
 const onEditOrAdd = (dlgType: 'edit' | 'add', source: string, editId?: string | number) => {
   dialogData.dlgType = dlgType;
-  if (editId !== undefined) {
+  if (dlgType === 'edit' && editId !== undefined) {
     dialogData.rule = initialData[source].find(rule => rule.id === editId) as SubscribeRuleT;
   }
   dialogSwitches[source] = true;
