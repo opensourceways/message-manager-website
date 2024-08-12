@@ -150,7 +150,7 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
 // ------------------------是否特别关注消息------------------------
 const isSpecial = ref<'true' | ''>('true');
 
-watch(isSpecial, () => getData());
+watch(isSpecial, () => page.value = 1);
 
 // ------------------------获取数据------------------------
 const isRead = ref<0 | 1 | undefined>();
@@ -428,7 +428,7 @@ const filterConfirm = (source: string, event_type: string) => {
             <OSelect class="select" v-model="readStatus" variant="text" style="width: 112px">
               <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
-            <template v-if="!isPhone">
+            <template v-if="!isPhone && isSpecial">
               <!-- 仓库/项目名称搜索框 -->
               <OInput v-model="searchInput" @pressEnter="getData" :placeholder="searchPlaceholder">
                 <template #suffix>
