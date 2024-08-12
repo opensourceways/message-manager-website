@@ -434,7 +434,7 @@ const filterConfirm = (source: string, event_type: string) => {
             <OSelect class="select" v-model="readStatus" variant="text" style="width: 112px">
               <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
-            <template v-if="!isPhone && isSpecial">
+            <template v-if="!isPhone && activeMenu !== 'all'">
               <!-- 仓库/项目名称搜索框 -->
               <OInput v-model="searchInput" @pressEnter="getData" :placeholder="searchPlaceholder">
                 <template #suffix>
