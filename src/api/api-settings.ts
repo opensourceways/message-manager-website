@@ -42,7 +42,7 @@ export function putSubsRule(data: Partial<SubscribeRuleT>) {
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function deleteSubsRule(data: SubscribeRuleT) {
+export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypes' | 'mode_name'>) {
   return request.delete('/message_center/config/subs', {
     data: {
       source: data.source,
