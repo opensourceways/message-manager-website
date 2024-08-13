@@ -74,6 +74,7 @@ const getData = async () => {
     }
     const rule = initialData[item.source].find((rule) => rule.id === item.id);
     if (rule) {
+      rule.mode_filter = item.mode_filter;
       rule.recipient_id = item.recipient_id;
       rule.needCheckboxes ??= [];
       if (item.need_inner_message) {

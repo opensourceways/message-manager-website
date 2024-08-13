@@ -15,7 +15,7 @@ const actions: DialogActionT[] = [
   {
     id: 'cancel',
     label: '确定',
-    variant: 'outline',
+    variant: 'solid',
     color: 'primary',
     size: 'large',
     round: 'pill',
@@ -25,7 +25,7 @@ const actions: DialogActionT[] = [
     id: 'ok',
     label: '取消',
     color: 'primary',
-    variant: 'solid',
+    variant: 'outline',
     round: 'pill',
     size: 'large',
     onClick: () => emit('cancel'),
