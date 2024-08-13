@@ -45,9 +45,8 @@ export function putSubsRule(data: Partial<SubscribeRuleT>) {
 export function deleteSubsRule(data: SubscribeRuleT) {
   return request.delete('/message_center/config/subs', {
     data: {
-      id: data.id,
       source: data.source,
-      type: data.eventTypes?.join(),
+      event_type: data.eventTypes?.join(),
       mode_name: data.mode_name,
     },
   });
