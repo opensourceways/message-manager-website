@@ -19,6 +19,7 @@ const props = defineProps<{
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
 
+/** 用于put接口，统一字段 */
 let update_info: { id: string, event_type: string }[];
 const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
   mode_name: '',

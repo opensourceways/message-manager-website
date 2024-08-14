@@ -88,6 +88,13 @@ export function getUrlParams(url: string) {
   }
 }
 
+/**
+ * 对比两个数组，输出区别及相同元素
+ * @param sourceArr 原数组
+ * @param targetArr 目标数组
+ * @param compareFn 比较函数
+ * @returns diff结果
+ */
 export function diff<T>(
   sourceArr: T[],
   targetArr: T[],
