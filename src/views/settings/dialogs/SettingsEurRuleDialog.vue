@@ -19,6 +19,7 @@ const props = defineProps<{
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
 
+let update_info: { id: string, event_type: string }[];
 const data = reactive<{ mode_name: string; mode_filter: EurModeFilterT }>({
   mode_name: '',
   mode_filter: {
@@ -42,6 +43,7 @@ watch(
     if (val && dialogData?.dlgType === 'edit') {
       const rule = dialogData?.rule;
       if (rule && rule.source === EventSources.EUR) {
+        update_info = rule.eventTypesAndIds.map((item) => ({ id: item.id, event_type: item.eventType }));
         data.mode_name = rule.mode_name;
         if (rule.mode_filter) {
           data.mode_filter.status = rule.mode_filter.status;
@@ -62,13 +64,21 @@ const onCancel = () => emit('update:show', false);
 const onConfirm = async () => {
   data.mode_filter.source_group = projectNameEditor.value.getTagValues();
   try {
-    const res = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
-      ...data,
-      source: EventSources.EUR,
-      event_type: 'build',
-    });
-    if (res && res.newId) {
-      res.newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
+    if (dialogData?.dlgType === 'add') {
+      const { newId } = await postSubsRule({
+        ...data,
+        source: EventSources.EUR,
+        event_type: 'build',
+      });
+      if (newId) {
+        newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
+      }
+    } else {
+      await putSubsRule({
+        ...data,
+        source: EventSources.EUR,
+        update_info,
+      });
     }
     emit('updateData');
     onCancel();

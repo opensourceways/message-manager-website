@@ -8,7 +8,6 @@ import { EventSources, REPO_PROJ_NAME_PATTERN } from '@/data/event';
 import { computed } from 'vue';
 import { useUserInfoStore } from '@/stores/user';
 
-
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
   (event: 'updateData'): void;
@@ -25,7 +24,7 @@ const data = reactive({
   mode_name: '',
   mode_filter: {
     repo_name: [] as string[],
-    is_bot: 'false' as "false" | "true" | undefined
+    is_bot: 'false' as 'false' | 'true' | undefined,
   },
 });
 
@@ -34,7 +33,7 @@ const dialogData = inject<{
   rule: SubscribeRuleT<GiteeModeFilterT>;
 }>('dialogData');
 
-const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags || !eventType.value.length || !isBot.value.length);
+const btnDisabled = computed(() => !data.mode_name || !repoNameEditor.value?.hasTags || !eventTypes.value.length || !isBot.value.length);
 
 // --------------------事件类型下拉选择----------------
 const eventTypesOptions = [
@@ -44,7 +43,9 @@ const eventTypesOptions = [
   { label: '评论', value: 'note' },
 ];
 
-const eventType = ref<string[]>([]);
+let originalEventTypesAndIds: { id: string; eventType: string }[] = [];
+const eventTypes = ref<string[]>([]);
+// const deletedIds =
 
 // --------------------是否机器人----------------
 const isBot = ref<('true' | 'false')[]>([]);
@@ -57,12 +58,12 @@ watch(
         const rule = dialogData?.rule;
         if (rule && rule.source === EventSources.GITEE) {
           data.mode_name = rule.mode_name;
-          if (rule.eventTypes?.length) {
-            eventType.value = rule.eventTypes;
+          if (rule.eventTypesAndIds?.length) {
+            eventTypes.value = rule.eventTypesAndIds.map((item) => item.eventType);
+            originalEventTypesAndIds = [...rule.eventTypesAndIds];
           }
           if (rule.mode_filter) {
             data.mode_filter.repo_name = rule.mode_filter.repo_name;
-            // data.mode_filter.is_bot = rule.mode_filter.is_bot;
             if (rule.mode_filter.is_bot === 'true') {
               isBot.value = ['true'];
             } else if (rule.mode_filter.is_bot === 'false') {
@@ -84,7 +85,7 @@ watch(
       };
       repoNameEditor.value.clear();
       isBot.value = [];
-      eventType.value = [];
+      eventTypes.value = [];
     }
   }
 );
@@ -95,13 +96,28 @@ const onConfirm = async () => {
   data.mode_filter.repo_name = repoNameEditor.value.getTagValues();
   data.mode_filter.is_bot = isBot.value.length === 2 ? undefined : isBot.value[0];
   try {
-    const res = await (dialogData?.dlgType === 'add' ? postSubsRule : putSubsRule)({
-      ...data,
-      source: EventSources.GITEE,
-      event_type: eventType.value.length ? eventType.value.join() : undefined,
-    });
-    if (res && res.newId) {
-      res.newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
+    if (dialogData?.dlgType === 'add') {
+      const { newId } = await postSubsRule({
+        ...data,
+        source: EventSources.GITEE,
+        event_type: eventTypes.value.join(),
+      });
+      if (newId) {
+        newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
+      }
+    } else {
+      const delete_info = originalEventTypesAndIds
+        .filter((item) => !eventTypes.value.includes(item.eventType))
+        .map((deleted) => ({ id: deleted.id }));
+      const update_info = originalEventTypesAndIds
+        .filter((item) => eventTypes.value.includes(item.eventType))
+        .map((item) => ({ id: item.id, event_type: item.eventType }));
+      await putSubsRule({
+        ...data,
+        source: EventSources.GITEE,
+        delete_info,
+        update_info,
+      });
     }
     emit('updateData');
     onCancel();
@@ -113,7 +129,7 @@ const onConfirm = async () => {
 
 <template>
   <ODialog :visible="show" @change="$emit('update:show', $event)" :unmount-on-hide="false">
-    <template #header>{{ dialogData?.dlgType === 'add'? '新增' : '编辑' }}消息接收规则</template>
+    <template #header>{{ dialogData?.dlgType === 'add' ? '新增' : '编辑' }}消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
       <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
@@ -142,7 +158,7 @@ const onConfirm = async () => {
           </OCheckboxGroup>
         </OFormItem>
         <OFormItem label="消息类型" required>
-          <OCheckboxGroup v-model="eventType">
+          <OCheckboxGroup v-model="eventTypes">
             <OCheckbox v-for="item in eventTypesOptions" :key="item.value" :value="item.value">{{ item.label }}</OCheckbox>
           </OCheckboxGroup>
         </OFormItem>

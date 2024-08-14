@@ -39,12 +39,12 @@ const aggregateData = (data: SubscribeRuleT[]): SubscribeRuleT[] => {
     let cached = map.get(key);
     if (!cached) {
       cached = item;
-      cached.eventTypes = [item.event_type];
+      cached.eventTypesAndIds = [{ id: item.id, eventType: item.event_type }];
       cached.ids = [item.id];
       map.set(key, cached);
       continue;
     }
-    cached.eventTypes?.push(item.event_type);
+    cached.eventTypesAndIds?.push({ id: item.id, eventType: item.event_type });
     cached.ids?.push(item.id);
   }
   return Array.from(map.values());

@@ -1,5 +1,5 @@
 import { request, type RequestConfig } from '@/shared/axios';
-import type { SubscribeRuleT } from '@/@types/type-settings';
+import type { ModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import type { PagedResponseT } from '@/@types/types-common';
 
 /**
@@ -33,20 +33,27 @@ export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConf
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function putSubsRule(data: Partial<SubscribeRuleT>) {
-  request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
+export function putSubsRule(data: {
+  update_info: { id: string; event_type: string }[];
+  delete_info?: { id: string }[];
+  source: string;
+  mode_filter: ModeFilterT;
+  mode_name: string;
+}) {
+  return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
 }
 
 /**
+ * 
  * 删除消息接收规则
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypes' | 'mode_name'>) {
+export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypesAndIds' | 'mode_name'>) {
   return request.delete('/message_center/config/subs', {
     data: {
       source: data.source,
-      event_type: data.eventTypes?.join(),
+      event_type: data.eventTypesAndIds.map(item => item.id).join(),
       mode_name: data.mode_name,
     },
   });
