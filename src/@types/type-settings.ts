@@ -50,8 +50,6 @@ export interface SubscribeRuleT<T = ModeFilterT> {
   need_inner_message?: boolean;
   
   /** 非后端字段，用于前端处理展示 */
-  eventTypes?: string[];
-  /** 非后端字段，用于前端处理展示 */
   eventTypesAndIds: { id: string, eventType: string }[];
   /** 站内消息、电话、短信等多选框的数组，非后端字段，用于前端处理展示 */
   needCheckboxes?: string[];

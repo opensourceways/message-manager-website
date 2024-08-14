@@ -7,6 +7,7 @@ import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EventSources, REPO_PROJ_NAME_PATTERN } from '@/data/event';
 import { computed } from 'vue';
 import { useUserInfoStore } from '@/stores/user';
+import { diff } from '@/utils/common';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -106,17 +107,38 @@ const onConfirm = async () => {
         newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
       }
     } else {
-      const delete_info = originalEventTypesAndIds
-        .filter((item) => !eventTypes.value.includes(item.eventType))
-        .map((deleted) => ({ id: deleted.id }));
-      const update_info = originalEventTypesAndIds
-        .filter((item) => eventTypes.value.includes(item.eventType))
-        .map((item) => ({ id: item.id, event_type: item.eventType }));
+      const diffRes = diff(
+        originalEventTypesAndIds.map((item) => item.eventType),
+        eventTypes.value
+      );
+      const delete_info: { id: string }[] = [];
+      const update_info: { id: string; event_type: string }[] = [];
+      const create_info: { event_type: string }[] = [];
+      for (const res of diffRes) {
+        if (res.type) {
+          if (res.type === 'add') {
+            create_info.push({ event_type: res.value });
+          } else {
+            delete_info.push({
+              id: originalEventTypesAndIds.find((item) => item.eventType === res.value)?.id as string
+            });
+          }
+        } else {
+          update_info.push({
+            event_type: res.value,
+            id: originalEventTypesAndIds.find((item) => item.eventType === res.value)?.id as string
+          });
+        }
+      }
+      console.log(delete_info);
+      console.log(update_info);
+      console.log(create_info);
       await putSubsRule({
         ...data,
         source: EventSources.GITEE,
         delete_info,
         update_info,
+        create_info,
       });
     }
     emit('updateData');

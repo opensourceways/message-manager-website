@@ -36,6 +36,7 @@ export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConf
 export function putSubsRule(data: {
   update_info: { id: string; event_type: string }[];
   delete_info?: { id: string }[];
+  create_info?: { event_type: string }[];
   source: string;
   mode_filter: ModeFilterT;
   mode_name: string;
