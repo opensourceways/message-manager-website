@@ -24,7 +24,7 @@ const inputArea = ref<HTMLDivElement>() as Ref<HTMLDivElement>;
 const tagSet = ref(new Set<string>());
 const hasTags = computed(() => tagSet.value.size > 0);
 
-const tagsRemovedObserver = new MutationObserver(([mut]) => {
+const editorMutationObserver = new MutationObserver(([mut]) => {
   if (mut.removedNodes.length) {
     mut.removedNodes.forEach((node) => {
       if (node instanceof HTMLSpanElement && node.classList.contains('tag-wrapper')) {
@@ -32,20 +32,18 @@ const tagsRemovedObserver = new MutationObserver(([mut]) => {
       }
     });
   }
+  if (inputArea.value?.hasChildNodes()) {
+    showPlaceHolder.value = false;
+  } else {
+    showPlaceHolder.value = true;
+  }
 });
 
-onMounted(() => tagsRemovedObserver.observe(inputArea.value, { childList: true }));
-const focused = ref(false);
+onMounted(() => editorMutationObserver.observe(inputArea.value, { childList: true }));
 const showPlaceHolder = ref(true);
 
-const onFocus = () => focused.value = true;
-
-const onBlur = () => focused.value = false;
-
 watchEffect(() => {
-  if (focused.value || tagSet.value.size > 0) {
-    showPlaceHolder.value = false;
-  } else if (inputArea.value?.hasChildNodes()) {
+  if (tagSet.value.size > 0) {
     showPlaceHolder.value = false;
   } else {
     showPlaceHolder.value = true;
@@ -144,6 +142,16 @@ const onClick = () => {
   }
 };
 
+const onPaste = (e: ClipboardEvent) => {
+  e.preventDefault();
+  const text = e.clipboardData?.getData('text/plain');
+  if (document.queryCommandSupported('insertText')) {
+    document.execCommand('insertText', false, text);
+  } else {
+    document.execCommand('paste', false, text);
+  }
+}
+
 const getTagValues = () => [...tagSet.value];
 
 const onClickPlaceholder = () => inputArea.value.focus();
@@ -163,7 +171,7 @@ defineExpose({
 <template>
   <div class="outer" :style="{ width: width, minHeight: height }">
     <p v-if="showPlaceHolder" class="placeholder" @click="onClickPlaceholder">{{ placeholder }}</p>
-    <div class="inputArea" ref="inputArea" contenteditable="true" @focus="onFocus" @blur="onBlur" @keydown.enter="addTag" @click="onClick"></div>
+    <div class="inputArea" ref="inputArea" contenteditable="true" @paste="onPaste" @keydown.enter="addTag" @click="onClick"></div>
   </div>
 </template>
 
