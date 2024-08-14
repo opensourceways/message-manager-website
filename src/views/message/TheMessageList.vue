@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -70,6 +70,13 @@ const toConfig = () => router.push('/settings');
 
 const isPhone = inject<Ref<boolean>>('isPhone');
 provide('isPhone', isPhone);
+let timeoutId: ReturnType<typeof setTimeout>;
+
+onMounted(() => {
+  timeoutId = setTimeout(getData, 10_000);
+});
+
+onUnmounted(() => clearTimeout(timeoutId));
 
 // ------------------------多选框事件------------------------
 const {
