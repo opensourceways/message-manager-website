@@ -34,7 +34,7 @@ const actions: DialogActionT[] = [
 </script>
 
 <template>
-  <ODialog :visible="show" :actions="actions" size="small" style="--dlg-radius: 4px">
+  <ODialog :maskClose="false" :visible="show" :actions="actions" size="small" style="--dlg-radius: 4px">
     <template #header>{{ title }}</template>
     <div style="display: flex; justify-content: center">
       {{ content }}

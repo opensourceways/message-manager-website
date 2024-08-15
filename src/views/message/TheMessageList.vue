@@ -85,9 +85,16 @@ const {
   indeterminate,
   isCheckedAll,
   checkAll,
-  clearCheckboxes
+  clearCheckboxes,
+  // checkboxChange,
+  // parentCheckboxChange,
 } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxes', checkboxes);
+// provide('checkboxChange', checkboxChange);
+
+watch(indeterminate, val => {
+  console.log(val);
+});
 
 // ------------------------搜索------------------------
 const searchInput = ref('');
@@ -385,11 +392,11 @@ watch(
 watch(
   () => phoneStore.checkedAll,
   (val) => {
-    if (val && !checkboxes.value.length) {
+    if (val && !isCheckedAll.value) {
       checkAll();
       return;
     }
-    if (!val && checkboxes.value.length) {
+    if (!val && isCheckedAll.value) {
       clearCheckboxes();
     }
   }

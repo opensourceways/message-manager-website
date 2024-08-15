@@ -5,15 +5,17 @@ export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T)
   const indeterminate = ref<boolean>(false);
   const parentCheckbox = ref<(string | number)[]>([]);
   const isCheckedAll = computed(() => parentCheckbox.value.length > 0);
+  const ONE = [1];
+  const EMPTY: any[] = [];
 
   const checkAll = () => {
     indeterminate.value = false;
-    parentCheckbox.value = [1];
+    parentCheckbox.value = ONE;
   };
 
   const clearCheckboxes = () => {
     indeterminate.value = false;
-    parentCheckbox.value = [];
+    parentCheckbox.value = EMPTY;
   };
 
   watch(datasource, (val) => {
@@ -22,42 +24,48 @@ export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T)
     }
   });
 
-  watch(parentCheckbox, (val) => {
-    if (datasource.value.length === 0) {
-      return;
-    }
-    if (val.length) {
-      if (checkboxes.value.length < datasource.value.length) {
-        checkboxes.value = datasource.value.map(cbValueExtractor);
+  watch(
+    () => parentCheckbox.value.length,
+    (length) => {
+      if (datasource.value.length === 0) {
+        return;
       }
-    } else {
-      if (!indeterminate.value && checkboxes.value.length > 0) {
-        checkboxes.value = [];
+      if (length) {
+        if (checkboxes.value.length < datasource.value.length) {
+          checkboxes.value = datasource.value.map(cbValueExtractor);
+        }
+      } else {
+        if (!indeterminate.value && checkboxes.value.length > 0) {
+          checkboxes.value = EMPTY;
+        }
       }
     }
-  });
+  );
 
-  watch(checkboxes, (val) => {
-    if (datasource.value.length === 0) {
-      return;
+  watch(
+    () => checkboxes.value.length,
+    (length) => {
+      if (datasource.value.length === 0) {
+        return;
+      }
+      if (length === datasource.value.length) {
+        if (!isCheckedAll.value) {
+          parentCheckbox.value = ONE;
+        }
+        indeterminate.value = false;
+      } else if (length === 0) {
+        if (isCheckedAll.value) {
+          parentCheckbox.value = EMPTY;
+        }
+        indeterminate.value = false;
+      } else {
+        if (isCheckedAll.value) {
+          parentCheckbox.value = EMPTY;
+        }
+        indeterminate.value = true;
+      }
     }
-    if (val.length === datasource.value.length) {
-      if (!isCheckedAll.value) {
-        parentCheckbox.value = [1];
-      }
-      indeterminate.value = false;
-    } else if (val.length === 0) {
-      if (isCheckedAll.value) {
-        parentCheckbox.value = [];
-      }
-      indeterminate.value = false;
-    } else {
-      if (isCheckedAll.value) {
-        parentCheckbox.value = [];
-      }
-      indeterminate.value = true;
-    }
-  });
+  );
 
   return {
     checkboxes,
