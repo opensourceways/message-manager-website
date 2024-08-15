@@ -107,32 +107,20 @@ const onConfirm = async () => {
         newId.forEach((subscribe_id) => postPushConfig({ recipient_id: userInfoStore.recipientId, subscribe_id }));
       }
     } else {
-      const diffRes = diff(
+      const { added, same, removed } = diff(
         originalEventTypesAndIds.map((item) => item.eventType),
         eventTypes.value
       );
-      const delete_info: { id: string }[] = [];
-      const update_info: { id: string; event_type: string }[] = [];
-      const create_info: { event_type: string }[] = [];
-      for (const res of diffRes) {
-        if (res.type) {
-          if (res.type === 'add') {
-            create_info.push({ event_type: res.value });
-          } else {
-            delete_info.push({
-              id: originalEventTypesAndIds.find((item) => item.eventType === res.value)?.id as string
-            });
-          }
-        } else {
-          update_info.push({
-            event_type: res.value,
-            id: originalEventTypesAndIds.find((item) => item.eventType === res.value)?.id as string
-          });
-        }
-      }
-      console.log(delete_info);
-      console.log(update_info);
-      console.log(create_info);
+      const delete_info = removed.map((removedItem) => ({
+        id: originalEventTypesAndIds.find((item) => item.eventType === removedItem)?.id as string
+      }));
+      const update_info = same.map(remainItem => ({
+        event_type: remainItem,
+        id: originalEventTypesAndIds.find((item) => item.eventType === remainItem)?.id as string
+      }));
+      const create_info = added.map((addItem) => ({
+        event_type: addItem
+      }));
       await putSubsRule({
         ...data,
         source: EventSources.GITEE,
