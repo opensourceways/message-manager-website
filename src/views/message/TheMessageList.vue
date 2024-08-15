@@ -70,13 +70,13 @@ const toConfig = () => router.push('/settings');
 
 const isPhone = inject<Ref<boolean>>('isPhone');
 provide('isPhone', isPhone);
-let timeoutId: ReturnType<typeof setTimeout>;
+let intervalId: ReturnType<typeof setInterval>;
 
 onMounted(() => {
-  timeoutId = setTimeout(getData, 10_000);
+  intervalId = setInterval(getData, 10_000);
 });
 
-onUnmounted(() => clearTimeout(timeoutId));
+onUnmounted(() => clearInterval(intervalId));
 
 // ------------------------多选框事件------------------------
 const {
