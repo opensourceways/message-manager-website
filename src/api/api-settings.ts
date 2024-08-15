@@ -54,7 +54,7 @@ export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypes
   return request.delete('/message_center/config/subs', {
     data: {
       source: data.source,
-      event_type: data.eventTypesAndIds.map(item => item.id).join(),
+      event_type: data.eventTypesAndIds.map(item => item.eventType).join(),
       mode_name: data.mode_name,
     },
   });

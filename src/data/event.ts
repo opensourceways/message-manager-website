@@ -34,4 +34,4 @@ export const EUR_BUILD_STATUS = [
   { label: 'unknown', value: 1000 },
 ];
 
-export const REPO_PROJ_NAME_PATTERN = /^\*$|^[a-zA-Z1-9]+\/(?:\*{1}|[a-zA-Z1-9]+)/;
+export const REPO_PROJ_NAME_PATTERN = /^\*$|^.+\/(?:\*{1}|.+)/;

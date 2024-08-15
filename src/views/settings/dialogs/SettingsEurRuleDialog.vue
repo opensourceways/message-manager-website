@@ -50,7 +50,6 @@ watch(
           data.mode_filter.status = rule.mode_filter.status;
           data.mode_filter.source_group = rule.mode_filter.source_group;
         }
-        console.log(JSON.stringify(data));
       }
     } else {
       data.mode_name = '';
