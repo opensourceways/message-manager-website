@@ -1,5 +1,5 @@
 import { request } from "@/shared/axios";
-import type { MessageT, MsgQueryParamT } from "@/@types/type-messages";
+import type { MessageT, MsgQueryParamT, Sig } from "@/@types/type-messages";
 import type { PagedResponseT } from "@/@types/types-common";
 
 /**
@@ -35,4 +35,12 @@ export function deleteMessages(...msgs: MessageT[]): Promise<any> {
  */
 export function getUnreadCount(): Promise<number> {
   return request.get('/message_center/inner/count').then(res => res.data.count).catch(() => 0);
+}
+
+export function getAllSigs() {
+  return request.get<{ data: Sig[] }>('/api-dsapi/query/sig/info?community=openeuler&search=fuzzy').then(res => res.data.data);
+}
+
+export function getRepoList() {
+  return request.get<{ data: string[] }>('/api-dsapi/query/sig/repo?community=openeuler&search=fuzzy').then(res => res.data.data);
 }

@@ -4,8 +4,10 @@ import { OButton, ODialog, OForm, OFormItem, OInput, OOption, OSelect, useMessag
 import type { EurModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { postPushConfig, postSubsRule, putSubsRule } from '@/api/api-settings';
 import { EventSources, EUR_BUILD_STATUS, REPO_PROJ_NAME_PATTERN } from '@/data/event';
-import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { useUserInfoStore } from '@/stores/user';
+
+import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
+import TextWithTip from '@/components/TextWithTip.vue';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -94,14 +96,20 @@ const onConfirm = async () => {
     <template #header>{{ dialogData?.dlgType === 'add' ? '创建' : '修改' }}消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
-      <OForm has-required layout="h" label-align="top" label-justify="left" label-width="80px">
-        <OFormItem label="规则名称" required>
+      <OForm has-required layout="h" label-align="top" label-justify="left" label-width="120px">
+        <OFormItem required>
+          <template #label>
+            <TextWithTip content="规则名称" tip="本条接收规则的自定义名称"></TextWithTip>
+          </template>
           <OInput class="input" clearable v-model="data.mode_name" placeholder="请输入方便您区分的名称" />
         </OFormItem>
       </OForm>
       <p class="dialog-content-title">消息接收规则设置</p>
-      <OForm has-required layout="h" label-align="top" label-justify="left" label-width="80px">
-        <OFormItem label="项目名称" required>
+      <OForm has-required layout="h" label-align="top" label-justify="left" label-width="120px">
+        <OFormItem required>
+          <template #label>
+            <TextWithTip content="项目名称" tip="EUR系统中User/Project格式的项目名称"></TextWithTip>
+          </template>
           <div>
             <SettingsTagsEditor
               :tags="data.mode_filter.source_group"
@@ -114,6 +122,9 @@ const onConfirm = async () => {
           </div>
         </OFormItem>
         <OFormItem label="构建状态" required>
+          <template #label>
+            <TextWithTip content="构建状态" tip="你关注的构建工程状态"></TextWithTip>
+          </template>
           <OSelect class="status-selector" v-model="data.mode_filter.status" multiple variant="outline" placeholder="请选择构建状态" clearable>
             <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :label="item.label" :value="item.value" />
           </OSelect>

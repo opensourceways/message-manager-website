@@ -1,6 +1,6 @@
 export const EventSources = {
-  EUR: 'https://eur.openeuler.openatom.cn',
   GITEE: 'https://gitee.com',
+  EUR: 'https://eur.openeuler.openatom.cn',
 };
 
 export const EventSourceNames: Record<string, string> = {

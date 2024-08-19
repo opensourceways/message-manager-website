@@ -39,6 +39,13 @@ export interface EurMsgQueryParamT extends CommonMsgQueryParamT {
 export interface GiteeMsgQueryParamT extends CommonMsgQueryParamT {
   /** gitee消息是否机器人 */
   is_bot?: string;
+  sig?: string;
+  repos?: string;
 }
 
 export type MsgQueryParamT = EurMsgQueryParamT | GiteeMsgQueryParamT;
+
+export interface Sig {
+  sig_name: string;
+  repos: string[];
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -29,9 +29,9 @@ import IconSettings from '~icons/app/icon-setting.svg';
 import IconSearch from '~icons/app/icon-search.svg';
 
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
-import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, readMessages } from '@/api/messages';
-import { useConfirmDialog } from '@vueuse/core';
+import type { CommonMsgQueryParamT, EurMsgQueryParamT, GiteeMsgQueryParamT, MessageT, MsgQueryParamT } from '@/@types/type-messages';
+import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages } from '@/api/messages';
+import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useLoginStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
@@ -178,16 +178,27 @@ const isRead = ref<0 | 1 | undefined>();
 const getData = () => {
   const { source, event_type } = route.query;
   const filterValues = msgFilterSelectVal.value.length ? msgFilterSelectVal.value.join() : undefined;
-  getMessages({
+  const commonQuery: CommonMsgQueryParamT = {
     source: source as string,
     event_type: event_type as string,
     is_read: isRead.value,
     page: page.value,
     count_per_page: pageSize.value,
     key_word: searchInput.value || undefined,
-    build_status: source === EventSources.EUR ? filterValues : undefined,
-    is_bot: source === EventSources.GITEE ? filterValues : undefined,
     is_special: isSpecial.value,
+  };
+  const specificQuery: MsgQueryParamT = {};
+  if (source === EventSources.EUR) {
+    (specificQuery as EurMsgQueryParamT).build_status = filterValues;
+  }
+  if (source === EventSources.GITEE) {
+    (specificQuery as GiteeMsgQueryParamT).is_bot = filterValues;
+    (specificQuery as GiteeMsgQueryParamT).sig = selectedSigs.value.length ? selectedSigs.value.join() : undefined;
+    (specificQuery as GiteeMsgQueryParamT).repos = selectedRepos.value.length ? selectedRepos.value.join() : undefined;
+  }
+  getMessages({
+    ...commonQuery,
+    ...specificQuery
   })
     .then((res) => {
       const { count, query_info } = res.data;
@@ -205,6 +216,58 @@ const getData = () => {
 };
 
 watch([page, pageSize], () => getData());
+
+// ------------------------gitee的sig和Repos------------------------
+const selectedSigs = ref<string[]>([]);
+const selectedRepos = ref<string[]>([]);
+const allSigReposMap = new Map<string, string[]>();
+
+const sigList = ref<string[]>([]);
+let repositoryList: string[] = [];
+const repoRenderList = ref<string[]>([]);
+
+const getAllRepo = () => {
+  getRepoList()
+    .then((data) => {
+      repositoryList = data;
+      repositoryList.sort((a, b) => {
+        return a.localeCompare(b);
+      });
+      repoRenderList.value = data.slice(0, 99);
+    });
+};
+
+const getSigList = () => {
+  getAllSigs().then(data => {
+    sigList.value = data.map((item) => item.sig_name);
+    for (const item of data) {
+      allSigReposMap.set(item.sig_name, item.repos);
+    }
+  });
+};
+
+const onSigChange = (val: string[]) => {
+  getData();
+  if (!val.length) {
+    repoRenderList.value = repositoryList.slice(0, 99);
+    return;
+  };
+  repoRenderList.value = val.reduce((list, current) => {
+    list.push(...(allSigReposMap.get(current) ?? []));
+    return list;
+  }, [] as string[]);
+};
+
+// 自定义筛选事件
+const debouncedRepoFilterFn = useDebounceFn((val: string) => {
+  if (!val && selectedSigs.value.length) return;
+  repoRenderList.value = repositoryList.filter((item) => {
+    return item.includes(val);
+  });
+  if (repoRenderList.value.length > 300) {
+    repoRenderList.value = repoRenderList.value.slice(0, 300);
+  }
+}, 300);
 
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
@@ -417,6 +480,11 @@ const filterConfirm = (source: string, event_type: string) => {
   }
   router.push({ path: '/', query: { source, event_type } });
 };
+
+onBeforeMount(() => {
+  getAllRepo();
+  getSigList();
+});
 </script>
 
 <template>
@@ -463,7 +531,7 @@ const filterConfirm = (source: string, event_type: string) => {
             </OSelect>
             <template v-if="!isPhone && activeMenu !== 'all'">
               <!-- 仓库/项目名称搜索框 -->
-              <OInput v-model="searchInput" @pressEnter="getData" :placeholder="searchPlaceholder">
+              <OInput style="width: 150px;" v-model="searchInput" @pressEnter="getData" :placeholder="searchPlaceholder">
                 <template #suffix>
                   <div style="display: flex">
                     <IconSearch class="icon-search" @click="getData" />
@@ -471,23 +539,56 @@ const filterConfirm = (source: string, event_type: string) => {
                 </template>
               </OInput>
               <!-- 通用过滤下拉选择 -->
-              <OSelect :multiple="true" v-model="msgFilterSelectVal" @change="onFilterSelectChange" :placeholder="msgFilterSelectPlaceholder">
+              <OSelect filterable style="width: 150px;" :multiple="true" v-model="msgFilterSelectVal" @change="onFilterSelectChange" :placeholder="msgFilterSelectPlaceholder">
                 <OOption v-for="item in msgFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
                   {{ item.label }}
                 </OOption>
               </OSelect>
-              <!-- gitee消息类型下拉选择 -->
-              <OSelect
-                v-if="route.query.source === EventSources.GITEE"
-                :multiple="true"
-                v-model="giteeEventType"
-                placeholder="消息类型"
-                @change="onGiteeEventTypeChange"
-              >
-                <OOption v-for="item in giteeEventTypeOptions" :key="item.value" :value="item.value" :label="item.label">
-                  {{ item.label }}
-                </OOption>
-              </OSelect>
+              <!-- gitee消息过滤下拉选择 -->
+              <template v-if="route.query.source === EventSources.GITEE">
+                <OSelect
+                  style="width: 130px;"
+                  :multiple="true"
+                  v-model="giteeEventType"
+                  placeholder="消息类型"
+                  @change="onGiteeEventTypeChange"
+                >
+                  <OOption v-for="item in giteeEventTypeOptions" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
+                <el-select
+                  v-model="selectedSigs"
+                  multiple
+                  filterable
+                  placeholder="SIG"
+                  style="width: 100px"
+                  @change="onSigChange"
+                >
+                  <el-option
+                    v-for="item in sigList"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                  />
+                </el-select>
+                <el-select
+                  v-model="selectedRepos"
+                  multiple
+                  filterable
+                  :filter-method="debouncedRepoFilterFn"
+                  placeholder="仓库"
+                  style="width: 100px"
+                  @change="getData"
+                >
+                  <el-option
+                    v-for="item in repoRenderList"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                  />
+                </el-select>
+              </template>
             </template>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">

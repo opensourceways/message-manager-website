@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { inject, reactive, ref, watch } from 'vue';
 import { OButton, OCheckbox, OCheckboxGroup, ODialog, OForm, OFormItem, OInput, useMessage } from '@opensig/opendesign';
-import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
 import { postPushConfig, postSubsRule, putSubsRule } from '@/api/api-settings';
 import type { GiteeModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
 import { EventSources, REPO_PROJ_NAME_PATTERN } from '@/data/event';
 import { computed } from 'vue';
 import { useUserInfoStore } from '@/stores/user';
 import { diff } from '@/utils/common';
+
+import SettingsTagsEditor from '../components/SettingsTagsEditor.vue';
+import TextWithTip from '@/components/TextWithTip.vue';
 
 const emit = defineEmits<{
   (event: 'update:show', show: boolean): void;
@@ -142,14 +144,20 @@ const onConfirm = async () => {
     <template #header>{{ dialogData?.dlgType === 'add' ? '新增' : '编辑' }}消息接收规则</template>
     <div class="dialog-content">
       <p class="dialog-content-title">消息接收规则命名</p>
-      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
-        <OFormItem label="规则名称" required>
+      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="120px">
+        <OFormItem required>
+          <template #label>
+            <TextWithTip content="规则名称" tip="本条接收规则的自定义名称"></TextWithTip>
+          </template>
           <OInput class="input" clearable v-model="data.mode_name" placeholder="请输入方便您区分的名称" />
         </OFormItem>
       </OForm>
       <p class="dialog-content-title">消息接收规则设置</p>
-      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="80px">
-        <OFormItem label="仓库名称" required>
+      <OForm class="content-form" has-required layout="h" label-align="top" label-justify="left" label-width="120px">
+        <OFormItem required>
+          <template #label>
+            <TextWithTip content="仓库名称" tip="gitee中相关主动仓库名称，目前只支持openeuler，scr-openeuler组织下的仓库"></TextWithTip>
+          </template>
           <div>
             <SettingsTagsEditor
               :tags="data.mode_filter.repo_name"
