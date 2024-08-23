@@ -6,6 +6,7 @@ const props = withDefaults(defineProps<{
   disabled?: boolean;
   iconSize?: string;
   hoverColor?: string;
+  color?: string;
   labelClassNames?: string[];
 }>(), {
   iconSize: '24px',

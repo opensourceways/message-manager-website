@@ -7,7 +7,7 @@ import type { PagedResponseT } from "@/@types/types-common";
  * @param params 查询参数
  * @returns { Promise<MessageT[]> } 所有消息
  */
-export function getMessages(params: MsgQueryParamT) {
+export function getMessages(params: Record<string, any>) {
   return request.get<PagedResponseT<MessageT>>(`/message_center/inner`, { params, ignoreDuplicates: true });
 }
 

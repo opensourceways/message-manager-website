@@ -20,6 +20,7 @@ import {
   type SelectValueT,
   OTab,
   OTabPane,
+  OTag,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -39,6 +40,8 @@ import IconLink from '@/components/IconLink.vue';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
 import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
+import FilterableSelect from '@/components/FilterableSelect.vue';
+import TagInput from '@/components/TagInput.vue';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -86,11 +89,8 @@ const {
   isCheckedAll,
   checkAll,
   clearCheckboxes,
-  // checkboxChange,
-  // parentCheckboxChange,
 } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxes', checkboxes);
-// provide('checkboxChange', checkboxChange);
 
 watch(indeterminate, val => {
   console.log(val);
@@ -99,18 +99,37 @@ watch(indeterminate, val => {
 // ------------------------搜索------------------------
 const searchInput = ref('');
 
-const searchPlaceholder = computed(() => {
-  switch (route.query.source) {
-    case EventSources.EUR:
-      return '项目';
-    case EventSources.GITEE:
-      return '仓库';
-    default:
-      return '项目/仓库';
-  }
+// ------------------------消息过滤下拉多选------------------------
+const filterParams = reactive({
+  source: '',
+  event_type: '',
+  is_read: '',
+  key_word: '',
+  is_bot: '',
+  is_special: '',
+  sig: '',
+  repos: '',
+  count_per_page: 10,
+  page: 1,
+  start_time: '',
+  end_time: '',
+  meeting_start_time: '',
+  meeting_end_time: '',
+  meeting_action: '',
+  meeting_sig: '',
+  pr_state: '',
+  pr_create: '',
+  pr_assignee: '',
+  issue_state: '',
+  issue_creator: '',
+  issue_assignee: '',
+  build_status: '',
+  build_creator: '',
+  build_owner: '',
+  note_type: '',
+  about: '',
 });
 
-// ------------------------消息过滤下拉多选------------------------
 const msgFilterSelectVal = ref<string[]>([]);
 
 const msgFilterSelectPlaceholder = computed(() => {
@@ -138,7 +157,27 @@ const msgFilterSelectOptions = computed(() => {
   }
 });
 
-const onFilterSelectChange = () => nextTick(getData);
+const startTime = ref<Date>();
+const endTime = ref<Date>();
+
+const executorSearchChange = (val: string[]) => {
+  filterParams.build_creator = val.join();
+  getData();
+}
+
+const ownerSearchChange = (val: string[]) => {
+  filterParams.build_owner = val.join();
+  getData();
+}
+
+const startTimeChange = (date: Date) => {
+  filterParams.start_time = `${date.getTime()}`;
+  getData();
+}
+const endTimeChange = (date: Date) => {
+  filterParams.end_time = `${date.getTime()}`;
+  getData();
+}
 
 // ------------------------gitee消息类型过滤下拉多选------------------------
 const giteeEventType = ref<string[]>([]);
@@ -176,29 +215,8 @@ watch(isSpecial, () => {
 const isRead = ref<0 | 1 | undefined>();
 
 const getData = () => {
-  const { source, event_type } = route.query;
-  const filterValues = msgFilterSelectVal.value.length ? msgFilterSelectVal.value.join() : undefined;
-  const commonQuery: CommonMsgQueryParamT = {
-    source: source as string,
-    event_type: event_type as string,
-    is_read: isRead.value,
-    page: page.value,
-    count_per_page: pageSize.value,
-    key_word: searchInput.value || undefined,
-    is_special: isSpecial.value,
-  };
-  const specificQuery: MsgQueryParamT = {};
-  if (source === EventSources.EUR) {
-    (specificQuery as EurMsgQueryParamT).build_status = filterValues;
-  }
-  if (source === EventSources.GITEE) {
-    (specificQuery as GiteeMsgQueryParamT).is_bot = filterValues;
-    (specificQuery as GiteeMsgQueryParamT).sig = selectedSigs.value.length ? selectedSigs.value.join() : undefined;
-    (specificQuery as GiteeMsgQueryParamT).repos = selectedRepos.value.length ? selectedRepos.value.join() : undefined;
-  }
   getMessages({
-    ...commonQuery,
-    ...specificQuery
+    ...filterParams,
   })
     .then((res) => {
       const { count, query_info } = res.data;
@@ -215,7 +233,7 @@ const getData = () => {
     })
 };
 
-watch([page, pageSize], () => getData());
+watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
 
 // ------------------------gitee的sig和Repos------------------------
 const selectedSigs = ref<string[]>([]);
@@ -223,17 +241,14 @@ const selectedRepos = ref<string[]>([]);
 const allSigReposMap = new Map<string, string[]>();
 
 const sigList = ref<string[]>([]);
-let repositoryList: string[] = [];
+const repoList = ref<string[]>([]);
 const repoRenderList = ref<string[]>([]);
 
 const getAllRepo = () => {
   getRepoList()
     .then((data) => {
-      repositoryList = data;
-      repositoryList.sort((a, b) => {
-        return a.localeCompare(b);
-      });
-      repoRenderList.value = data.slice(0, 99);
+      repoList.value = data;
+      repoRenderList.value = data;
     });
 };
 
@@ -246,28 +261,23 @@ const getSigList = () => {
   });
 };
 
-const onSigChange = (val: string[]) => {
+const onSigChange = (val: (string | number)[]) => {
+  selectedSigs.value = val as string[];
   getData();
   if (!val.length) {
-    repoRenderList.value = repositoryList.slice(0, 99);
+    repoRenderList.value = repoList.value;
     return;
   };
   repoRenderList.value = val.reduce((list, current) => {
-    list.push(...(allSigReposMap.get(current) ?? []));
+    list.push(...(allSigReposMap.get(current as string) ?? []));
     return list;
   }, [] as string[]);
 };
 
-// 自定义筛选事件
-const debouncedRepoFilterFn = useDebounceFn((val: string) => {
-  if (!val && selectedSigs.value.length) return;
-  repoRenderList.value = repositoryList.filter((item) => {
-    return item.includes(val);
-  });
-  if (repoRenderList.value.length > 300) {
-    repoRenderList.value = repoRenderList.value.slice(0, 300);
-  }
-}, 300);
+const onRepoChange = (val: (string | number)[]) => {
+  selectedRepos.value = val as string[];
+  getData();
+};
 
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
@@ -304,11 +314,13 @@ watch(
     }
     const { source, event_type } = route.query;
     if (source && source !== activeMenu.value) {
+      filterParams.source = source as string;
       activeMenu.value = source as string;
     } else if (!source && activeMenu.value !== 'all') {
       activeMenu.value = 'all';
     }
     if (event_type) {
+      filterParams.event_type = event_type as string;
       switch (source) {
         case EventSources.GITEE:
           giteeEventType.value = (event_type as string).split(',');
@@ -530,22 +542,53 @@ onBeforeMount(() => {
               <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
             <template v-if="!isPhone && activeMenu !== 'all'">
-              <!-- 仓库/项目名称搜索框 -->
-              <OInput style="width: 150px;" v-model="searchInput" @pressEnter="getData" :placeholder="searchPlaceholder">
-                <template #suffix>
-                  <div style="display: flex">
-                    <IconSearch class="icon-search" @click="getData" />
-                  </div>
-                </template>
-              </OInput>
               <!-- 通用过滤下拉选择 -->
-              <OSelect filterable style="width: 150px;" :multiple="true" v-model="msgFilterSelectVal" @change="onFilterSelectChange" :placeholder="msgFilterSelectPlaceholder">
+              <OSelect filterable style="width: 150px;" :multiple="true" v-model="msgFilterSelectVal" @change="getData" :placeholder="msgFilterSelectPlaceholder">
                 <OOption v-for="item in msgFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
                   {{ item.label }}
                 </OOption>
               </OSelect>
-              <!-- gitee消息过滤下拉选择 -->
+              <!-- eur过滤 -->
+              <template v-if="route.query.source === EventSources.EUR">
+                <!-- 创建者 -->
+                <TagInput @change="executorSearchChange" placeholder="创建者">
+                  <template #suffix>
+                    <div style="display: flex">
+                      <IconSearch class="icon-search" @click="getData" />
+                    </div>
+                  </template>
+                </TagInput>
+                <!-- 所有者 -->
+                <TagInput @change="ownerSearchChange" placeholder="所有者">
+                  <template #suffix>
+                    <div style="display: flex">
+                      <IconSearch class="icon-search" @click="getData" />
+                    </div>
+                  </template>
+                </TagInput>
+                <el-date-picker
+                  v-model="startTime"
+                  type="datetime"
+                  placeholder="开始时间"
+                  @change="startTimeChange"
+                />
+                <el-date-picker
+                  v-model="endTime"
+                  type="datetime"
+                  placeholder="结束时间"
+                  @change="endTimeChange"
+                />
+              </template>
+              <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
+                <!-- 仓库名称搜索框 -->
+                <OInput v-model="searchInput" @pressEnter="getData" placeholder="仓库">
+                  <template #suffix>
+                    <div style="display: flex">
+                      <IconSearch class="icon-search" @click="getData" />
+                    </div>
+                  </template>
+                </OInput>
                 <OSelect
                   style="width: 130px;"
                   :multiple="true"
@@ -557,37 +600,10 @@ onBeforeMount(() => {
                     {{ item.label }}
                   </OOption>
                 </OSelect>
-                <el-select
-                  v-model="selectedSigs"
-                  multiple
-                  filterable
-                  placeholder="SIG"
-                  style="width: 100px"
-                  @change="onSigChange"
-                >
-                  <el-option
-                    v-for="item in sigList"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                  />
-                </el-select>
-                <el-select
-                  v-model="selectedRepos"
-                  multiple
-                  filterable
-                  :filter-method="debouncedRepoFilterFn"
-                  placeholder="仓库"
-                  style="width: 100px"
-                  @change="getData"
-                >
-                  <el-option
-                    v-for="item in repoRenderList"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                  />
-                </el-select>
+                <!-- sig筛选 -->
+                <FilterableSelect :values="sigList" @change="onSigChange"></FilterableSelect>
+                <!-- sig筛选 -->
+                <FilterableSelect :values="repoRenderList" @change="onRepoChange"></FilterableSelect>
               </template>
             </template>
           </div>
@@ -637,7 +653,7 @@ onBeforeMount(() => {
       </div>
     </div>
   </div>
-  <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="page" v-model:pageSize="pageSize" />
+  <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="filterParams.page" v-model:pageSize="filterParams.count_per_page" />
 </template>
 
 <style scoped lang="scss">
@@ -785,6 +801,7 @@ onBeforeMount(() => {
     .left {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       @include text1;
 
       & > :not(:first-child):not(.select) {

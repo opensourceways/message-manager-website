@@ -1,6 +1,6 @@
-import { computed, ref, watch, type Ref } from 'vue';
+import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
 
-export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T) => string | number) => {
+export const useCheckbox = <T>(datasource: MaybeRefOrGetter<T[]>, cbValueExtractor: (item: T) => string | number) => {
   const checkboxes = ref<(string | number)[]>([]);
   const indeterminate = ref<boolean>(false);
   const parentCheckbox = ref<(string | number)[]>([]);
@@ -18,21 +18,25 @@ export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T)
     parentCheckbox.value = EMPTY;
   };
 
-  watch(datasource, (val) => {
-    if (val.length === 0) {
-      clearCheckboxes();
+  watch(
+    () => toValue(datasource),
+    (val) => {
+      if (val.length === 0) {
+        clearCheckboxes();
+      }
     }
-  });
+  );
 
   watch(
     () => parentCheckbox.value.length,
     (length) => {
-      if (datasource.value.length === 0) {
+      const ds = toValue(datasource);
+      if (ds.length === 0) {
         return;
       }
       if (length) {
-        if (checkboxes.value.length < datasource.value.length) {
-          checkboxes.value = datasource.value.map(cbValueExtractor);
+        if (checkboxes.value.length < ds.length) {
+          checkboxes.value = ds.map(cbValueExtractor);
         }
       } else {
         if (!indeterminate.value && checkboxes.value.length > 0) {
@@ -45,10 +49,11 @@ export const useCheckbox = <T>(datasource: Ref<T[]>, cbValueExtractor: (item: T)
   watch(
     () => checkboxes.value.length,
     (length) => {
-      if (datasource.value.length === 0) {
+      const ds = toValue(datasource);
+      if (ds.length === 0) {
         return;
       }
-      if (length === datasource.value.length) {
+      if (length === ds.length) {
         if (!isCheckedAll.value) {
           parentCheckbox.value = ONE;
         }
