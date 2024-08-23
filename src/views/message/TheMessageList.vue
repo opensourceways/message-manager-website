@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -127,7 +127,9 @@ const filterParams = reactive({
   about: '',
 });
 
-watch(filterParams, () => getData, { deep: true })
+// watch(filterParams, () => nextTick(getData), { deep: true })
+
+watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
 
 const msgFilterSelectVal = ref<string[]>([]);
 
@@ -161,10 +163,12 @@ const endTime = ref<Date>();
 
 const executorSearchChange = (val: string[]) => {
   filterParams.build_creator = val.join();
+  getData();
 }
 
 const ownerSearchChange = (val: string[]) => {
   filterParams.build_owner = val.join();
+  getData();
 }
 
 const startTimeChange = (date: Date) => {
@@ -240,6 +244,7 @@ const repoRenderList = ref<string[]>([]);
 const onSigChange = (val: (string | number)[]) => {
   selectedSigs.value = val as string[];
   filterParams.sig = val.join();
+  getData();
   if (!val.length) {
     repoRenderList.value = repoList.value;
     return;
@@ -253,6 +258,7 @@ const onSigChange = (val: (string | number)[]) => {
 const onRepoChange = (val: (string | number)[]) => {
   selectedRepos.value = val as string[];
   filterParams.repos = val.join();
+  getData();
 };
 
 // ------------------------菜单事件------------------------
@@ -283,14 +289,14 @@ const onMenuChange = (menu: string) => {
 watch(
   () => route.query,
   () => {
+    const { source, event_type } = route.query;
+    filterParams.source = (source ?? '') as string;
+    filterParams.event_type = (event_type ?? '') as string;
     if (filterParams.page !== 1) {
       filterParams.page = 1;
     } else {
       getData();
     }
-    const { source, event_type } = route.query;
-    filterParams.source = (source ?? '') as string;
-    filterParams.event_type = (event_type ?? '') as string;
     if (source && source !== activeMenu.value) {
       activeMenu.value = source as string;
     } else if (!source && activeMenu.value !== 'all') {
