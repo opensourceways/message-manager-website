@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -20,7 +20,6 @@ import {
   type SelectValueT,
   OTab,
   OTabPane,
-  OTag,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -30,9 +29,9 @@ import IconSettings from '~icons/app/icon-setting.svg';
 import IconSearch from '~icons/app/icon-search.svg';
 
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
-import type { CommonMsgQueryParamT, EurMsgQueryParamT, GiteeMsgQueryParamT, MessageT, MsgQueryParamT } from '@/@types/type-messages';
+import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages } from '@/api/messages';
-import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
+import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useLoginStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
@@ -55,8 +54,6 @@ const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
 
-const page = ref(1);
-const pageSize = ref(10);
 const total = ref(0);
 
 watchEffect(() => {
@@ -130,6 +127,8 @@ const filterParams = reactive({
   about: '',
 });
 
+watch(filterParams, () => getData, { deep: true })
+
 const msgFilterSelectVal = ref<string[]>([]);
 
 const msgFilterSelectPlaceholder = computed(() => {
@@ -162,21 +161,17 @@ const endTime = ref<Date>();
 
 const executorSearchChange = (val: string[]) => {
   filterParams.build_creator = val.join();
-  getData();
 }
 
 const ownerSearchChange = (val: string[]) => {
   filterParams.build_owner = val.join();
-  getData();
 }
 
 const startTimeChange = (date: Date) => {
   filterParams.start_time = `${date.getTime()}`;
-  getData();
 }
 const endTimeChange = (date: Date) => {
   filterParams.end_time = `${date.getTime()}`;
-  getData();
 }
 
 // ------------------------gitee消息类型过滤下拉多选------------------------
@@ -204,10 +199,10 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
 const isSpecial = ref<'true' | ''>('true');
 
 watch(isSpecial, () => {
-  if (page.value === 1) {
+  if (filterParams.page === 1) {
     getData();
   } else {
-    page.value = 1;
+    filterParams.page = 1;
   }
 });
 
@@ -233,8 +228,6 @@ const getData = () => {
     })
 };
 
-watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
-
 // ------------------------gitee的sig和Repos------------------------
 const selectedSigs = ref<string[]>([]);
 const selectedRepos = ref<string[]>([]);
@@ -244,26 +237,9 @@ const sigList = ref<string[]>([]);
 const repoList = ref<string[]>([]);
 const repoRenderList = ref<string[]>([]);
 
-const getAllRepo = () => {
-  getRepoList()
-    .then((data) => {
-      repoList.value = data;
-      repoRenderList.value = data;
-    });
-};
-
-const getSigList = () => {
-  getAllSigs().then(data => {
-    sigList.value = data.map((item) => item.sig_name);
-    for (const item of data) {
-      allSigReposMap.set(item.sig_name, item.repos);
-    }
-  });
-};
-
 const onSigChange = (val: (string | number)[]) => {
   selectedSigs.value = val as string[];
-  getData();
+  filterParams.sig = val.join();
   if (!val.length) {
     repoRenderList.value = repoList.value;
     return;
@@ -276,7 +252,7 @@ const onSigChange = (val: (string | number)[]) => {
 
 const onRepoChange = (val: (string | number)[]) => {
   selectedRepos.value = val as string[];
-  getData();
+  filterParams.repos = val.join();
 };
 
 // ------------------------菜单事件------------------------
@@ -307,20 +283,20 @@ const onMenuChange = (menu: string) => {
 watch(
   () => route.query,
   () => {
-    if (page.value !== 1) {
-      page.value = 1;
+    if (filterParams.page !== 1) {
+      filterParams.page = 1;
     } else {
       getData();
     }
     const { source, event_type } = route.query;
+    filterParams.source = (source ?? '') as string;
+    filterParams.event_type = (event_type ?? '') as string;
     if (source && source !== activeMenu.value) {
-      filterParams.source = source as string;
       activeMenu.value = source as string;
     } else if (!source && activeMenu.value !== 'all') {
       activeMenu.value = 'all';
     }
     if (event_type) {
-      filterParams.event_type = event_type as string;
       switch (source) {
         case EventSources.GITEE:
           giteeEventType.value = (event_type as string).split(',');
@@ -494,8 +470,17 @@ const filterConfirm = (source: string, event_type: string) => {
 };
 
 onBeforeMount(() => {
-  getAllRepo();
-  getSigList();
+  getRepoList()
+    .then((data) => {
+      repoList.value = data;
+      repoRenderList.value = data;
+    });
+  getAllSigs().then(data => {
+    sigList.value = data.map((item) => item.sig_name);
+    for (const item of data) {
+      allSigReposMap.set(item.sig_name, item.repos);
+    }
+  });
 });
 </script>
 
@@ -566,7 +551,7 @@ onBeforeMount(() => {
                     </div>
                   </template>
                 </TagInput>
-                <el-date-picker
+                <!-- <el-date-picker
                   v-model="startTime"
                   type="datetime"
                   placeholder="开始时间"
@@ -577,7 +562,7 @@ onBeforeMount(() => {
                   type="datetime"
                   placeholder="结束时间"
                   @change="endTimeChange"
-                />
+                /> -->
               </template>
               <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
@@ -602,7 +587,7 @@ onBeforeMount(() => {
                 </OSelect>
                 <!-- sig筛选 -->
                 <FilterableSelect :values="sigList" @change="onSigChange"></FilterableSelect>
-                <!-- sig筛选 -->
+                <!-- repo筛选 -->
                 <FilterableSelect :values="repoRenderList" @change="onRepoChange"></FilterableSelect>
               </template>
             </template>
