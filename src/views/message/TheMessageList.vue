@@ -89,13 +89,6 @@ const {
 } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxes', checkboxes);
 
-watch(indeterminate, val => {
-  console.log(val);
-});
-
-// ------------------------搜索------------------------
-const searchInput = ref('');
-
 // ------------------------消息过滤下拉多选------------------------
 const filterParams = reactive({
   source: '',
@@ -127,40 +120,10 @@ const filterParams = reactive({
   about: '',
 });
 
-// watch(filterParams, () => nextTick(getData), { deep: true })
-
 watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
 
-const msgFilterSelectVal = ref<string[]>([]);
 
-const msgFilterSelectPlaceholder = computed(() => {
-  switch (route.query.source) {
-    case EventSources.EUR:
-      return '构建状态';
-    case EventSources.GITEE:
-      return '是否机器人';
-    default:
-      return '';
-  }
-});
-
-const msgFilterSelectOptions = computed(() => {
-  switch (route.query.source) {
-    case EventSources.EUR:
-      return EUR_BUILD_STATUS;
-    case EventSources.GITEE:
-      return [
-        { value: 'true', label: '机器人' },
-        { value: 'false', label: '非机器人' },
-      ];
-    default:
-      return [];
-  }
-});
-
-const startTime = ref<Date>();
-const endTime = ref<Date>();
-
+// ------------------------eur消息过滤------------------------
 const executorSearchChange = (val: string[]) => {
   filterParams.build_creator = val.join();
   getData();
@@ -171,14 +134,22 @@ const ownerSearchChange = (val: string[]) => {
   getData();
 }
 
-const startTimeChange = (date: Date) => {
+const onBuildStatusChange = (val: string[]) => {
+  filterParams.build_status = val.join();
+  getData();
+};
+
+/* const startTime = ref<Date>();
+const endTime = ref<Date>(); */
+
+/* const startTimeChange = (date: Date) => {
   filterParams.start_time = `${date.getTime()}`;
 }
 const endTimeChange = (date: Date) => {
   filterParams.end_time = `${date.getTime()}`;
-}
+} */
 
-// ------------------------gitee消息类型过滤下拉多选------------------------
+// ------------------------gitee消息过滤------------------------
 const giteeEventType = ref<string[]>([]);
 
 const giteeEventTypeOptions = [
@@ -199,16 +170,15 @@ const onGiteeEventTypeChange = (val: SelectValueT) => {
   });
 };
 
-// ------------------------是否特别关注消息------------------------
-const isSpecial = ref<'true' | ''>('true');
+const robotSelectOptions = [
+  { value: 'true', label: '机器人' },
+  { value: 'false', label: '非机器人' },
+];
 
-watch(isSpecial, () => {
-  if (filterParams.page === 1) {
-    getData();
-  } else {
-    filterParams.page = 1;
-  }
-});
+const isBotChange = (val: string[]) => {
+  filterParams.is_bot = val.join();
+  getData();
+};
 
 // ------------------------获取数据------------------------
 const isRead = ref<0 | 1 | undefined>();
@@ -268,10 +238,10 @@ const onMenuChange = (menu: string) => {
   if (menu === 'all') {
     router.push({ path: '/' });
   } else {
-    // 清空过滤
+    /* // 清空过滤
     if (msgFilterSelectVal.value.length) {
       msgFilterSelectVal.value = [];
-    }
+    } */
     // 清空gitee消息类型过滤
     if (giteeEventType.value.length) {
       giteeEventType.value = [];
@@ -286,6 +256,7 @@ const onMenuChange = (menu: string) => {
   }
 };
 
+// ------------------------监听路由改变------------------------
 watch(
   () => route.query,
   () => {
@@ -520,10 +491,6 @@ onBeforeMount(() => {
     </aside>
 
     <div class="message-list-wrap">
-      <OTab variant="text" :line="false" v-model="isSpecial">
-        <OTabPane label="特别关注消息" value="true"></OTabPane>
-        <OTabPane label="全部消息" value=""></OTabPane>
-      </OTab>
       <div class="message-list">
         <div class="header">
           <div class="left">
@@ -533,14 +500,13 @@ onBeforeMount(() => {
               <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
             <template v-if="!isPhone && activeMenu !== 'all'">
-              <!-- 通用过滤下拉选择 -->
-              <OSelect filterable style="width: 150px;" :multiple="true" v-model="msgFilterSelectVal" @change="getData" :placeholder="msgFilterSelectPlaceholder">
-                <OOption v-for="item in msgFilterSelectOptions" :key="item.value" :value="item.value" :label="item.label">
-                  {{ item.label }}
-                </OOption>
-              </OSelect>
               <!-- eur过滤 -->
               <template v-if="route.query.source === EventSources.EUR">
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="onBuildStatusChange" placeholder="构建状态">
+                  <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
                 <!-- 创建者 -->
                 <TagInput @change="executorSearchChange" placeholder="创建者">
                   <template #suffix>
@@ -572,14 +538,11 @@ onBeforeMount(() => {
               </template>
               <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
-                <!-- 仓库名称搜索框 -->
-                <OInput v-model="searchInput" @pressEnter="getData" placeholder="仓库">
-                  <template #suffix>
-                    <div style="display: flex">
-                      <IconSearch class="icon-search" @click="getData" />
-                    </div>
-                  </template>
-                </OInput>
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
+                  <OOption v-for="item in robotSelectOptions" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
                 <OSelect
                   style="width: 130px;"
                   :multiple="true"
@@ -593,7 +556,7 @@ onBeforeMount(() => {
                 </OSelect>
                 <!-- sig筛选 -->
                 <FilterableSelect :values="sigList" @change="onSigChange"></FilterableSelect>
-                <!-- repo筛选 -->
+                <!-- 仓库名称 -->
                 <FilterableSelect :values="repoRenderList" @change="onRepoChange"></FilterableSelect>
               </template>
             </template>
