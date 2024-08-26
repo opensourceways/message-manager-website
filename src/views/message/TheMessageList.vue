@@ -31,7 +31,7 @@ import IconSearch from '~icons/app/icon-search.svg';
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages } from '@/api/messages';
-import { useConfirmDialog } from '@vueuse/core';
+import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useLoginStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
@@ -103,6 +103,7 @@ const filterParams = reactive({
   page: 1,
   start_time: '',
   end_time: '',
+  build_env: '',
   meeting_start_time: '',
   meeting_end_time: '',
   meeting_action: '',
@@ -124,49 +125,17 @@ watch([() => filterParams.page, () => filterParams.count_per_page], () => getDat
 
 
 // ------------------------eur消息过滤------------------------
-const eurTimeFilterOption = reactive({
-  day: null as Date | null,
-  startTime: null as Date | null,
-  endTime: null as Date | null,
-});
+const eurTime = ref<[Date, Date]>([]);
 
-const onDayChange = (val: Date | null) => {
-  if (!val) {
-    eurTimeFilterOption.startTime = null;
-    eurTimeFilterOption.endTime = null;
-    filterParams.start_time = '';
-    filterParams.end_time = '';
-    getData();
-  } else {
-    if (eurTimeFilterOption.startTime && eurTimeFilterOption.endTime) {
-      filterParams.start_time = new Date(val.getTime() + eurTimeFilterOption.startTime.getTime()).getTime().toString();
-      filterParams.end_time = new Date(val.getTime() + eurTimeFilterOption.endTime.getTime()).getTime().toString();
-    }
-  }
-};
-
-const onStartTimeChange = (val: Date | null) => {
-  if (!eurTimeFilterOption.day) {
-    return;
-  }
+const onEurTimeChange = (val: [Date, Date] | null) => {
   if (!val) {
     filterParams.start_time = '';
-  } else {
-    filterParams.start_time = new Date(eurTimeFilterOption.day.getTime() + val.getTime()).getTime().toString();
-  }
-  getData();
-};
-
-const onEndTimeChange = (val: Date | null) => {
-  if (!eurTimeFilterOption.day) {
+    filterParams.end_time = '';
     return;
   }
-  if (!val) {
-    filterParams.end_time = '';
-  } else {
-    filterParams.end_time = new Date(eurTimeFilterOption.day.getTime() + val.getTime()).getTime().toString();
-  }
-  getData();
+  const [ startTime, endTime ] = val;
+  filterParams.start_time = startTime.getTime().toString();
+  filterParams.end_time = endTime.getTime().toString();
 };
 
 const executorSearchChange = (val: string[]) => {
@@ -298,6 +267,7 @@ const getData = () => {
     })
 };
 
+const debouncedGetData = useDebounceFn(getData, 300);
 
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
@@ -570,6 +540,7 @@ onBeforeMount(() => {
             <template v-if="!isPhone && activeMenu !== 'all'">
               <!-- eur过滤 -->
               <template v-if="route.query.source === EventSources.EUR">
+                <OInput v-model="filterParams.build_env" placeholder="构建环境" @input="debouncedGetData"></OInput>
                 <OSelect filterable style="width: 150px;" :multiple="true" @change="onBuildStatusChange" placeholder="构建状态">
                   <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
@@ -592,36 +563,26 @@ onBeforeMount(() => {
                   </template>
                 </TagInput>
                 <el-date-picker
-                  v-model="eurTimeFilterOption.day"
-                  @change="onDayChange"
-                  type="date"
-                  placeholder="选择日期"
-                />
-                <el-time-picker
-                  v-model="eurTimeFilterOption.startTime"
-                  @change="onStartTimeChange"
-                  arrow-control
-                  placeholder="开始时间"
-                />
-                <el-time-picker
-                  v-model="eurTimeFilterOption.endTime"
-                  @change="onEndTimeChange"
-                  arrow-control
-                  placeholder="结束时间"
+                  v-model="eurTime"
+                  type="datetimerange"
+                  range-separator="至"
+                  start-placeholder="开始时间"
+                  end-placeholder="结束时间"
+                  @change="onEurTimeChange"
                 />
               </template>
               <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
-                <OInput v-model="filterParams.pr_creator" placeholder="pr_creator"></OInput>
-                <OInput v-model="filterParams.pr_assignee" placeholder="pr_assignee"></OInput>
+                <OInput v-model="filterParams.pr_creator" @input="debouncedGetData" placeholder="pr_creator"></OInput>
+                <OInput v-model="filterParams.pr_assignee" @input="debouncedGetData" placeholder="pr_assignee"></OInput>
                 <OSelect filterable style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="pr_type">
                   <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
                 </OSelect>
 
-                <OInput v-model="filterParams.issue_assignee" placeholder="issue_assignee"></OInput>
-                <OInput v-model="filterParams.issue_creator" placeholder="issue_creator"></OInput>
+                <OInput v-model="filterParams.issue_assignee" @input="debouncedGetData" placeholder="issue_assignee"></OInput>
+                <OInput v-model="filterParams.issue_creator" @input="debouncedGetData" placeholder="issue_creator"></OInput>
                 <OSelect filterable style="width: 150px;" :multiple="true" @change="issueStateChange" placeholder="issue_type">
                   <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
@@ -653,6 +614,10 @@ onBeforeMount(() => {
                 <FilterableSelect :values="sigList" @change="onSigChange" placeholder="sig"></FilterableSelect>
                 <!-- 仓库名称 -->
                 <FilterableSelect :values="repoRenderList" @change="onRepoChange" placeholder="仓库"></FilterableSelect>
+              </template>
+              <template v-if="route.query.source === EventSources.MEETING">
+                <OInput v-model="filterParams.meeting_action" @input="debouncedGetData" placeholder="pr_creator"></OInput>
+                <OInput v-model="filterParams.meeting_sig" @input="debouncedGetData" placeholder="pr_assignee"></OInput>
               </template>
             </template>
           </div>
