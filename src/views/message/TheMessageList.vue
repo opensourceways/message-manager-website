@@ -614,7 +614,7 @@ onBeforeMount(() => {
               <template v-if="route.query.source === EventSources.GITEE">
                 <OInput v-model="filterParams.pr_creator" placeholder="pr_creator"></OInput>
                 <OInput v-model="filterParams.pr_assignee" placeholder="pr_assignee"></OInput>
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="issue_type">
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="pr_type">
                   <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
