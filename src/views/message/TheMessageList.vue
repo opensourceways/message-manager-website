@@ -216,9 +216,8 @@ const isBotChange = (val: string[]) => {
 };
 
 const noteType = [
-  'issue',
-  'pr',
-  'commit',
+  'Issue',
+  'PullRequest',
 ];
 
 const noteTypeChange = (val: string[]) => {
