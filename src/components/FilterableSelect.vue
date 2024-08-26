@@ -23,6 +23,10 @@ const props = defineProps({
     type: Number,
     default: 300,
   },
+  placeholder: {
+    type: String,
+    default: '',
+  },
 });
 
 const emit = defineEmits<{
@@ -84,7 +88,7 @@ watch(checkboxes, (values) => emit('change', values));
 <template>
   <OPopup trigger="click" @change="onVisibleChange" style="--popup-shadow: var(--o-shadow-1)">
     <template #target>
-      <OInput @input="onFilterInput" clearable @clear="onFilterInput()"></OInput>
+      <OInput @input="onFilterInput" clearable @clear="onFilterInput()" :placeholder="placeholder"></OInput>
     </template>
     <AppScroller @scrollBottom="onScrollBottom" ref="scroller">
       <div class="check-all-wrap">

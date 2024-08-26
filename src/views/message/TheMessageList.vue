@@ -108,7 +108,7 @@ const filterParams = reactive({
   meeting_action: '',
   meeting_sig: '',
   pr_state: '',
-  pr_create: '',
+  pr_creator: '',
   pr_assignee: '',
   issue_state: '',
   issue_creator: '',
@@ -124,6 +124,51 @@ watch([() => filterParams.page, () => filterParams.count_per_page], () => getDat
 
 
 // ------------------------eur消息过滤------------------------
+const eurTimeFilterOption = reactive({
+  day: null as Date | null,
+  startTime: null as Date | null,
+  endTime: null as Date | null,
+});
+
+const onDayChange = (val: Date | null) => {
+  if (!val) {
+    eurTimeFilterOption.startTime = null;
+    eurTimeFilterOption.endTime = null;
+    filterParams.start_time = '';
+    filterParams.end_time = '';
+    getData();
+  } else {
+    if (eurTimeFilterOption.startTime && eurTimeFilterOption.endTime) {
+      filterParams.start_time = new Date(val.getTime() + eurTimeFilterOption.startTime.getTime()).getTime().toString();
+      filterParams.end_time = new Date(val.getTime() + eurTimeFilterOption.endTime.getTime()).getTime().toString();
+    }
+  }
+};
+
+const onStartTimeChange = (val: Date | null) => {
+  if (!eurTimeFilterOption.day) {
+    return;
+  }
+  if (!val) {
+    filterParams.start_time = '';
+  } else {
+    filterParams.start_time = new Date(eurTimeFilterOption.day.getTime() + val.getTime()).getTime().toString();
+  }
+  getData();
+};
+
+const onEndTimeChange = (val: Date | null) => {
+  if (!eurTimeFilterOption.day) {
+    return;
+  }
+  if (!val) {
+    filterParams.end_time = '';
+  } else {
+    filterParams.end_time = new Date(eurTimeFilterOption.day.getTime() + val.getTime()).getTime().toString();
+  }
+  getData();
+};
+
 const executorSearchChange = (val: string[]) => {
   filterParams.build_creator = val.join();
   getData();
@@ -138,16 +183,6 @@ const onBuildStatusChange = (val: string[]) => {
   filterParams.build_status = val.join();
   getData();
 };
-
-/* const startTime = ref<Date>();
-const endTime = ref<Date>(); */
-
-/* const startTimeChange = (date: Date) => {
-  filterParams.start_time = `${date.getTime()}`;
-}
-const endTimeChange = (date: Date) => {
-  filterParams.end_time = `${date.getTime()}`;
-} */
 
 // ------------------------gitee消息过滤------------------------
 const giteeEventType = ref<string[]>([]);
@@ -180,26 +215,39 @@ const isBotChange = (val: string[]) => {
   getData();
 };
 
-// ------------------------获取数据------------------------
-const isRead = ref<0 | 1 | undefined>();
+const noteType = [
+  'issue',
+  'pr',
+  'commit',
+];
 
-const getData = () => {
-  getMessages({
-    ...filterParams,
-  })
-    .then((res) => {
-      const { count, query_info } = res.data;
-      total.value = count;
-      if (query_info) {
-        for (const msg of query_info) {
-          msg.id = msg.source + msg.event_id;
-          const date = dayjs(msg.time);
-          msg.formattedTime = date.fromNow();
-        }
-      }
-      clearCheckboxes();
-      messages.value = query_info ?? [];
-    })
+const noteTypeChange = (val: string[]) => {
+  filterParams.note_type = val.join();
+  getData();
+};
+
+const issueState = [
+  { value: 'open', label: '待办的' },
+  { value: 'progressing', label: '进行中' },
+  { value: 'closed', label: '已完成' },
+  { value: 'rejected', label: '已拒绝' },
+];
+
+const issueStateChange = (val: string[]) => {
+  filterParams.issue_state = val.join();
+  getData();
+};
+
+const prState = [
+  { value: 'open', label: '开启' },
+  { value: 'closed', label: '关闭' },
+  { value: 'can_be_merged', label: '可合并' },
+  { value: 'cannot_be_merged', label: '不可合并' },
+];
+
+const prStateChange = (val: string[]) => {
+  filterParams.pr_state = val.join();
+  getData();
 };
 
 // ------------------------gitee的sig和Repos------------------------
@@ -230,6 +278,27 @@ const onRepoChange = (val: (string | number)[]) => {
   filterParams.repos = val.join();
   getData();
 };
+
+// ------------------------获取数据------------------------
+const getData = () => {
+  getMessages({
+    ...filterParams,
+  })
+    .then((res) => {
+      const { count, query_info } = res.data;
+      total.value = count;
+      if (query_info) {
+        for (const msg of query_info) {
+          msg.id = msg.source + msg.event_id;
+          const date = dayjs(msg.time);
+          msg.formattedTime = date.fromNow();
+        }
+      }
+      clearCheckboxes();
+      messages.value = query_info ?? [];
+    })
+};
+
 
 // ------------------------菜单事件------------------------
 const activeMenu = ref('all');
@@ -388,15 +457,15 @@ const markReadMultiMessages = () => {
 const readStatus = ref('all');
 const readStatusOptions = ref([
   { value: 'all', label: '全部消息' },
-  { value: 1, label: '已读消息' },
-  { value: 0, label: '未读消息' },
+  { value: '1', label: '已读消息' },
+  { value: '0', label: '未读消息' },
 ]);
 
 watch(readStatus, (val: string | number) => {
   if (val === 'all') {
-    isRead.value = undefined;
+    filterParams.is_read = '';
   } else {
-    isRead.value = val as 0 | 1;
+    filterParams.is_read = val as string;
   }
   getData();
 });
@@ -523,21 +592,48 @@ onBeforeMount(() => {
                     </div>
                   </template>
                 </TagInput>
-                <!-- <el-date-picker
-                  v-model="startTime"
-                  type="datetime"
-                  placeholder="开始时间"
-                  @change="startTimeChange"
-                />
                 <el-date-picker
-                  v-model="endTime"
-                  type="datetime"
+                  v-model="eurTimeFilterOption.day"
+                  @change="onDayChange"
+                  type="date"
+                  placeholder="选择日期"
+                />
+                <el-time-picker
+                  v-model="eurTimeFilterOption.startTime"
+                  @change="onStartTimeChange"
+                  arrow-control
+                  placeholder="开始时间"
+                />
+                <el-time-picker
+                  v-model="eurTimeFilterOption.endTime"
+                  @change="onEndTimeChange"
+                  arrow-control
                   placeholder="结束时间"
-                  @change="endTimeChange"
-                /> -->
+                />
               </template>
               <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
+                <OInput v-model="filterParams.pr_creator" placeholder="pr_creator"></OInput>
+                <OInput v-model="filterParams.pr_assignee" placeholder="pr_assignee"></OInput>
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="issue_type">
+                  <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
+
+                <OInput v-model="filterParams.issue_assignee" placeholder="issue_assignee"></OInput>
+                <OInput v-model="filterParams.issue_creator" placeholder="issue_creator"></OInput>
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="issueStateChange" placeholder="issue_type">
+                  <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
+
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="noteTypeChange" placeholder="note_type">
+                  <OOption v-for="item in noteType" :key="item" :value="item" :label="item">
+                    {{ item }}
+                  </OOption>
+                </OSelect>
                 <OSelect filterable style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
                   <OOption v-for="item in robotSelectOptions" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
@@ -555,9 +651,9 @@ onBeforeMount(() => {
                   </OOption>
                 </OSelect>
                 <!-- sig筛选 -->
-                <FilterableSelect :values="sigList" @change="onSigChange"></FilterableSelect>
+                <FilterableSelect :values="sigList" @change="onSigChange" placeholder="sig"></FilterableSelect>
                 <!-- 仓库名称 -->
-                <FilterableSelect :values="repoRenderList" @change="onRepoChange"></FilterableSelect>
+                <FilterableSelect :values="repoRenderList" @change="onRepoChange" placeholder="仓库"></FilterableSelect>
               </template>
             </template>
           </div>
