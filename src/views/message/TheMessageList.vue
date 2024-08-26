@@ -20,6 +20,7 @@ import {
   type SelectValueT,
   OTab,
   OTabPane,
+  OButton,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -30,7 +31,7 @@ import IconSearch from '~icons/app/icon-search.svg';
 
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages } from '@/api/messages';
+import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, saveRule } from '@/api/messages';
 import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useLoginStore } from '@/stores/user';
@@ -89,8 +90,8 @@ const {
 } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxes', checkboxes);
 
-// ------------------------消息过滤下拉多选------------------------
-const filterParams = reactive({
+// ------------------------消息过滤------------------------
+const filterParams = reactive<Record<string, string | number>>({
   source: '',
   event_type: '',
   is_read: '',
@@ -123,9 +124,38 @@ const filterParams = reactive({
 
 watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
 
+const resetParams = () => {
+  Object.keys(filterParams).forEach((key) => {
+    if (key === 'page') {
+      filterParams[key] = 1;
+    } else if (key === 'count_per_page') {
+      filterParams[key] = 10;
+    } else {
+      filterParams[key] = '';
+    }
+  });
+};
+
+// ------------------------过滤规则------------------------
+const ruleName = ref('');
+
+const saveFilterRule = () => {
+  if (!ruleName.value) {
+    return;
+  }
+  const data: Record<string, any> = {};
+  Object.keys(filterParams).forEach((key) => {
+    const val = filterParams[key];
+    if (val) {
+      data[key] = val;
+    }
+  });
+  saveRule({ spec_version: '1.0', mode_name: ruleName.value, ...data })
+    .then(() => message.success({ content: '保存成功' }));
+};
 
 // ------------------------eur消息过滤------------------------
-const eurTime = ref<[Date, Date]>([]);
+const eurTime = ref<[Date, Date]>();
 
 const onEurTimeChange = (val: [Date, Date] | null) => {
   if (!val) {
@@ -247,6 +277,17 @@ const onRepoChange = (val: (string | number)[]) => {
   getData();
 };
 
+// ------------------------会议消息过滤------------------------
+const meetingActState = [
+  { value: 'create_meeting', label: '创建' },
+  { value: 'delete_meeting', label: '删除' },
+];
+
+const meetingActStateChange = (val: string[]) => {
+  filterParams.meeting_action = val.join();
+  getData();
+};
+
 // ------------------------获取数据------------------------
 const getData = () => {
   getMessages({
@@ -273,13 +314,11 @@ const debouncedGetData = useDebounceFn(getData, 300);
 const activeMenu = ref('all');
 
 const onMenuChange = (menu: string) => {
+  // 清空过滤
+  resetParams();
   if (menu === 'all') {
     router.push({ path: '/' });
   } else {
-    /* // 清空过滤
-    if (msgFilterSelectVal.value.length) {
-      msgFilterSelectVal.value = [];
-    } */
     // 清空gitee消息类型过滤
     if (giteeEventType.value.length) {
       giteeEventType.value = [];
@@ -512,9 +551,9 @@ onBeforeMount(() => {
     <aside v-if="!isPhone">
       <div class="title">
         消息中心
-        <IconLink ref="settingsIcon" @click="toConfig">
+        <!-- <IconLink ref="settingsIcon" @click="toConfig">
           <template #suffix><IconSettings /></template>
-        </IconLink>
+        </IconLink> -->
         <OPopover :target="settingsIcon" :visible="showTipPopOver" trigger="none">
           <div class="first-time-login-tip">
             <p>可在消息订阅管理中订阅你所关注的消息</p>
@@ -538,6 +577,8 @@ onBeforeMount(() => {
               <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </OSelect>
             <template v-if="!isPhone && activeMenu !== 'all'">
+              <OInput v-model="ruleName" placeholder="规则名称"></OInput>
+              <OButton @click="saveFilterRule">保存规则</OButton>
               <!-- eur过滤 -->
               <template v-if="route.query.source === EventSources.EUR">
                 <OInput v-model="filterParams.build_env" placeholder="构建环境" @input="debouncedGetData"></OInput>
@@ -615,8 +656,13 @@ onBeforeMount(() => {
                 <!-- 仓库名称 -->
                 <FilterableSelect :values="repoRenderList" @change="onRepoChange" placeholder="仓库"></FilterableSelect>
               </template>
+              <!-- 会议消息过滤 -->
               <template v-if="route.query.source === EventSources.MEETING">
-                <OInput v-model="filterParams.meeting_action" @input="debouncedGetData" placeholder="pr_creator"></OInput>
+                <OSelect filterable style="width: 150px;" :multiple="true" @change="meetingActStateChange" placeholder="meeting_action">
+                  <OOption v-for="item in meetingActState" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
                 <OInput v-model="filterParams.meeting_sig" @input="debouncedGetData" placeholder="pr_assignee"></OInput>
               </template>
             </template>

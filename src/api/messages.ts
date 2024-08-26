@@ -44,3 +44,10 @@ export function getAllSigs() {
 export function getRepoList() {
   return request.get<{ data: string[] }>('/api-dsapi/query/sig/repo?community=openeuler&search=fuzzy').then(res => res.data.data);
 }
+
+/**
+ * 保存过滤规则
+ */
+export function saveRule(rule: Record<string, any>) {
+  return request.post('/message_center/config/subs_new', rule);
+}
