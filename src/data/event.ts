@@ -1,7 +1,7 @@
 export const EventSources = {
   GITEE: 'https://gitee.com',
   EUR: 'https://eur.openeuler.openatom.cn',
-  MEETING: 'https://www.openeuler.org/meeting',
+  MEETING: 'https://www.openEuler.org/meeting',
 };
 
 export const EventSourceNames: Record<string, string> = {

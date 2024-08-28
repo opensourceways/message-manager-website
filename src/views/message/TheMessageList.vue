@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -18,15 +18,12 @@ import {
   OIcon,
   OInput,
   type SelectValueT,
-  OTab,
-  OTabPane,
   OButton,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IconDelete from '~icons/app/icon-delete.svg';
 import IconRead from '~icons/app/icon-read.svg';
-import IconSettings from '~icons/app/icon-setting.svg';
 import IconSearch from '~icons/app/icon-search.svg';
 
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
@@ -34,7 +31,7 @@ import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, saveRule } from '@/api/messages';
 import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
-import { useLoginStore } from '@/stores/user';
+import { useLoginStore, useUserInfoStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import IconLink from '@/components/IconLink.vue';
 import AppPagination from '@/components/AppPagination.vue';
@@ -43,6 +40,7 @@ import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import TagInput from '@/components/TagInput.vue';
 
+const userStore = useUserInfoStore();
 const message = useMessage();
 const { locale } = useI18n();
 const router = useRouter();
@@ -66,8 +64,6 @@ watchEffect(() => {
     }
   }
 });
-
-const toConfig = () => router.push('/settings');
 
 const isPhone = inject<Ref<boolean>>('isPhone');
 provide('isPhone', isPhone);
@@ -100,6 +96,7 @@ const filterParams = reactive<Record<string, string | number>>({
   is_special: '',
   sig: '',
   repos: '',
+  '@login_name': '',
   count_per_page: 10,
   page: 1,
   start_time: '',
@@ -186,6 +183,15 @@ const onBuildStatusChange = (val: string[]) => {
 // ------------------------gitee消息过滤------------------------
 const giteeEventType = ref<string[]>([]);
 
+const mentionedMeChange = (val: string[]) => {
+  if (val.length) {
+    filterParams['@login_name'] = userStore.identities.find((id) => id.identity === 'gitee')?.login_name ?? '';
+  } else {
+    filterParams['@login_name'] = '';
+  }
+  getData();
+};
+
 const giteeEventTypeOptions = [
   { value: 'push', label: 'Push' },
   { value: 'pr', label: 'Pull Request' },
@@ -249,16 +255,13 @@ const prStateChange = (val: string[]) => {
 };
 
 // ------------------------gitee的sig和Repos------------------------
-const selectedSigs = ref<string[]>([]);
-const selectedRepos = ref<string[]>([]);
 const allSigReposMap = new Map<string, string[]>();
 
 const sigList = ref<string[]>([]);
 const repoList = ref<string[]>([]);
 const repoRenderList = ref<string[]>([]);
 
-const onSigChange = (val: (string | number)[]) => {
-  selectedSigs.value = val as string[];
+const onGiteeSigChange = (val: (string | number)[]) => {
   filterParams.sig = val.join();
   getData();
   if (!val.length) {
@@ -272,7 +275,6 @@ const onSigChange = (val: (string | number)[]) => {
 };
 
 const onRepoChange = (val: (string | number)[]) => {
-  selectedRepos.value = val as string[];
   filterParams.repos = val.join();
   getData();
 };
@@ -285,6 +287,11 @@ const meetingActState = [
 
 const meetingActStateChange = (val: string[]) => {
   filterParams.meeting_action = val.join();
+  getData();
+};
+
+const meetingSigChange = (val: (string | number)[]) => {
+  filterParams.meeting_sig = val.join();
   getData();
 };
 
@@ -614,9 +621,10 @@ onBeforeMount(() => {
               </template>
               <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
+                <OCheckbox @change="mentionedMeChange" value="1">@我的</OCheckbox>
                 <OInput v-model="filterParams.pr_creator" @input="debouncedGetData" placeholder="pr_creator"></OInput>
                 <OInput v-model="filterParams.pr_assignee" @input="debouncedGetData" placeholder="pr_assignee"></OInput>
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="pr_type">
+                <OSelect style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="pr_type">
                   <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
@@ -624,18 +632,18 @@ onBeforeMount(() => {
 
                 <OInput v-model="filterParams.issue_assignee" @input="debouncedGetData" placeholder="issue_assignee"></OInput>
                 <OInput v-model="filterParams.issue_creator" @input="debouncedGetData" placeholder="issue_creator"></OInput>
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="issueStateChange" placeholder="issue_type">
+                <OSelect style="width: 150px;" :multiple="true" @change="issueStateChange" placeholder="issue_type">
                   <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
                 </OSelect>
 
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="noteTypeChange" placeholder="note_type">
+                <OSelect style="width: 150px;" :multiple="true" @change="noteTypeChange" placeholder="note_type">
                   <OOption v-for="item in noteType" :key="item" :value="item" :label="item">
                     {{ item }}
                   </OOption>
                 </OSelect>
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
+                <OSelect style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
                   <OOption v-for="item in robotSelectOptions" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
@@ -652,7 +660,7 @@ onBeforeMount(() => {
                   </OOption>
                 </OSelect>
                 <!-- sig筛选 -->
-                <FilterableSelect :values="sigList" @change="onSigChange" placeholder="sig"></FilterableSelect>
+                <FilterableSelect :values="sigList" @change="onGiteeSigChange" placeholder="sig"></FilterableSelect>
                 <!-- 仓库名称 -->
                 <FilterableSelect :values="repoRenderList" @change="onRepoChange" placeholder="仓库"></FilterableSelect>
               </template>
@@ -663,7 +671,8 @@ onBeforeMount(() => {
                     {{ item.label }}
                   </OOption>
                 </OSelect>
-                <OInput v-model="filterParams.meeting_sig" @input="debouncedGetData" placeholder="pr_assignee"></OInput>
+                <!-- sig筛选 -->
+                <FilterableSelect :values="sigList" @change="meetingSigChange" placeholder="sig"></FilterableSelect>
               </template>
             </template>
           </div>
