@@ -96,7 +96,6 @@ const filterParams = reactive<Record<string, string | number>>({
   is_special: '',
   sig: '',
   repos: '',
-  about: '',
   count_per_page: 10,
   page: 1,
   start_time: '',
@@ -181,13 +180,45 @@ const onBuildStatusChange = (val: string[]) => {
 };
 
 // ------------------------gitee消息过滤------------------------
-const giteeEventType = ref<string[]>([]);
+const giteeEventType = ref<string>('pr');
 
-const mentionedMeChange = (val: string[]) => {
+watch(giteeEventType, val => {
+  filterParams.pr_assignee = '';
+  filterParams.issue_assignee = '';
+  router.push({
+    path: '/',
+    query: {
+      source: EventSources.GITEE,
+      event_type: val || undefined,
+    },
+  });
+});
+
+const mentionedMeChange = (val: (string | number)[]) => {
   const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
   if (val.length && loginName) {
     filterParams.about = '@' + loginName;
   } else {
+    filterParams.about = '';
+  }
+  getData();
+};
+
+const myRepoChange = (val: (string | number)[]) => {
+
+};
+
+const mySigChange = (val: (string | number)[]) => {
+
+};
+
+const assignToMeChange = (val: (string | number)[]) => {
+  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
+  if (val.length && loginName) {
+    filterParams[`${giteeEventType.value}_assignee`] = loginName;
+    filterParams.about = '@' + loginName;
+  } else {
+    filterParams[`${giteeEventType.value}_assignee`] = '';
     filterParams.about = '';
   }
   getData();
@@ -199,17 +230,6 @@ const giteeEventTypeOptions = [
   { value: 'issue', label: 'Issue' },
   { value: 'note', label: '评论' },
 ];
-
-const onGiteeEventTypeChange = (val: SelectValueT) => {
-  const types = val as string[];
-  router.push({
-    path: '/',
-    query: {
-      source: EventSources.GITEE,
-      event_type: types.length ? types.join() : undefined,
-    },
-  });
-};
 
 const robotSelectOptions = [
   { value: 'true', label: '机器人' },
@@ -328,14 +348,14 @@ const onMenuChange = (menu: string) => {
     router.push({ path: '/' });
   } else {
     // 清空gitee消息类型过滤
-    if (giteeEventType.value.length) {
-      giteeEventType.value = [];
+    if (giteeEventType.value) {
+      giteeEventType.value = '';
     }
     router.push({
       path: '/',
       query: {
         source: menu,
-        event_type: menu === EventSources.EUR ? 'build' : giteeEventType.value.join(),
+        event_type: menu === EventSources.EUR ? 'build' : giteeEventType.value,
       },
     });
   }
@@ -361,7 +381,9 @@ watch(
     if (event_type) {
       switch (source) {
         case EventSources.GITEE:
-          giteeEventType.value = (event_type as string).split(',');
+          if (event_type !== giteeEventType.value) {
+            giteeEventType.value = event_type as string;
+          }
           break;
       }
     }
@@ -620,43 +642,24 @@ onBeforeMount(() => {
                   @change="onEurTimeChange"
                 />
               </template>
+
               <!-- gitee消息过滤 -->
               <template v-if="route.query.source === EventSources.GITEE">
+                <OCheckbox @change="myRepoChange" value="1">我管理的仓库</OCheckbox>
+                <OCheckbox @change="mySigChange" value="1">我的sig组</OCheckbox>
                 <OCheckbox @change="mentionedMeChange" value="1">@我的</OCheckbox>
-                <OInput v-model="filterParams.pr_creator" @input="debouncedGetData" placeholder="pr_creator"></OInput>
-                <OInput v-model="filterParams.pr_assignee" @input="debouncedGetData" placeholder="pr_assignee"></OInput>
-                <OSelect style="width: 150px;" :multiple="true" @change="prStateChange" placeholder="pr_type">
-                  <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
-
-                <OInput v-model="filterParams.issue_assignee" @input="debouncedGetData" placeholder="issue_assignee"></OInput>
-                <OInput v-model="filterParams.issue_creator" @input="debouncedGetData" placeholder="issue_creator"></OInput>
-                <OSelect style="width: 150px;" :multiple="true" @change="issueStateChange" placeholder="issue_type">
-                  <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
-
-                <OSelect style="width: 150px;" :multiple="true" @change="noteTypeChange" placeholder="note_type">
-                  <OOption v-for="item in noteType" :key="item" :value="item" :label="item">
-                    {{ item }}
-                  </OOption>
-                </OSelect>
-                <OSelect style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
-                  <OOption v-for="item in robotSelectOptions" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
                 <OSelect
-                  style="width: 130px;"
-                  :multiple="true"
                   v-model="giteeEventType"
+                  style="width: 130px;"
                   placeholder="消息类型"
-                  @change="onGiteeEventTypeChange"
                 >
                   <OOption v-for="item in giteeEventTypeOptions" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
+
+                <OSelect style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
+                  <OOption v-for="item in robotSelectOptions" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
                 </OSelect>
@@ -664,10 +667,36 @@ onBeforeMount(() => {
                 <FilterableSelect :values="sigList" @change="onGiteeSigChange" placeholder="sig"></FilterableSelect>
                 <!-- 仓库名称 -->
                 <FilterableSelect :values="repoRenderList" @change="onRepoChange" placeholder="仓库"></FilterableSelect>
+
+                <OSelect v-if="giteeEventType === 'note'" style="width: 150px;" :multiple="true" @change="noteTypeChange" placeholder="note_type">
+                  <OOption v-for="item in noteType" :key="item" :value="item" :label="item">
+                    {{ item }}
+                  </OOption>
+                </OSelect>
+
+                <template v-if="giteeEventType === 'pr'">
+                  <OCheckbox @change="assignToMeChange" value="1">指派给我的</OCheckbox>
+                  <OInput v-model="filterParams.pr_creator" @input="debouncedGetData" placeholder="pr_creator"></OInput>
+                  <OSelect :multiple="true" @change="prStateChange" placeholder="pr_type">
+                    <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
+                      {{ item.label }}
+                    </OOption>
+                  </OSelect>
+                </template>
+
+                <template v-if="giteeEventType === 'issue'">
+                  <OCheckbox @change="assignToMeChange" value="1">指派给我的</OCheckbox>
+                  <OInput v-model="filterParams.issue_creator" @input="debouncedGetData" placeholder="issue_creator"></OInput>
+                  <OSelect :multiple="true" @change="issueStateChange" placeholder="issue_type">
+                    <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
+                      {{ item.label }}
+                    </OOption>
+                  </OSelect>
+                </template>
               </template>
               <!-- 会议消息过滤 -->
               <template v-if="route.query.source === EventSources.MEETING">
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="meetingActStateChange" placeholder="meeting_action">
+                <OSelect filterable :multiple="true" @change="meetingActStateChange" placeholder="meeting_action">
                   <OOption v-for="item in meetingActState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
