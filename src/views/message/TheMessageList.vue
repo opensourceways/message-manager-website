@@ -96,7 +96,7 @@ const filterParams = reactive<Record<string, string | number>>({
   is_special: '',
   sig: '',
   repos: '',
-  '@login_name': '',
+  about: '',
   count_per_page: 10,
   page: 1,
   start_time: '',
@@ -186,9 +186,9 @@ const giteeEventType = ref<string[]>([]);
 const mentionedMeChange = (val: string[]) => {
   const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
   if (val.length && loginName) {
-    filterParams['@login_name'] = '@' + loginName;
+    filterParams.about = '@' + loginName;
   } else {
-    filterParams['@login_name'] = '';
+    filterParams.about = '';
   }
   getData();
 };
