@@ -23,7 +23,7 @@ export function queryUserInfo() {
  * @returns 用户的recipient_id
  */
 export function syncUserInfo(userInfo: UserInfoT) {
-  const gitee_user_name = userInfo.identities?.find((item) => item.identity === 'gitee')?.user_name;
+  const gitee_user_name = userInfo.identities?.find((item) => item.identity === 'gitee')?.login_name;
   return request
     .post<{ newId: number }>('/message_center/config/recipient/sync', {
       mail: userInfo.email,

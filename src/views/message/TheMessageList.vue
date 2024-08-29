@@ -184,8 +184,9 @@ const onBuildStatusChange = (val: string[]) => {
 const giteeEventType = ref<string[]>([]);
 
 const mentionedMeChange = (val: string[]) => {
-  if (val.length) {
-    filterParams['@login_name'] = userStore.identities.find((id) => id.identity === 'gitee')?.login_name ?? '';
+  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
+  if (val.length && loginName) {
+    filterParams['@login_name'] = '@' + loginName;
   } else {
     filterParams['@login_name'] = '';
   }
