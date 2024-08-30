@@ -56,5 +56,5 @@ export function saveRule(rule: Record<string, any>) {
  * 
  */
 export function filterByRule(params: { source: string, mode_name: string }) {
-  return request.get('/message_center/inner_quick', { params });
+  return request.get('/message_center/inner_quick', { params }).then((res) => res.data.data);
 }

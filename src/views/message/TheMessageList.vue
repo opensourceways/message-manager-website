@@ -40,7 +40,6 @@ import { usePhoneStore } from '@/stores/phone';
 import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import TagInput from '@/components/TagInput.vue';
-import { getRules } from '../../api/messages';
 import { getAllSubs } from '@/api/api-settings';
 
 const userStore = useUserInfoStore();
@@ -72,8 +71,17 @@ const isPhone = inject<Ref<boolean>>('isPhone');
 provide('isPhone', isPhone);
 let intervalId: ReturnType<typeof setInterval>;
 
+let lastPollType: 'inner' | 'quick' = 'inner';
+let lastQueryRule: any;
+
 onMounted(() => {
-  intervalId = setInterval(getData, 10_000);
+  intervalId = setInterval(() => {
+    if (lastPollType === 'inner') {
+      getData();
+    } else {
+      selectRule(lastQueryRule);
+    }
+  }, 10_000);
 });
 
 onUnmounted(() => clearInterval(intervalId));
@@ -121,6 +129,9 @@ const filterParams = reactive<Record<string, string | number>>({
   about: '',
   my_sig: '',
   my_management: '',
+  cve_repo: '',
+  cve_state: '',
+  cve_sys_version: '',
 });
 
 const rules = ref<{ source: string, mode_name: string, id: string }[]>([]);
@@ -143,13 +154,27 @@ watch(
   }
 );
 
-const selectRule = (val: { source: string, mode_name: string, id: string }) => {
+const selectRule = (val: { source: string, mode_name: string }) => {
   if (val) {
+    lastPollType = 'quick';
+    lastQueryRule = val;
     filterByRule({
       source: val.source,
       mode_name: val.mode_name,
       page: filterParams.page,
       count_per_page: filterParams.count_per_page,
+    }).then((res) => {
+      const { count, query_info } = res.data;
+      total.value = count;
+      if (query_info) {
+        for (const msg of query_info) {
+          msg.id = msg.source + msg.event_id;
+          const date = dayjs(msg.time);
+          msg.formattedTime = date.fromNow();
+        }
+      }
+      clearCheckboxes();
+      messages.value = query_info ?? [];
     })
   }
 };
@@ -216,7 +241,7 @@ const onBuildStatusChange = (val: string[]) => {
 };
 
 // ------------------------gitee消息过滤------------------------
-const giteeEventType = ref<string>('pr');
+const giteeEventType = ref<string>('');
 
 watch(giteeEventType, val => {
   filterParams.pr_assignee = '';
@@ -365,10 +390,14 @@ const meetingSigChange = (val: (string | number)[]) => {
 };
 
 // ------------------------漏洞消息过滤------------------------
-
+const cveStateChange = (val: string[]) => {
+  filterParams.cve_state = val.join();
+  getData();
+};
 
 // ------------------------获取数据------------------------
 const getData = () => {
+  lastPollType = 'inner';
   getMessages({
     ...filterParams,
   })
@@ -766,13 +795,15 @@ onBeforeMount(() => {
                 <!-- sig筛选 -->
                 <FilterableSelect :values="sigList" @change="meetingSigChange" placeholder="sig"></FilterableSelect>
               </template>
-              <!-- <template v-if="route.query.source === EventSources.CVE">
-                <OSelect :multiple="true" @change="issueStateChange" placeholder="issue_type">
+              <template v-if="route.query.source === EventSources.CVE">
+                <OInput v-model="filterParams.cve_repo" placeholder="漏洞的组件" @input="debouncedGetData"></OInput>
+                <OInput v-model="filterParams.cve_sys_version" placeholder="影响系统版本" @input="debouncedGetData"></OInput>
+                <OSelect :multiple="true" @change="cveStateChange" placeholder="状态">
                   <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
                     {{ item.label }}
                   </OOption>
                 </OSelect>
-              </template> -->
+              </template>
             </template>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">

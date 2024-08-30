@@ -2,14 +2,14 @@ export const EventSources = {
   GITEE: 'https://gitee.com',
   EUR: 'https://eur.openeuler.openatom.cn',
   MEETING: 'https://www.openEuler.org/meeting',
-  // CVE: 'cve',
+  CVE: 'cve',
 };
 
 export const EventSourceNames: Record<string, string> = {
   [EventSources.EUR]: 'EUR',
   [EventSources.GITEE]: 'Gitee',
   [EventSources.MEETING]: '会议',
-  // [EventSources.CVE]: '漏洞',
+  [EventSources.CVE]: '漏洞',
 };
 
 export const EventSourceTypes = {
