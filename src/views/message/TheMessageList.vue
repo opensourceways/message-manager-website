@@ -17,8 +17,9 @@ import {
   ODivider,
   OIcon,
   OInput,
-  type SelectValueT,
+  ODialog,
   OButton,
+  OPagination,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -28,7 +29,7 @@ import IconSearch from '~icons/app/icon-search.svg';
 
 import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, saveRule } from '@/api/messages';
+import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, saveRule, filterByRule } from '@/api/messages';
 import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
@@ -40,6 +41,7 @@ import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import TagInput from '@/components/TagInput.vue';
 import { getRules } from '../../api/messages';
+import { getAllSubs } from '@/api/api-settings';
 
 const userStore = useUserInfoStore();
 const message = useMessage();
@@ -120,6 +122,35 @@ const filterParams = reactive<Record<string, string | number>>({
   my_sig: '',
   my_management: '',
 });
+
+const rules = ref<{ source: string, mode_name: string, id: string }[]>([]);
+
+const showDlg = ref(false);
+
+watch(
+  showDlg,
+  (val) => {
+    if (val) {
+      getAllSubs()
+        .then((data) => {
+          rules.value = data.map((item) => ({
+            source: item.source,
+            mode_name: item.mode_name,
+            id: item.id
+          }));
+        })
+    }
+  }
+);
+
+const selectRule = (val: { source: string, mode_name: string, id: string }) => {
+  if (val) {
+    filterByRule({
+      source: val.source,
+      mode_name: val.mode_name
+    })
+  }
+};
 
 watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
 
@@ -592,6 +623,14 @@ onBeforeMount(() => {
   <!-- 移动端特有弹窗 -->
   <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="filterConfirm"></MessageListFilterDlg>
 
+  <ODialog v-model:visible="showDlg">
+    <ul>
+      <li v-for="item in rules" :key="item.id">
+        <OLink @click="selectRule(item)" style="margin-top: 8px;">{{ item.mode_name }}</OLink>
+      </li>
+    </ul>
+  </ODialog>
+
   <div class="messages-container">
     <aside v-if="!isPhone">
       <div class="title">
@@ -613,6 +652,7 @@ onBeforeMount(() => {
     </aside>
 
     <div class="message-list-wrap">
+      <OButton @click="showDlg = true">保存的规则</OButton>
       <div class="message-list">
         <div class="header">
           <div class="left">
@@ -664,6 +704,7 @@ onBeforeMount(() => {
                 <OCheckbox @change="mySigChange" value="1">我的sig组</OCheckbox>
                 <OCheckbox @change="mentionedMeChange" value="1">@我的</OCheckbox>
                 <OSelect
+                  clearable
                   v-model="giteeEventType"
                   style="width: 130px;"
                   placeholder="消息类型"

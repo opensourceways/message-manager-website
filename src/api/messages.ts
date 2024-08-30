@@ -1,5 +1,5 @@
 import { request } from "@/shared/axios";
-import type { MessageT, MsgQueryParamT, Sig } from "@/@types/type-messages";
+import type { MessageT, Sig } from "@/@types/type-messages";
 import type { PagedResponseT } from "@/@types/types-common";
 
 /**
@@ -50,4 +50,11 @@ export function getRepoList() {
  */
 export function saveRule(rule: Record<string, any>) {
   return request.post('/message_center/config/subs_new', rule);
+}
+
+/**
+ * 
+ */
+export function filterByRule(params: { source: string, mode_name: string }) {
+  return request.get('/message_center/inner_quick', { params });
 }
