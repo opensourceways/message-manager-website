@@ -27,7 +27,7 @@ import IconDelete from '~icons/app/icon-delete.svg';
 import IconRead from '~icons/app/icon-read.svg';
 import IconSearch from '~icons/app/icon-search.svg';
 
-import { EUR_BUILD_STATUS, EventSourceNames, EventSources } from '@/data/event';
+import { EUR_BUILD_STATUS, EventSourceNames, EventSourceTypes, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, saveRule, filterByRule } from '@/api/messages';
 import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
@@ -147,7 +147,9 @@ const selectRule = (val: { source: string, mode_name: string, id: string }) => {
   if (val) {
     filterByRule({
       source: val.source,
-      mode_name: val.mode_name
+      mode_name: val.mode_name,
+      page: filterParams.page,
+      count_per_page: filterParams.count_per_page,
     })
   }
 };
@@ -362,6 +364,9 @@ const meetingSigChange = (val: (string | number)[]) => {
   getData();
 };
 
+// ------------------------漏洞消息过滤------------------------
+
+
 // ------------------------获取数据------------------------
 const getData = () => {
   getMessages({
@@ -397,11 +402,12 @@ const onMenuChange = (menu: string) => {
     if (giteeEventType.value) {
       giteeEventType.value = '';
     }
+    const types = EventSourceTypes[menu];
     router.push({
       path: '/',
       query: {
         source: menu,
-        event_type: menu === EventSources.EUR ? 'build' : giteeEventType.value,
+        event_type: menu === EventSources.GITEE ? giteeEventType.value : types[0],
       },
     });
   }
@@ -760,6 +766,13 @@ onBeforeMount(() => {
                 <!-- sig筛选 -->
                 <FilterableSelect :values="sigList" @change="meetingSigChange" placeholder="sig"></FilterableSelect>
               </template>
+              <!-- <template v-if="route.query.source === EventSources.CVE">
+                <OSelect :multiple="true" @change="issueStateChange" placeholder="issue_type">
+                  <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
+                    {{ item.label }}
+                  </OOption>
+                </OSelect>
+              </template> -->
             </template>
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
