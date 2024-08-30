@@ -39,6 +39,7 @@ import { usePhoneStore } from '@/stores/phone';
 import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import TagInput from '@/components/TagInput.vue';
+import { getRules } from '../../api/messages';
 
 const userStore = useUserInfoStore();
 const message = useMessage();
@@ -116,6 +117,8 @@ const filterParams = reactive<Record<string, string | number>>({
   build_owner: '',
   note_type: '',
   about: '',
+  my_sig: '',
+  my_management: '',
 });
 
 watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
@@ -205,11 +208,23 @@ const mentionedMeChange = (val: (string | number)[]) => {
 };
 
 const myRepoChange = (val: (string | number)[]) => {
-
+  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
+  if (val.length && loginName) {
+    filterParams.my_management = loginName;
+  } else {
+    filterParams.my_management = '';
+  }
+  getData();
 };
 
 const mySigChange = (val: (string | number)[]) => {
-
+  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
+  if (val.length && loginName) {
+    filterParams.my_sig = loginName;
+  } else {
+    filterParams.my_sig = '';
+  }
+  getData();
 };
 
 const assignToMeChange = (val: (string | number)[]) => {
