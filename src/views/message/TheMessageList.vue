@@ -19,7 +19,6 @@ import {
   OInput,
   ODialog,
   OButton,
-  OPagination,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
