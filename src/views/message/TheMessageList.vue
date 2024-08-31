@@ -128,7 +128,7 @@ const filterParams = reactive<Record<string, string | number>>({
   about: '',
   my_sig: '',
   my_management: '',
-  cve_repo: '',
+  cve_component: '',
   cve_state: '',
   cve_affected: '',
 });
@@ -402,7 +402,7 @@ const cveStateChange = (val: string[]) => {
 };
 
 const onCveRepoChange = (val: (string | number)[]) => {
-  filterParams.cve_repo = val.join();
+  filterParams.cve_component = val.join();
   getData();
 };
 
