@@ -131,7 +131,7 @@ const filterParams = reactive<Record<string, string | number>>({
   my_management: '',
   cve_repo: '',
   cve_state: '',
-  cve_sys_version: '',
+  cve_affected: '',
 });
 
 const rules = ref<{ source: string, mode_name: string, id: string }[]>([]);
@@ -390,8 +390,20 @@ const meetingSigChange = (val: (string | number)[]) => {
 };
 
 // ------------------------漏洞消息过滤------------------------
+const cveState = [
+  '待办',
+  '进行中',
+  '已完成',
+  '已关闭',
+]
+
 const cveStateChange = (val: string[]) => {
   filterParams.cve_state = val.join();
+  getData();
+};
+
+const onCveRepoChange = (val: (string | number)[]) => {
+  filterParams.cve_repo = val.join();
   getData();
 };
 
@@ -795,12 +807,13 @@ onBeforeMount(() => {
                 <!-- sig筛选 -->
                 <FilterableSelect :values="sigList" @change="meetingSigChange" placeholder="sig"></FilterableSelect>
               </template>
+              <!-- cve消息过滤 -->
               <template v-if="route.query.source === EventSources.CVE">
-                <OInput v-model="filterParams.cve_repo" placeholder="漏洞的组件" @input="debouncedGetData"></OInput>
-                <OInput v-model="filterParams.cve_sys_version" placeholder="影响系统版本" @input="debouncedGetData"></OInput>
+                <FilterableSelect :values="repoRenderList" @change="onCveRepoChange" placeholder="仓库"></FilterableSelect>
+                <OInput v-model="filterParams.cve_affected" placeholder="影响系统版本" @input="debouncedGetData"></OInput>
                 <OSelect :multiple="true" @change="cveStateChange" placeholder="状态">
-                  <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
+                  <OOption v-for="item in cveState" :key="item" :value="item" :label="item">
+                    {{ item }}
                   </OOption>
                 </OSelect>
               </template>
