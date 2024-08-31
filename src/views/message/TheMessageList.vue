@@ -390,11 +390,11 @@ const meetingSigChange = (val: (string | number)[]) => {
 
 // ------------------------漏洞消息过滤------------------------
 const cveState = [
-  '待办',
+  '待办的',
   '进行中',
   '已完成',
   '已关闭',
-]
+];
 
 const cveStateChange = (val: string[]) => {
   filterParams.cve_state = val.join();
