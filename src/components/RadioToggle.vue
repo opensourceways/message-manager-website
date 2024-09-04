@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ORadio, ORadioGroup, OTag, OToggle } from '@opensig/opendesign';
+import { ODivider, ORadio, ORadioGroup, OTag, OToggle } from '@opensig/opendesign';
 import { useVModel } from '@vueuse/core';
 import { computed, ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
+    defaultOptions?: (string | { label: string; value: any })[];
     options?: (string | { label: string; value: any })[];
     modelValue?: string | number;
     addNew?: boolean;
   }>(),
   {
     options: (): any[] => [],
+    defaultOptions: (): any[] => [],
     modelValue: '',
     addNew: false,
   }
@@ -32,6 +34,15 @@ const normalizedOptions = computed(() =>
   })
 );
 
+const normalizedDefaultOptions = computed(() =>
+  props.defaultOptions.map((item) => {
+    if (typeof item === 'string') {
+      return { label: item, value: item };
+    }
+    return item;
+  })
+);
+
 const val = useVModel(props, 'modelValue', emit);
 const isAddNew = useVModel(props, 'addNew', emit);
 
@@ -46,6 +57,16 @@ const confirmAdd = () => {
 
 <template>
   <ORadioGroup v-model="val" @change="$emit('change', $event)" style="--radio-group-gap: 8px; row-gap: 8px">
+    <template v-if="defaultOptions.length">
+      <ORadio v-for="item in normalizedDefaultOptions" :key="item.value" :value="item.value">
+        <template #radio="{ checked }">
+          <OToggle :checked="checked" style="--toggle-radius: 4px">
+            {{ item.label }}
+          </OToggle>
+        </template>
+      </ORadio>
+      <ODivider direction="v" style="height: var(--toggle-size)"></ODivider>
+    </template>
     <ORadio v-for="item in normalizedOptions" :key="item.value" :value="item.value">
       <template #radio="{ checked }">
         <OToggle :checked="checked" style="--toggle-radius: 4px">

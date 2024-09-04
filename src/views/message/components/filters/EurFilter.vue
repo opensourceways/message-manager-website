@@ -14,7 +14,14 @@ const projRelations = [
 const projRelation = ref();
 const buildStatus = ref<string[]>();
 
-const filterParams = computed(() => {
+const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
+
+const reset = () => {
+  projRelation.value = '';
+  buildStatus.value = [];
+};
+
+const getFilterParams = () => {
   const params: Record<string, string> = { event_type: 'build' };
   if (userInfoStore.giteeLoginName) {
     if (projRelation.value === 'myProj') {
@@ -25,16 +32,7 @@ const filterParams = computed(() => {
   }
   buildStatus.value?.length && (params.build_status = buildStatus.value.join());
   return params;
-});
-
-const filterContainer = inject<Ref<HTMLElement>>('filterContainer');
-
-const reset = () => {
-  projRelation.value = '';
-  buildStatus.value = [];
 };
-
-const getFilterParams = () => ({ ...filterParams.value });
 
 defineExpose({
   reset,
@@ -48,7 +46,7 @@ defineExpose({
       <RadioToggle v-model="projRelation" :options="projRelations" />
     </OFormItem>
     <OFormItem label="构建状态">
-      <OSelect v-model="buildStatus" clearable multiple option-position="bottom" style="width: 100%; --select-radius: 4px" :options-wrapper="filterContainer">
+      <OSelect v-model="buildStatus" clearable multiple option-position="bottom" style="width: 100%; --select-radius: 4px" :options-wrapper="popupContainer">
         <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
           {{ item.label }}
         </OOption>

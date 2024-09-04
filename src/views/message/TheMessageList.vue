@@ -80,7 +80,7 @@ onMounted(() => {
   getData();
   intervalId = setInterval(() => {
     if (lastPollType === 'inner') {
-      getData();
+      getData(lastFilterParams.value);
     } else {
       selectRule(lastQueryRule);
     }
@@ -169,26 +169,6 @@ const filterParams = reactive<Record<string, string | number>>({
 
 const lastFilterParams = ref<Record<string, any>>({});
 
-const rules = ref<{ source: string, mode_name: string, id: string }[]>([]);
-
-const showDlg = ref(false);
-
-watch(
-  showDlg,
-  (val) => {
-    if (val) {
-      getAllSubs()
-        .then((data) => {
-          rules.value = data.map((item) => ({
-            source: item.source,
-            mode_name: item.mode_name,
-            id: item.id
-          }));
-        })
-    }
-  }
-);
-
 const selectRule = (val: { source: string, mode_name: string }) => {
   if (val) {
     lastPollType = 'quick';
@@ -213,32 +193,6 @@ const selectRule = (val: { source: string, mode_name: string }) => {
     })
   }
 };
-
-// ------------------------gitee的sig和Repos------------------------
-const allSigReposMap = new Map<string, string[]>();
-
-const sigList = ref<string[]>([]);
-const repoList = ref<string[]>([]);
-const repoRenderList = ref<string[]>([]);
-
-const onGiteeSigChange = (val: (string | number)[]) => {
-  filterParams.sig = val.join();
-  getData();
-  if (!val.length) {
-    repoRenderList.value = repoList.value;
-    return;
-  };
-  repoRenderList.value = val.reduce((list, current) => {
-    list.push(...(allSigReposMap.get(current as string) ?? []));
-    return list;
-  }, [] as string[]);
-};
-
-const onRepoChange = (val: (string | number)[]) => {
-  filterParams.repos = val.join();
-  getData();
-};
-
 
 // ------------------------获取数据------------------------
 const getData = (filterParams: Record<string, any> = {}) => {
@@ -357,9 +311,9 @@ const delMultiMessages = async () => {
 
 // ------------------------标记已读消息------------------------
 const unreadCountStore = useUnreadMsgCountStore();
-const multiReadDisabled = computed(() => {
+/* const multiReadDisabled = computed(() => {
   return checkboxes.value.length === 0 || messages.value.every((item) => item.is_read);
-});
+}); */
 
 const markReadMessage = (msg: MessageT) => {
   if (msg.is_read) {
@@ -454,20 +408,6 @@ const phoneFilterConfirm = (source: string) => {
   }
   router.push({ path: '/', query: { source } });
 };
-
-onBeforeMount(() => {
-  getRepoList()
-    .then((data) => {
-      repoList.value = data;
-      repoRenderList.value = data;
-    });
-  getAllSigs().then(data => {
-    sigList.value = data.map((item) => item.sig_name);
-    for (const item of data) {
-      allSigReposMap.set(item.sig_name, item.repos);
-    }
-  });
-});
 </script>
 
 <template>

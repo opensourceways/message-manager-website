@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import IconLink from '@/components/IconLink.vue';
-import RadioToggle from '@/components/RadioToggle.vue';
-import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 import { computed, onMounted, provide, ref } from 'vue';
-import IconClear from '~icons/app/icon-clear.svg';
-import IconAdd from '~icons/app/icon-add.svg';
-import EurFilter from './filters/EurFilter.vue';
+import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
+
 import { EventSources } from '@/data/event';
 import type { FilterRuleT } from '@/@types/type-settings';
 import { getFilterRules } from '@/api/api-settings';
 import { saveRule } from '@/api/messages';
+
+import IconClear from '~icons/app/icon-clear.svg';
+import IconAdd from '~icons/app/icon-add.svg';
+import IconLink from '@/components/IconLink.vue';
+
+import RadioToggle from '@/components/RadioToggle.vue';
+import EurFilter from './filters/EurFilter.vue';
+import GiteeFilter from './filters/GiteeFilter.vue';
 
 const props = defineProps<{
   source: string;
@@ -24,6 +28,7 @@ const message = useMessage();
 
 const compMap = {
   [EventSources.EUR]: EurFilter,
+  [EventSources.GITEE]: GiteeFilter,
 };
 const currentFilterComp = computed(() => compMap[props.source]);
 const currentCompRef = ref();
@@ -32,23 +37,23 @@ const setCurrenCompRef = (val: any) => {
   currentCompRef.value = val;
 };
 
-const filterContainer = ref();
-provide('filterContainer', filterContainer);
+const popupContainer = ref();
+provide('popupContainer', popupContainer);
 
 const selectedQuickFilter = ref('');
 
 const quickFilterMap = ref(new Map<string, FilterRuleT[]>());
+const currentFilters = computed(() => quickFilterMap.value.get(props.source));
+
 const defaultQuickFilters = computed(() => {
-  return quickFilterMap.value
-    .get(props.source)
+  return currentFilters.value
     ?.filter((filter) => filter.is_default)
-    .map((filter) => filter.mode_name);
+    .map((filter) => ({ label: filter.mode_name, value: filter.id }));
 });
 const quickFilters = computed(() => {
-  return quickFilterMap.value
-    .get(props.source)
+  return currentFilters.value
     ?.filter((filter) => !filter.is_default)
-    .map((filter) => filter.mode_name);
+    .map((filter) => ({ label: filter.mode_name, value: filter.id }));
 });
 
 onMounted(() => {
@@ -77,13 +82,18 @@ const emailSwitch = ref(false);
 const weChatSwitch = ref(false);
 
 const saveRuleFlag = ref(false);
-const confirmSave = (mode_name: string) => {
+const confirmSave = (id: string) => {
+  const mode_name = currentFilters.value?.find((filter) => filter.id === id)?.mode_name;
   saveRule({
     spec_version: '1.0',
     mode_name,
     source: props.source,
     ...currentCompRef.value?.getFilterParams(),
   }).then(() => message.success({ content: '保存成功' }));
+};
+
+const applyQuickFilter = (id: string) => {
+  emit('quickFiter', currentFilters.value?.find((filter) => filter.id === id)?.mode_name as string);
 };
 
 const getFilterParams = (): Record<string, any> => {
@@ -99,19 +109,16 @@ defineExpose({ getFilterParams, reset });
 </script>
 
 <template>
-  <div ref="filterContainer" class="filter-container">
+  <div ref="popupContainer" class="pop-container">
     <template v-if="quickFilterMap.size">
       <p class="sec-title">快捷筛选</p>
-      <template v-if="defaultQuickFilters?.length">
-        <RadioToggle v-model="selectedQuickFilter" @change="$emit('quickFiter', $event)" :options="defaultQuickFilters" />
-        <ODivider direction="v" style="height: 100%"></ODivider>
-      </template>
       <RadioToggle
         v-model="selectedQuickFilter"
         v-model:add-new="saveRuleFlag"
         @confirm-add="confirmSave"
-        @change="$emit('quickFiter', $event)"
+        @change="applyQuickFilter"
         :options="quickFilters"
+        :defaultOptions="defaultQuickFilters"
       />
     </template>
     <p class="sec-title">高级筛选</p>
@@ -142,7 +149,7 @@ defineExpose({ getFilterParams, reset });
 </template>
 
 <style lang="scss" scoped>
-.filter-container {
+.pop-container {
   position: relative;
 
   .sec-title {

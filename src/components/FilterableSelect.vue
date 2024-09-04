@@ -27,6 +27,17 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  inputWidth: {
+    type: String,
+    default: '',
+  },
+  /**
+   * 挂载容器，默认为body
+   */
+  optionsWrapper: {
+    type: [String, Object] as PropType<string | HTMLElement | null>,
+    default: 'body',
+  },
 });
 
 const emit = defineEmits<{
@@ -86,9 +97,9 @@ watch(checkboxes, (values) => emit('change', values));
 </script>
 
 <template>
-  <OPopup trigger="click" @change="onVisibleChange" style="--popup-shadow: var(--o-shadow-1)">
+  <OPopup :wrapper="props.optionsWrapper" position="bottom" trigger="click" @change="onVisibleChange" style="--popup-shadow: var(--o-shadow-1)">
     <template #target>
-      <OInput @input="onFilterInput" clearable @clear="onFilterInput()" :placeholder="placeholder"></OInput>
+      <OInput :style="{ '--input-radius': '4px', width: inputWidth ?? '100%' }" @input="onFilterInput" clearable @clear="onFilterInput()" :placeholder="placeholder"></OInput>
     </template>
     <AppScroller @scrollBottom="onScrollBottom" ref="scroller">
       <div class="check-all-wrap">
