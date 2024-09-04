@@ -47,7 +47,7 @@ const addQuery = (to: RouteLocationNormalized) => {
 }
 
 router.beforeEach(async (to, from) => {
-  const loginStore = useLoginStore();
+  /* const loginStore = useLoginStore();
   const unreadCountStore = useUnreadMsgCountStore();
   if (loginStore.isLogined) {
     if (to.name !== from.name) {
@@ -73,7 +73,7 @@ router.beforeEach(async (to, from) => {
     if (to.name !== from.name) {
       unreadCountStore.updateCount();
     }
-  }
+  } */
   return addQuery(to);
 });
 

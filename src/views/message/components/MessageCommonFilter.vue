@@ -119,6 +119,7 @@ defineExpose({ getFilterParams, reset });
         @change="applyQuickFilter"
         :options="quickFilters"
         :defaultOptions="defaultQuickFilters"
+        enable-rename-tags
       />
     </template>
     <p class="sec-title">高级筛选</p>
@@ -153,7 +154,7 @@ defineExpose({ getFilterParams, reset });
   position: relative;
 
   .sec-title {
-    @include text1;
+    @include text2;
 
     &:first-child {
       margin-bottom: 16px;

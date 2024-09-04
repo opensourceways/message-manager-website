@@ -29,6 +29,7 @@ onBeforeMount(() => {
   });
 });
 
+// ----------------sig/repo----------------
 const selectedSigs = ref<string[]>([]);
 const selectedRepos = ref<string[]>([]);
 
@@ -48,6 +49,7 @@ const onRepoChange = (val: (string | number)[]) => {
   selectedRepos.value = val as string[];
 };
 
+// ----------------事件类型----------------
 const eventType = ref('');
 const eventTypes = [
   { label: 'Issue',value: 'issue' },
@@ -55,17 +57,21 @@ const eventTypes = [
   { label: '评论',value: 'note' },
 ];
 
+// ----------------提交人----------------
 const isBot = ref();
 const isBotOptions = [
   { label: '全部', value: '' },
   { label: '非机器人', value: 'false' },
 ];
 
+// ----------------事件关系----------------
 const eventRelation = ref('');
 const eventRelations = [
   { label: '我创建的', value: '_creator' },
   { label: '指派给我的', value: '_assignee' },
 ];
+
+// ----------------事件状态----------------
 const eventState = ref('');
 
 const issueState = [
@@ -91,7 +97,9 @@ const displayEventState = computed(() => {
   }
   return [];
 });
+watch(displayEventState, () => eventState.value = '');
 
+// ----------------评论归属----------------
 const noteType = ref('');
 const noteTypes = [
   'Issue',
@@ -99,7 +107,6 @@ const noteTypes = [
   'Commit',
 ];
 
-watch(displayEventState, () => eventState.value = '');
 
 const reset = () => {
   selectedSigs.value = [];
