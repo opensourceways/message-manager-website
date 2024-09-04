@@ -10,51 +10,54 @@ import {
   OMenu,
   OMenuItem,
   useMessage,
-  OSelect,
-  OOption,
   OPopover,
   OLink,
   ODivider,
   OIcon,
-  OInput,
-  ODialog,
-  OButton,
+  OPopup,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IconDelete from '~icons/app/icon-delete.svg';
 import IconRead from '~icons/app/icon-read.svg';
-import IconSearch from '~icons/app/icon-search.svg';
 
-import { EUR_BUILD_STATUS, EventSourceNames, EventSourceTypes, EventSources } from '@/data/event';
+import { EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, saveRule, filterByRule } from '@/api/messages';
-import { useConfirmDialog, useDebounceFn } from '@vueuse/core';
+import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, filterByRule } from '@/api/messages';
+import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
-import { useLoginStore, useUserInfoStore } from '@/stores/user';
+import { useLoginStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
-import IconLink from '@/components/IconLink.vue';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
 import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
-import FilterableSelect from '@/components/FilterableSelect.vue';
-import TagInput from '@/components/TagInput.vue';
-import { getAllSubs } from '@/api/api-settings';
+import { getAllSubs, getFilterRules } from '@/api/api-settings';
+import ContentWrapper from '@/components/ContentWrapper.vue';
+import RadioToggle from '@/components/RadioToggle.vue';
+import MessageCommonFilter from './components/MessageCommonFilter.vue';
 
-const userStore = useUserInfoStore();
 const message = useMessage();
 const { locale } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const loginStore = useLoginStore();
+const dateTime = dayjs();
 
 const settingsIcon = ref();
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
 
-const total = ref(0);
+const pageInfo = reactive({
+  page: 1,
+  pageSize: 10,
+  total: 0,
+});
+
+watch([() => pageInfo.page, () => pageInfo.pageSize], () => {
+
+});
 
 watchEffect(() => {
   if (loginStore.isLogined) {
@@ -74,6 +77,7 @@ let lastPollType: 'inner' | 'quick' = 'inner';
 let lastQueryRule: any;
 
 onMounted(() => {
+  getData();
   intervalId = setInterval(() => {
     if (lastPollType === 'inner') {
       getData();
@@ -84,6 +88,36 @@ onMounted(() => {
 });
 
 onUnmounted(() => clearInterval(intervalId));
+
+const timeOptions = [
+  { label: '全部', value: 'all' },
+  { label: '近一周', value: 'week' },
+  { label: '近一月', value: 'month' },
+];
+
+const timeRangeChange = (val: string) => {
+  if (val === 'all') {
+    filterParams.start_time = '';
+    filterParams.end_time = '';
+  } else if (val === 'week') {
+    filterParams.start_time = dateTime.subtract(7, 'day').valueOf();
+    filterParams.end_time = dateTime.valueOf();
+  } else if (val === 'month') {
+    filterParams.start_time = dateTime.subtract(1, 'month').valueOf();
+    filterParams.end_time = dateTime.valueOf();
+  }
+  getData();
+};
+
+const applyQuickFilter = (mode_name: string) => selectRule({ source: route.query.source as string, mode_name });
+
+const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
+
+const filterPopupVisibleChange = (visible: boolean) => {
+  if (!visible) {
+    getData(filterRef.value?.getFilterParams());
+  }
+};
 
 // ------------------------多选框事件------------------------
 const {
@@ -133,6 +167,8 @@ const filterParams = reactive<Record<string, string | number>>({
   cve_affected: '',
 });
 
+const lastFilterParams = ref<Record<string, any>>({});
+
 const rules = ref<{ source: string, mode_name: string, id: string }[]>([]);
 
 const showDlg = ref(false);
@@ -160,11 +196,11 @@ const selectRule = (val: { source: string, mode_name: string }) => {
     filterByRule({
       source: val.source,
       mode_name: val.mode_name,
-      page: filterParams.page,
-      count_per_page: filterParams.count_per_page,
+      page: filterParams.page as number,
+      count_per_page: filterParams.count_per_page as number,
     }).then((res) => {
       const { count, query_info } = res.data;
-      total.value = count;
+      pageInfo.total = count;
       if (query_info) {
         for (const msg of query_info) {
           msg.id = msg.source + msg.event_id;
@@ -176,175 +212,6 @@ const selectRule = (val: { source: string, mode_name: string }) => {
       messages.value = query_info ?? [];
     })
   }
-};
-
-watch([() => filterParams.page, () => filterParams.count_per_page], () => getData());
-
-const resetParams = () => {
-  Object.keys(filterParams).forEach((key) => {
-    if (key === 'page') {
-      filterParams[key] = 1;
-    } else if (key === 'count_per_page') {
-      filterParams[key] = 10;
-    } else {
-      filterParams[key] = '';
-    }
-  });
-};
-
-// ------------------------过滤规则------------------------
-const ruleName = ref('');
-
-const saveFilterRule = () => {
-  if (!ruleName.value) {
-    return;
-  }
-  const data: Record<string, any> = {};
-  Object.keys(filterParams).forEach((key) => {
-    const val = filterParams[key];
-    if (val) {
-      data[key] = val;
-    }
-  });
-  saveRule({ spec_version: '1.0', mode_name: ruleName.value, ...data })
-    .then(() => message.success({ content: '保存成功' }));
-};
-
-// ------------------------eur消息过滤------------------------
-const eurTime = ref<[Date, Date]>();
-
-const onEurTimeChange = (val: [Date, Date] | null) => {
-  if (!val) {
-    filterParams.start_time = '';
-    filterParams.end_time = '';
-    return;
-  }
-  const [ startTime, endTime ] = val;
-  filterParams.start_time = startTime.getTime().toString();
-  filterParams.end_time = endTime.getTime().toString();
-};
-
-const executorSearchChange = (val: string[]) => {
-  filterParams.build_creator = val.join();
-  getData();
-}
-
-const ownerSearchChange = (val: string[]) => {
-  filterParams.build_owner = val.join();
-  getData();
-}
-
-const onBuildStatusChange = (val: string[]) => {
-  filterParams.build_status = val.join();
-  getData();
-};
-
-// ------------------------gitee消息过滤------------------------
-const giteeEventType = ref<string>('');
-
-watch(giteeEventType, val => {
-  filterParams.pr_assignee = '';
-  filterParams.issue_assignee = '';
-  router.push({
-    path: '/',
-    query: {
-      source: EventSources.GITEE,
-      event_type: val || undefined,
-    },
-  });
-});
-
-const mentionedMeChange = (val: (string | number)[]) => {
-  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
-  if (val.length && loginName) {
-    filterParams.about = '@' + loginName;
-  } else {
-    filterParams.about = '';
-  }
-  getData();
-};
-
-const myRepoChange = (val: (string | number)[]) => {
-  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
-  if (val.length && loginName) {
-    filterParams.my_management = loginName;
-  } else {
-    filterParams.my_management = '';
-  }
-  getData();
-};
-
-const mySigChange = (val: (string | number)[]) => {
-  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
-  if (val.length && loginName) {
-    filterParams.my_sig = loginName;
-  } else {
-    filterParams.my_sig = '';
-  }
-  getData();
-};
-
-const assignToMeChange = (val: (string | number)[]) => {
-  const loginName = userStore.identities.find((id) => id.identity === 'gitee')?.login_name;
-  if (val.length && loginName) {
-    filterParams[`${giteeEventType.value}_assignee`] = loginName;
-    filterParams.about = '@' + loginName;
-  } else {
-    filterParams[`${giteeEventType.value}_assignee`] = '';
-    filterParams.about = '';
-  }
-  getData();
-};
-
-const giteeEventTypeOptions = [
-  { value: 'push', label: 'Push' },
-  { value: 'pr', label: 'Pull Request' },
-  { value: 'issue', label: 'Issue' },
-  { value: 'note', label: '评论' },
-];
-
-const robotSelectOptions = [
-  { value: 'true', label: '机器人' },
-  { value: 'false', label: '非机器人' },
-];
-
-const isBotChange = (val: string[]) => {
-  filterParams.is_bot = val.join();
-  getData();
-};
-
-const noteType = [
-  'Issue',
-  'PullRequest',
-];
-
-const noteTypeChange = (val: string[]) => {
-  filterParams.note_type = val.join();
-  getData();
-};
-
-const issueState = [
-  { value: 'open', label: '待办的' },
-  { value: 'progressing', label: '进行中' },
-  { value: 'closed', label: '已完成' },
-  { value: 'rejected', label: '已拒绝' },
-];
-
-const issueStateChange = (val: string[]) => {
-  filterParams.issue_state = val.join();
-  getData();
-};
-
-const prState = [
-  { value: 'open', label: '开启' },
-  { value: 'closed', label: '关闭' },
-  { value: 'can_be_merged', label: '可合并' },
-  { value: 'cannot_be_merged', label: '不可合并' },
-];
-
-const prStateChange = (val: string[]) => {
-  filterParams.pr_state = val.join();
-  getData();
 };
 
 // ------------------------gitee的sig和Repos------------------------
@@ -372,49 +239,20 @@ const onRepoChange = (val: (string | number)[]) => {
   getData();
 };
 
-// ------------------------会议消息过滤------------------------
-const meetingActState = [
-  { value: 'create_meeting', label: '创建' },
-  { value: 'delete_meeting', label: '删除' },
-];
-
-const meetingActStateChange = (val: string[]) => {
-  filterParams.meeting_action = val.join();
-  getData();
-};
-
-const meetingSigChange = (val: (string | number)[]) => {
-  filterParams.meeting_sig = val.join();
-  getData();
-};
-
-// ------------------------漏洞消息过滤------------------------
-const cveState = [
-  '待办的',
-  '进行中',
-  '已完成',
-  '已关闭',
-];
-
-const cveStateChange = (val: string[]) => {
-  filterParams.cve_state = val.join();
-  getData();
-};
-
-const onCveRepoChange = (val: (string | number)[]) => {
-  filterParams.cve_component = val.join();
-  getData();
-};
 
 // ------------------------获取数据------------------------
-const getData = () => {
+const getData = (filterParams: Record<string, any> = {}) => {
   lastPollType = 'inner';
+  lastFilterParams.value = filterParams;
   getMessages({
-    ...filterParams,
+    page: pageInfo.page,
+    count_per_page: pageInfo.pageSize,
+    source: route.query.source as string,
+    ...lastFilterParams.value,
   })
     .then((res) => {
       const { count, query_info } = res.data;
-      total.value = count;
+      pageInfo.total = count;
       if (query_info) {
         for (const msg of query_info) {
           msg.id = msg.source + msg.event_id;
@@ -425,30 +263,23 @@ const getData = () => {
       clearCheckboxes();
       messages.value = query_info ?? [];
     })
+    .catch(() => {
+      pageInfo.total = 0;
+    })
 };
 
-const debouncedGetData = useDebounceFn(getData, 300);
-
 // ------------------------菜单事件------------------------
-const activeMenu = ref('all');
+const activeMenu = ref(EventSources.EUR);
 
-const onMenuChange = (menu: string) => {
+const onMenuChange = (source: string) => {
   // 清空过滤
-  resetParams();
-  if (menu === 'all') {
+  filterRef.value?.reset();
+  if (source === 'all') {
     router.push({ path: '/' });
   } else {
-    // 清空gitee消息类型过滤
-    if (giteeEventType.value) {
-      giteeEventType.value = '';
-    }
-    const types = EventSourceTypes[menu];
     router.push({
       path: '/',
-      query: {
-        source: menu,
-        event_type: menu === EventSources.GITEE ? giteeEventType.value : types[0],
-      },
+      query: { source },
     });
   }
 };
@@ -457,28 +288,11 @@ const onMenuChange = (menu: string) => {
 watch(
   () => route.query,
   () => {
-    const { source, event_type } = route.query;
-    filterParams.source = (source ?? '') as string;
-    filterParams.event_type = (event_type ?? '') as string;
-    if (filterParams.page !== 1) {
-      filterParams.page = 1;
-    } else {
-      getData();
-    }
+    const { source } = route.query;
     if (source && source !== activeMenu.value) {
       activeMenu.value = source as string;
-    } else if (!source && activeMenu.value !== 'all') {
-      activeMenu.value = 'all';
     }
-    if (event_type) {
-      switch (source) {
-        case EventSources.GITEE:
-          if (event_type !== giteeEventType.value) {
-            giteeEventType.value = event_type as string;
-          }
-          break;
-      }
-    }
+    getData();
   },
   { immediate: true }
 );
@@ -584,19 +398,15 @@ const markReadMultiMessages = () => {
 };
 
 // ------------------------切换已读未读消息------------------------
-const readStatus = ref('all');
+const readStatus = ref('');
 const readStatusOptions = ref([
-  { value: 'all', label: '全部消息' },
-  { value: '1', label: '已读消息' },
-  { value: '0', label: '未读消息' },
+  { value: '', label: '全部' },
+  // { value: '1', label: '已读消息' },
+  { value: '0', label: '未读' },
 ]);
 
 watch(readStatus, (val: string | number) => {
-  if (val === 'all') {
-    filterParams.is_read = '';
-  } else {
-    filterParams.is_read = val as string;
-  }
+  filterParams.is_read = val as string;
   getData();
 });
 
@@ -637,12 +447,12 @@ watch(isCheckedAll, (val) => {
   }
 });
 
-const filterConfirm = (source: string, event_type: string) => {
-  if (!source && !event_type) {
+const phoneFilterConfirm = (source: string) => {
+  if (!source) {
     router.push({ path: '/' });
     return;
   }
-  router.push({ path: '/', query: { source, event_type } });
+  router.push({ path: '/', query: { source } });
 };
 
 onBeforeMount(() => {
@@ -664,26 +474,15 @@ onBeforeMount(() => {
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
 
   <!-- 移动端特有弹窗 -->
-  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="filterConfirm"></MessageListFilterDlg>
+  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg>
 
   <!-- 移动端特有弹窗 -->
-  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="filterConfirm"></MessageListFilterDlg>
-
-  <ODialog v-model:visible="showDlg">
-    <ul>
-      <li v-for="item in rules" :key="item.id">
-        <OLink @click="selectRule(item)" style="margin-top: 8px;">{{ item.mode_name }}</OLink>
-      </li>
-    </ul>
-  </ODialog>
+  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg>
 
   <div class="messages-container">
     <aside v-if="!isPhone">
       <div class="title">
         消息中心
-        <!-- <IconLink ref="settingsIcon" @click="toConfig">
-          <template #suffix><IconSettings /></template>
-        </IconLink> -->
         <OPopover :target="settingsIcon" :visible="showTipPopOver" trigger="none">
           <div class="first-time-login-tip">
             <p>可在消息订阅管理中订阅你所关注的消息</p>
@@ -692,147 +491,33 @@ onBeforeMount(() => {
         </OPopover>
       </div>
       <OMenu v-model="activeMenu" @change="onMenuChange">
-        <OMenuItem class="menu-item" value="all"> 全部 </OMenuItem>
         <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url"> {{ EventSourceNames[url] }} </OMenuItem>
       </OMenu>
     </aside>
 
     <div class="message-list-wrap">
-      <OButton @click="showDlg = true">保存的规则</OButton>
       <div class="message-list">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1"></OCheckbox>
-            <!-- 已读状态筛选 -->
-            <OSelect class="select" v-model="readStatus" variant="text" style="width: 112px">
-              <OOption class="select-option" v-for="item in readStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </OSelect>
-            <template v-if="!isPhone && activeMenu !== 'all'">
-              <OInput v-model="ruleName" placeholder="规则名称"></OInput>
-              <OButton @click="saveFilterRule">保存规则</OButton>
-              <!-- eur过滤 -->
-              <template v-if="route.query.source === EventSources.EUR">
-                <OInput v-model="filterParams.build_env" placeholder="构建环境" @input="debouncedGetData"></OInput>
-                <OSelect filterable style="width: 150px;" :multiple="true" @change="onBuildStatusChange" placeholder="构建状态">
-                  <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
-                <!-- 创建者 -->
-                <TagInput @change="executorSearchChange" placeholder="创建者">
-                  <template #suffix>
-                    <div style="display: flex">
-                      <IconSearch class="icon-search" @click="getData" />
-                    </div>
-                  </template>
-                </TagInput>
-                <!-- 所有者 -->
-                <TagInput @change="ownerSearchChange" placeholder="所有者">
-                  <template #suffix>
-                    <div style="display: flex">
-                      <IconSearch class="icon-search" @click="getData" />
-                    </div>
-                  </template>
-                </TagInput>
-                <el-date-picker
-                  v-model="eurTime"
-                  type="datetimerange"
-                  range-separator="至"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
-                  @change="onEurTimeChange"
-                />
-              </template>
-
-              <!-- gitee消息过滤 -->
-              <template v-if="route.query.source === EventSources.GITEE">
-                <OCheckbox @change="myRepoChange" value="1">我管理的仓库</OCheckbox>
-                <OCheckbox @change="mySigChange" value="1">我的sig组</OCheckbox>
-                <OCheckbox @change="mentionedMeChange" value="1">@我的</OCheckbox>
-                <OSelect
-                  clearable
-                  v-model="giteeEventType"
-                  style="width: 130px;"
-                  placeholder="消息类型"
-                >
-                  <OOption v-for="item in giteeEventTypeOptions" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
-
-                <OSelect style="width: 150px;" :multiple="true" @change="isBotChange" placeholder="是否机器人">
-                  <OOption v-for="item in robotSelectOptions" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
-                <!-- sig筛选 -->
-                <FilterableSelect :values="sigList" @change="onGiteeSigChange" placeholder="sig"></FilterableSelect>
-                <!-- 仓库名称 -->
-                <FilterableSelect :values="repoRenderList" @change="onRepoChange" placeholder="仓库"></FilterableSelect>
-
-                <OSelect v-if="giteeEventType === 'note'" style="width: 150px;" :multiple="true" @change="noteTypeChange" placeholder="note_type">
-                  <OOption v-for="item in noteType" :key="item" :value="item" :label="item">
-                    {{ item }}
-                  </OOption>
-                </OSelect>
-
-                <template v-if="giteeEventType === 'pr'">
-                  <OCheckbox @change="assignToMeChange" value="1">指派给我的</OCheckbox>
-                  <OInput v-model="filterParams.pr_creator" @input="debouncedGetData" placeholder="pr_creator"></OInput>
-                  <OSelect :multiple="true" @change="prStateChange" placeholder="pr_type">
-                    <OOption v-for="item in prState" :key="item.value" :value="item.value" :label="item.label">
-                      {{ item.label }}
-                    </OOption>
-                  </OSelect>
-                </template>
-
-                <template v-if="giteeEventType === 'issue'">
-                  <OCheckbox @change="assignToMeChange" value="1">指派给我的</OCheckbox>
-                  <OInput v-model="filterParams.issue_creator" @input="debouncedGetData" placeholder="issue_creator"></OInput>
-                  <OSelect :multiple="true" @change="issueStateChange" placeholder="issue_type">
-                    <OOption v-for="item in issueState" :key="item.value" :value="item.value" :label="item.label">
-                      {{ item.label }}
-                    </OOption>
-                  </OSelect>
-                </template>
-              </template>
-              <!-- 会议消息过滤 -->
-              <template v-if="route.query.source === EventSources.MEETING">
-                <OSelect filterable :multiple="true" @change="meetingActStateChange" placeholder="meeting_action">
-                  <OOption v-for="item in meetingActState" :key="item.value" :value="item.value" :label="item.label">
-                    {{ item.label }}
-                  </OOption>
-                </OSelect>
-                <!-- sig筛选 -->
-                <FilterableSelect :values="sigList" @change="meetingSigChange" placeholder="sig"></FilterableSelect>
-              </template>
-              <!-- cve消息过滤 -->
-              <template v-if="route.query.source === EventSources.CVE">
-                <FilterableSelect :values="repoRenderList" @change="onCveRepoChange" placeholder="仓库"></FilterableSelect>
-                <OInput v-model="filterParams.cve_affected" placeholder="影响系统版本" @input="debouncedGetData"></OInput>
-                <OSelect :multiple="true" @change="cveStateChange" placeholder="状态">
-                  <OOption v-for="item in cveState" :key="item" :value="item" :label="item">
-                    {{ item }}
-                  </OOption>
-                </OSelect>
-              </template>
-            </template>
+            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1">全选</OCheckbox>
+            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+            <RadioToggle v-model="filterParams.is_read" :options="readStatusOptions" />
+            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+            <RadioToggle @change="timeRangeChange" :options="timeOptions" />
           </div>
           <div class="right" :disabled="checkboxes.length === 0">
-            <template v-if="!isPhone">
-              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="checkboxes.length === 0" @click="delMultiMessages">
-                <template #prefix><IconDelete /></template>
-                删除
-              </IconLink>
-              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" :disabled="multiReadDisabled" @click="markReadMultiMessages">
-                <template #prefix><IconRead /></template>
-                标记已读
-              </IconLink>
-            </template>
-            <OLink v-else-if="!phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink>
+            <OPopup trigger="click" position="br" @change="filterPopupVisibleChange" :unmount-on-hide="false">
+              <template #target>
+                <p style="cursor: pointer;">筛选</p>
+              </template>
+              <ContentWrapper vertical-padding="24px" style="border-radius: 4px; box-shadow: var(--o-shadow-2); width: 450px; background-color: var(--o-color-fill2); --layout-content-padding: 16px">
+                <MessageCommonFilter ref="filterRef" :source="(route.query.source as string)" @quick-fiter="applyQuickFilter" />
+              </ContentWrapper>
+            </OPopup>
+            <OLink v-if="isPhone && !phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink>
           </div>
         </div>
-        <template v-if="total > 0">
+        <template v-if="pageInfo.total > 0">
           <!-- 消息列表 -->
           <div class="list">
             <div v-for="(msg, index) in messages" :key="msg.id" class="item">
@@ -864,7 +549,7 @@ onBeforeMount(() => {
       </div>
     </div>
   </div>
-  <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="filterParams.page" v-model:pageSize="filterParams.count_per_page" />
+  <AppPagination v-if="!isPhone && pageInfo.total > 0" topMargin="40px" :total="pageInfo.total" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.pageSize" />
 </template>
 
 <style scoped lang="scss">

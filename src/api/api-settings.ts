@@ -1,13 +1,13 @@
 import { request, type RequestConfig } from '@/shared/axios';
-import type { ModeFilterT, SubscribeRuleT } from '@/@types/type-settings';
+import type { FilterRuleT } from '@/@types/type-settings';
 import type { PagedResponseT } from '@/@types/types-common';
 
 /**
- * 获取所有消息接收规则（包含接收人信息）
- * @returns 消息接收规则（包含接收人信息）
+ * 获取快捷筛选项
+ * @returns 快捷筛选项
  */
-export function getSubsDetail(): Promise<SubscribeRuleT[]> {
-  return request.get<{ query_info: SubscribeRuleT[] }>('/message_center/config/subs').then((res) => res?.data.query_info ?? []);
+export function getFilterRules(): Promise<FilterRuleT[]> {
+  return request.get<{ query_info: FilterRuleT[] }>('/message_center/config/subs').then((res) => res?.data.query_info ?? []);
 }
 
 /**
@@ -15,7 +15,7 @@ export function getSubsDetail(): Promise<SubscribeRuleT[]> {
  * @returns 消息接收规则标题（不包含接收人信息）
  */
 export const getAllSubs = () => {
-  return request.get<PagedResponseT<SubscribeRuleT>>('/message_center/config/subs/all').then((res) => res.data.query_info ?? []);
+  return request.get<PagedResponseT<FilterRuleT>>('/message_center/config/subs/all').then((res) => res.data.query_info ?? []);
 };
 
 /**
@@ -24,7 +24,7 @@ export const getAllSubs = () => {
  * @param config axios设置
  * @returns 新增项的id
  */
-export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConfig) {
+export function postSubsRule(data: Partial<FilterRuleT>, config?: RequestConfig) {
   return request.post<{ newId: number[] }>('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }), config).then((res) => res.data);
 }
 
@@ -33,7 +33,7 @@ export function postSubsRule(data: Partial<SubscribeRuleT>, config?: RequestConf
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function putSubsRule(data: {
+/* export function putSubsRule(data: {
   update_info: { id: string; event_type: string }[];
   delete_info?: { id: string }[];
   create_info?: { event_type: string }[];
@@ -42,7 +42,7 @@ export function putSubsRule(data: {
   mode_name: string;
 }) {
   return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
-}
+} */
 
 /**
  * 
@@ -50,7 +50,7 @@ export function putSubsRule(data: {
  * @param data 消息接收规则
  * @returns 调用结果
  */
-export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypesAndIds' | 'mode_name'>) {
+/* export function deleteSubsRule(data: Pick<FilterRuleT, 'source' | 'eventTypesAndIds' | 'mode_name'>) {
   return request.delete('/message_center/config/subs', {
     data: {
       source: data.source,
@@ -58,7 +58,7 @@ export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypes
       mode_name: data.mode_name,
     },
   });
-}
+} */
 
 /**
  * 消息接收设置，接受规则内接收方式多选框状态改变时调用
@@ -68,7 +68,7 @@ export function deleteSubsRule(data: Pick<SubscribeRuleT, 'source' | 'eventTypes
  * @param subscribe_id 接受规则id
  * @returns 调用结果
  */
-export function updateNeedStatus(rule: SubscribeRuleT) {
+/* export function updateNeedStatus(rule: FilterRuleT) {
   const data: Record<string, any> = {
     need_inner_message: false,
     need_mail: false,
@@ -79,8 +79,8 @@ export function updateNeedStatus(rule: SubscribeRuleT) {
   };
   rule.needCheckboxes?.forEach((item) => (data[item] = true));
   return request.put('/message_center/config/push', data);
-}
+} */
 
-export function postPushConfig(data: any) {
+/* export function postPushConfig(data: any) {
   return request.post('/message_center/config/push', data, { ignoreDuplicates: true });
-}
+} */

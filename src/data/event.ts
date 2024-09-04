@@ -1,7 +1,7 @@
 export const EventSources = {
-  GITEE: 'https://gitee.com',
   EUR: 'https://eur.openeuler.openatom.cn',
   MEETING: 'https://www.openEuler.org/meeting',
+  GITEE: 'https://gitee.com',
   CVE: 'cve',
 };
 
