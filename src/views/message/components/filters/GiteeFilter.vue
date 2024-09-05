@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getAllSigs, getRepoList } from '@/api/messages';
+import { getAllSigs } from '@/api/messages';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import { useUserInfoStore } from '@/stores/user';
@@ -9,40 +9,28 @@ import { computed, inject, onBeforeMount, ref, watch, type Ref } from 'vue';
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 
-const allSigReposMap = new Map<string, string[]>();
-
-const sigList = ref<string[]>([]);
-const repoList = ref<string[]>([]);
-const repoRenderList = ref<string[]>([]);
-
+// ----------------sig/repo----------------
+const allSigReposMap = ref(new Map<string, string[]>());
 onBeforeMount(() => {
-  getRepoList()
-    .then((data) => {
-      repoList.value = data;
-      repoRenderList.value = data;
-    });
   getAllSigs().then(data => {
-    sigList.value = data.map((item) => item.sig_name);
     for (const item of data) {
-      allSigReposMap.set(item.sig_name, item.repos);
+      allSigReposMap.value.set(item.sig_name, item.repos);
     }
   });
 });
 
-// ----------------sig/repo----------------
+const sigList = computed(() => Array.from(allSigReposMap.value.keys()));
+const repoList = computed(() => {
+  if (selectedSigs.value.length) {
+    return selectedSigs.value.flatMap((sig) => allSigReposMap.value.get(sig as string) ?? []);
+  }
+  return Array.from(allSigReposMap.value.values()).flat();
+});
 const selectedSigs = ref<string[]>([]);
 const selectedRepos = ref<string[]>([]);
 
-const onSigChange = (val: (string | number)[]) => {
-  selectedSigs.value = val as string[];
-  if (!val.length) {
-    repoRenderList.value = repoList.value;
-    return;
-  };
-  repoRenderList.value = val.reduce((list, current) => {
-    list.push(...(allSigReposMap.get(current as string) ?? []));
-    return list;
-  }, [] as string[]);
+const onSigChange = (sigs: (string | number)[]) => {
+  selectedSigs.value = sigs as string[];
 };
 
 const onRepoChange = (val: (string | number)[]) => {
@@ -166,7 +154,7 @@ defineExpose({
       <FilterableSelect filterable :values="sigList" inputWidth="100%" :options-wrapper="popupContainer" @change="onSigChange"></FilterableSelect>
     </OFormItem>
     <OFormItem label="仓库">
-      <FilterableSelect filterable :values="repoRenderList" inputWidth="100%" :options-wrapper="popupContainer" @change="onRepoChange"></FilterableSelect>
+      <FilterableSelect filterable :values="repoList" inputWidth="100%" :options-wrapper="popupContainer" @change="onRepoChange"></FilterableSelect>
     </OFormItem>
     <OFormItem label="事件类型">
       <RadioToggle v-model="eventType" :options="eventTypes" />

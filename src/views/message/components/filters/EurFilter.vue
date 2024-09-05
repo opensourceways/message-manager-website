@@ -2,7 +2,7 @@
 import RadioToggle from '@/components/RadioToggle.vue';
 import { EUR_BUILD_STATUS } from '@/data/event';
 import { useUserInfoStore } from '@/stores/user';
-import { OForm, OFormItem, OOption, OSelect } from '@opensig/opendesign';
+import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
 import { computed, inject, ref, type Ref } from 'vue';
 
 const userInfoStore = useUserInfoStore();
@@ -34,6 +34,8 @@ const getFilterParams = () => {
   return params;
 };
 
+const exceededLabel = (vals: SelectOptionT[]) => `${vals.length}个选项被选中`;
+
 defineExpose({
   reset,
   getFilterParams,
@@ -46,7 +48,17 @@ defineExpose({
       <RadioToggle v-model="projRelation" :options="projRelations" />
     </OFormItem>
     <OFormItem label="构建状态">
-      <OSelect v-model="buildStatus" clearable multiple option-position="bottom" style="width: 100%; --select-radius: 4px" :options-wrapper="popupContainer">
+      <OSelect
+        v-model="buildStatus"
+        :fold-label="exceededLabel"
+        show-fold-tags
+        :max-tag-count="1"
+        clearable
+        multiple
+        option-position="bottom"
+        style="width: 100%; --select-radius: 4px"
+        :options-wrapper="popupContainer"
+      >
         <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
           {{ item.label }}
         </OOption>

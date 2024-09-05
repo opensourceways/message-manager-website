@@ -33,16 +33,15 @@ export function postSubsRule(data: Partial<FilterRuleT>, config?: RequestConfig)
  * @param data 消息接收规则
  * @returns 调用结果
  */
-/* export function putSubsRule(data: {
+export function putSubsRule(data: {
   update_info: { id: string; event_type: string }[];
   delete_info?: { id: string }[];
   create_info?: { event_type: string }[];
   source: string;
-  mode_filter: ModeFilterT;
   mode_name: string;
 }) {
   return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
-} */
+}
 
 /**
  * 
@@ -50,15 +49,15 @@ export function postSubsRule(data: Partial<FilterRuleT>, config?: RequestConfig)
  * @param data 消息接收规则
  * @returns 调用结果
  */
-/* export function deleteSubsRule(data: Pick<FilterRuleT, 'source' | 'eventTypesAndIds' | 'mode_name'>) {
+export function deleteFilterRule(source: string, mode_name: string, event_type: string) {
   return request.delete('/message_center/config/subs', {
     data: {
-      source: data.source,
-      event_type: data.eventTypesAndIds.map(item => item.eventType).join(),
-      mode_name: data.mode_name,
+      source,
+      event_type,
+      mode_name,
     },
   });
-} */
+}
 
 /**
  * 消息接收设置，接受规则内接收方式多选框状态改变时调用

@@ -4,7 +4,7 @@ import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
 import type { FilterRuleT } from '@/@types/type-settings';
-import { getFilterRules } from '@/api/api-settings';
+import { deleteFilterRule, getFilterRules } from '@/api/api-settings';
 import { saveRule } from '@/api/messages';
 
 import IconClear from '~icons/app/icon-clear.svg';
@@ -14,36 +14,32 @@ import IconLink from '@/components/IconLink.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import EurFilter from './filters/EurFilter.vue';
 import GiteeFilter from './filters/GiteeFilter.vue';
+import { useRoute } from 'vue-router';
 
-const props = defineProps<{
-  source: string;
-}>();
-
+const popupContainer = ref();
+provide('popupContainer', popupContainer);
+const message = useMessage();
+const route = useRoute();
+const source = computed<string>(() => route.query.source as string);
 const emit = defineEmits<{
   (event: 'reset'): void;
   (event: 'quickFiter', val: string): void;
 }>();
-
-const message = useMessage();
-
 const compMap = {
   [EventSources.EUR]: EurFilter,
   [EventSources.GITEE]: GiteeFilter,
 };
-const currentFilterComp = computed(() => compMap[props.source]);
+const currentFilterComp = computed(() => compMap[source.value]);
 const currentCompRef = ref();
 
-const setCurrenCompRef = (val: any) => {
-  currentCompRef.value = val;
-};
+const setCurrenCompRef = (el: any) => currentCompRef.value = el;
 
-const popupContainer = ref();
-provide('popupContainer', popupContainer);
-
+// ----------------快捷筛选----------------
+/** 选中的快捷筛选 */
 const selectedQuickFilter = ref('');
 
 const quickFilterMap = ref(new Map<string, FilterRuleT[]>());
-const currentFilters = computed(() => quickFilterMap.value.get(props.source));
+const currentFilters = computed(() => quickFilterMap.value.get(source.value));
 
 const defaultQuickFilters = computed(() => {
   return currentFilters.value
@@ -70,6 +66,30 @@ onMounted(() => {
   });
 });
 
+// ----------------删除快捷筛选----------------
+const deleteFilter = (id: string | number) => {
+  const { source, mode_name, event_type } = currentFilters.value?.find((fil) => fil.id === id) as FilterRuleT;
+  deleteFilterRule(source, mode_name, event_type)
+    .then(() => {
+      const filters = quickFilterMap.value.get(source);
+      if (filters) {
+        filters.splice(filters.findIndex((fil) => fil.id === id), 1);
+      }
+    })
+    .catch(() => message.danger({ content: '删除失败' }));
+};
+
+// ----------------重命名筛选----------------
+const renameFilter = (filterId: string | number, newName: string, resolve: () => void, reject: () => void) => {
+  const filters = quickFilterMap.value.get(source.value);
+  if (filters) {
+    (filters.find((fil) => fil.id === filterId) as FilterRuleT).mode_name = newName;
+  }
+  // _TODO rename
+  resolve();
+};
+
+// ----------------重置----------------
 const onReset = (allowEmit = true) => {
   selectedQuickFilter.value = '';
   currentCompRef.value?.reset();
@@ -87,7 +107,7 @@ const confirmSave = (id: string) => {
   saveRule({
     spec_version: '1.0',
     mode_name,
-    source: props.source,
+    source: source.value,
     ...currentCompRef.value?.getFilterParams(),
   }).then(() => message.success({ content: '保存成功' }));
 };
@@ -98,7 +118,7 @@ const applyQuickFilter = (id: string) => {
 
 const getFilterParams = (): Record<string, any> => {
   return {
-    source: props.source,
+    source: source.value,
     ...currentCompRef.value?.getFilterParams(),
   };
 };
@@ -120,10 +140,13 @@ defineExpose({ getFilterParams, reset });
         :options="quickFilters"
         :defaultOptions="defaultQuickFilters"
         enable-rename-tags
+        enable-delete-tags
+        @remove="deleteFilter"
+        @rename="renameFilter"
       />
     </template>
     <p class="sec-title">高级筛选</p>
-    <component :is="currentFilterComp" :ref="(el) => setCurrenCompRef(el)"></component>
+    <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 
     <IconLink @click="saveRuleFlag = true" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
       保存为快捷筛选项

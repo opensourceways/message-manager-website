@@ -1,20 +1,24 @@
 <script setup lang="ts">
-import { ODivider, ORadio, ORadioGroup, OTag, OToggle } from '@opensig/opendesign';
-import { onClickOutside, useVModel } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { onClickOutside, useVModel } from '@vueuse/core';
+import { ODivider, OIcon, ORadio, ORadioGroup, OTag, OToggle } from '@opensig/opendesign';
+
+import IconClose from '~icons/app/icon-close.svg';
 
 const props = withDefaults(
   defineProps<{
     /** 默认标签项（不可重命名） */
-    defaultOptions?: (string | { label: string; value: any })[];
+    defaultOptions?: (string | { label: string; value: string | number })[];
     /** 标签项 */
-    options?: (string | { label: string; value: any })[];
+    options?: (string | { label: string; value: string | number })[];
     /** 选中标签值 */
     modelValue?: string | number;
     /** 新增标签的开关 */
     addNew?: boolean;
     /** 是否允许重命名标签 */
     enableRenameTags?: boolean;
+    /** 是否允许删除标签 */
+    enableDeleteTags?: boolean;
   }>(),
   {
     options: (): any[] => [],
@@ -27,6 +31,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'change', val: any): void;
   (event: 'confirmAdd', val: string): void;
+  (event: 'remove', val: string | number, index: number): void;
+  (event: 'rename', val: string | number, newName: string, resolve: () => void, reject: (reason?: any) => void): void;
   (event: 'update:modelValue', val: any): void;
   (event: 'update:addNew', val: any): void;
 }>();
@@ -81,26 +87,39 @@ const confirmAdd = () => {
   newTagContent.value = '';
 };
 
-
 // ----------------重命名标签----------------
 const renameContent = ref('');
-const currentlyRenameTagIndex = ref<number| null>();
+const currentlyRenameTagIndex = ref<number | null>();
 
-const rename = (ev: Event, index: number) => {
+const rename = (
+  val: {
+    label: string;
+    value: any;
+  },
+  index: number,
+  ev?: MouseEvent
+) => {
   if (!props.enableRenameTags) {
     return;
   }
-  ev.preventDefault();
+  if (val.value !== radioVal.value) {
+    return;
+  }
+  ev?.stopPropagation();
+  ev?.preventDefault();
   currentlyRenameTagIndex.value = index;
+  renameContent.value = val.label;
 };
 
-const confirmRename = (index: number) => {
+const confirmRename = () => {
   if (!props.enableRenameTags) {
     return;
   }
-  // todo rename
-  console.log(index);
-  currentlyRenameTagIndex.value = null;
+  if (typeof currentlyRenameTagIndex.value === 'number') {
+    new Promise<void>((resolve, reject) => {
+      emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value as number].value, renameContent.value, resolve, reject);
+    }).finally(() => (currentlyRenameTagIndex.value = null));
+  }
 };
 
 const setFilterTagClickOutside = (el: any, index: number) => {
@@ -108,15 +127,19 @@ const setFilterTagClickOutside = (el: any, index: number) => {
     return;
   }
   if (!el) {
+    console.log('remove', index)
     clickOutsideCancelFnMap.get(index)?.();
     clickOutsideCancelFnMap.delete(index);
     return;
   }
-  clickOutsideCancelFnMap.set(index, onClickOutside(el, () => {
-    // 取消重命名
-    currentlyRenameTagIndex.value = null;
-    renameContent.value = '';
-  }) as () => void);
+  clickOutsideCancelFnMap.set(
+    index,
+    onClickOutside(el, () => {
+      // 取消重命名
+      currentlyRenameTagIndex.value = null;
+      renameContent.value = '';
+    }) as () => void
+  );
 };
 
 onBeforeUnmount(() => {
@@ -133,7 +156,9 @@ onBeforeUnmount(() => {
       <ORadio v-for="item in normalizedDefaultOptions" :key="item.value" :value="item.value">
         <template #radio="{ checked }">
           <OToggle :checked="checked" style="--toggle-radius: 4px">
-            {{ item.label }}
+            <p class="toggle-content">
+              {{ item.label }}
+            </p>
           </OToggle>
         </template>
       </ORadio>
@@ -141,18 +166,26 @@ onBeforeUnmount(() => {
     </template>
     <ORadio
       v-for="(item, index) in normalizedOptions"
-      @click.right="rename($event, index)"
+      @click.right.prevent="rename(item, index)"
+      @click.left="rename(item, index, $event)"
       :ref="(el) => setFilterTagClickOutside(el, index)"
       :key="item.value"
       :value="item.value"
     >
       <template #radio="{ checked }">
-        <OToggle v-if="currentlyRenameTagIndex !== index" :checked="checked" style="--toggle-radius: 4px">
-          {{ item.label }}
-        </OToggle>
-        <OTag v-else style="--tag-bg-color: var(--o-color-fill1); --tag-bd-color: var(--o-color-fill1); --tag-height: var(--o-control_size-m)">
-          <input v-focus v-model="renameContent" class="input-text" type="text" @keydown.enter="() => confirmRename(index)" />
-        </OTag>
+        <div class="toggle-item-wrapper" style="position: relative">
+          <div v-if="enableDeleteTags" class="close-icon" @click.stop.prevent="$emit('remove', item.value, index)">
+            <OIcon style="color: var(--o-color-fill2)"><IconClose /></OIcon>
+          </div>
+          <OToggle v-if="currentlyRenameTagIndex !== index" :checked="checked" style="--toggle-radius: 4px">
+            <p class="toggle-content">
+              {{ item.label }}
+            </p>
+          </OToggle>
+          <OTag v-else style="--tag-bg-color: var(--o-color-fill2); --tag-bd-color: var(--o-color-primary1); --tag-height: var(--o-control_size-m)">
+            <input v-focus v-model="renameContent" class="input-text" type="text" @keydown.enter="confirmRename" />
+          </OTag>
+        </div>
       </template>
     </ORadio>
     <ORadio :ref="setAddNewTagClickOutside" v-if="isAddNew" :value="false">
@@ -166,10 +199,38 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+.toggle-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 176px;
+}
+
 .input-text {
   border: none;
   outline: none;
-  background-color: var(--o-color-fill1);
+  background-color: transparent;
   width: 90px;
+  max-width: 176px;
+}
+
+.toggle-item-wrapper {
+  @include text1;
+
+  .close-icon {
+    display: none;
+    background-color: var(--o-color-control2);
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    position: absolute;
+    right: -0.5em;
+    top: -0.5em;
+  }
+
+  &:hover .close-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 }
 </style>

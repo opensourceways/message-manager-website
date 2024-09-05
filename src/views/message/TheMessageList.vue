@@ -35,6 +35,7 @@ import { getAllSubs, getFilterRules } from '@/api/api-settings';
 import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
+import IconLink from '@/components/IconLink.vue';
 
 const message = useMessage();
 const { locale } = useI18n();
@@ -42,20 +43,19 @@ const router = useRouter();
 const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const loginStore = useLoginStore();
-const dateTime = dayjs();
 
 const settingsIcon = ref();
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
 
+const total = ref(0);
 const pageInfo = reactive({
   page: 1,
-  pageSize: 10,
-  total: 0,
+  count_per_page: 10,
 });
 
-watch([() => pageInfo.page, () => pageInfo.pageSize], () => {
+watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
 
 });
 
@@ -89,22 +89,31 @@ onMounted(() => {
 
 onUnmounted(() => clearInterval(intervalId));
 
+// ----------------时间范围----------------
 const timeOptions = [
   { label: '全部', value: 'all' },
   { label: '近一周', value: 'week' },
   { label: '近一月', value: 'month' },
 ];
 
+const timeRange = reactive({
+  start_time: '' as string | number,
+  end_time: '' as string | number,
+});
+
 const timeRangeChange = (val: string) => {
   if (val === 'all') {
-    filterParams.start_time = '';
-    filterParams.end_time = '';
-  } else if (val === 'week') {
-    filterParams.start_time = dateTime.subtract(7, 'day').valueOf();
-    filterParams.end_time = dateTime.valueOf();
+    timeRange.start_time = '';
+    timeRange.end_time = '';
+    return;
+  }
+  const current = dayjs();
+  if (val === 'week') {
+    timeRange.start_time = current.subtract(7, 'day').valueOf();
+    timeRange.end_time = current.valueOf();
   } else if (val === 'month') {
-    filterParams.start_time = dateTime.subtract(1, 'month').valueOf();
-    filterParams.end_time = dateTime.valueOf();
+    timeRange.start_time = current.subtract(1, 'month').valueOf();
+    timeRange.end_time = current.valueOf();
   }
   getData();
 };
@@ -180,7 +189,7 @@ const selectRule = (val: { source: string, mode_name: string }) => {
       count_per_page: filterParams.count_per_page as number,
     }).then((res) => {
       const { count, query_info } = res.data;
-      pageInfo.total = count;
+      total.value = count;
       if (query_info) {
         for (const msg of query_info) {
           msg.id = msg.source + msg.event_id;
@@ -199,14 +208,14 @@ const getData = (filterParams: Record<string, any> = {}) => {
   lastPollType = 'inner';
   lastFilterParams.value = filterParams;
   getMessages({
-    page: pageInfo.page,
-    count_per_page: pageInfo.pageSize,
     source: route.query.source as string,
+    ...pageInfo,
     ...lastFilterParams.value,
+    ...timeRange
   })
     .then((res) => {
       const { count, query_info } = res.data;
-      pageInfo.total = count;
+      total.value = count;
       if (query_info) {
         for (const msg of query_info) {
           msg.id = msg.source + msg.event_id;
@@ -218,7 +227,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
       messages.value = query_info ?? [];
     })
     .catch(() => {
-      pageInfo.total = 0;
+      total.value = 0;
     })
 };
 
@@ -233,7 +242,7 @@ const onMenuChange = (source: string) => {
   } else {
     router.push({
       path: '/',
-      query: { source },
+      query: { source: encodeURIComponent(source) },
     });
   }
 };
@@ -244,7 +253,7 @@ watch(
   () => {
     const { source } = route.query;
     if (source && source !== activeMenu.value) {
-      activeMenu.value = source as string;
+      activeMenu.value = decodeURIComponent(source as string);
     }
     getData();
   },
@@ -311,10 +320,6 @@ const delMultiMessages = async () => {
 
 // ------------------------标记已读消息------------------------
 const unreadCountStore = useUnreadMsgCountStore();
-/* const multiReadDisabled = computed(() => {
-  return checkboxes.value.length === 0 || messages.value.every((item) => item.is_read);
-}); */
-
 const markReadMessage = (msg: MessageT) => {
   if (msg.is_read) {
     return;
@@ -439,25 +444,41 @@ const phoneFilterConfirm = (source: string) => {
       <div class="message-list">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1">全选</OCheckbox>
-            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-            <RadioToggle v-model="filterParams.is_read" :options="readStatusOptions" />
-            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-            <RadioToggle @change="timeRangeChange" :options="timeOptions" />
+            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1">
+              {{ checkboxes.length ? `已选${checkboxes.length}条消息` : '全选' }}
+            </OCheckbox>
+            <template v-if="!checkboxes.length">
+              <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+              <RadioToggle v-model="filterParams.is_read" :options="readStatusOptions" />
+              <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+              <RadioToggle @change="timeRangeChange" :options="timeOptions" />
+            </template>
           </div>
-          <div class="right" :disabled="checkboxes.length === 0">
-            <OPopup trigger="click" position="br" @change="filterPopupVisibleChange" :unmount-on-hide="false">
-              <template #target>
-                <p style="cursor: pointer;">筛选</p>
-              </template>
-              <ContentWrapper vertical-padding="24px" style="border-radius: 4px; box-shadow: var(--o-shadow-2); width: 450px; background-color: var(--o-color-fill2); --layout-content-padding: 16px">
-                <MessageCommonFilter ref="filterRef" :source="(route.query.source as string)" @quick-fiter="applyQuickFilter" />
-              </ContentWrapper>
-            </OPopup>
+          <div class="right">
+            <template v-if="checkboxes.length">
+              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" @click="markReadMultiMessages">
+                <template #prefix><IconRead /></template>
+                标记已读
+              </IconLink>
+              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" @click="delMultiMessages">
+                <template #prefix><IconDelete /></template>
+                删除
+              </IconLink>
+            </template>
+            <template v-else>
+              <OPopup trigger="click" position="br" @change="filterPopupVisibleChange" :unmount-on-hide="false">
+                <template #target>
+                  <p style="cursor: pointer;">筛选</p>
+                </template>
+                <ContentWrapper vertical-padding="24px" style="border-radius: 4px; box-shadow: var(--o-shadow-2); width: 450px; background-color: var(--o-color-fill2); --layout-content-padding: 16px">
+                  <MessageCommonFilter ref="filterRef" @quick-fiter="applyQuickFilter" />
+                </ContentWrapper>
+              </OPopup>
+            </template>
             <OLink v-if="isPhone && !phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink>
           </div>
         </div>
-        <template v-if="pageInfo.total > 0">
+        <template v-if="total > 0">
           <!-- 消息列表 -->
           <div class="list">
             <div v-for="(msg, index) in messages" :key="msg.id" class="item">
@@ -489,7 +510,7 @@ const phoneFilterConfirm = (source: string) => {
       </div>
     </div>
   </div>
-  <AppPagination v-if="!isPhone && pageInfo.total > 0" topMargin="40px" :total="pageInfo.total" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.pageSize" />
+  <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.count_per_page" />
 </template>
 
 <style scoped lang="scss">

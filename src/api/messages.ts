@@ -45,6 +45,10 @@ export function getRepoList() {
   return request.get<{ data: string[] }>('/api-dsapi/query/sig/repo?community=openeuler&search=fuzzy').then(res => res.data.data);
 }
 
+export function getMySigs(loginName: string) {
+  return request.get<{ data: Sig[] }>('/api-dsapi/query/sig/info?community=openeuler&search=fuzzy').then(res => res.data.data);
+}
+
 /**
  * 保存过滤规则
  */

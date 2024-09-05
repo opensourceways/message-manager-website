@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { OInput, OPopup, OCheckbox, OCheckboxGroup } from '@opensig/opendesign';
+import { computed, nextTick, ref, watch } from 'vue';
+import { OInput, OPopup, OCheckbox, OCheckboxGroup, OScroller } from '@opensig/opendesign';
 import { useDebounceFn } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import type { PropType } from 'vue';
-import AppScroller from './AppScroller.vue';
+import useScrollBottomListener from '@/composables/useScrollBottomListener';
 
 type ValueT = string | { label: string; value: string };
 
@@ -70,10 +70,7 @@ const displayValues = computed(() => {
 });
 
 const scroller = ref();
-
-const onScrollBottom = () => {
-  displayCount.value += 30;
-};
+const { scrollTop } = useScrollBottomListener(scroller, () => displayCount.value += 30);
 
 const onFilterInput = useDebounceFn((search?: string) => {
   // 重置显示个数
@@ -97,22 +94,29 @@ watch(checkboxes, (values) => emit('change', values));
 </script>
 
 <template>
-  <OPopup :wrapper="props.optionsWrapper" position="bottom" trigger="click" @change="onVisibleChange" style="--popup-shadow: var(--o-shadow-1)">
+  <OPopup :unmountOnHide="false" :wrapper="props.optionsWrapper" position="bottom" trigger="click" @change="onVisibleChange" style="--popup-shadow: var(--o-shadow-1)">
     <template #target>
       <OInput :style="{ '--input-radius': '4px', width: inputWidth ?? '100%' }" @input="onFilterInput" clearable @clear="onFilterInput()" :placeholder="placeholder"></OInput>
     </template>
-    <AppScroller @scrollBottom="onScrollBottom" ref="scroller">
+    <OScroller ref="scroller" class="scroller">
       <div class="check-all-wrap">
         <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1">全选</OCheckbox>
       </div>
       <OCheckboxGroup v-model="checkboxes" direction="v">
         <OCheckbox v-for="item in displayValues" :key="item.value" :value="item.value">{{ item.label }}</OCheckbox>
       </OCheckboxGroup>
-    </AppScroller>
+    </OScroller>
   </OPopup>
 </template>
 
 <style lang="scss" scoped>
+.scroller {
+  background-color: var(--o-color-fill2);
+  padding: 12px;
+  padding-bottom: 0;
+  max-height: 200px;
+}
+
 .filter-input {
   --input-radius: 4px;
   width: 100%;
