@@ -171,7 +171,7 @@ const getFilterParams = (): Record<string, string> => {
     params.event_type = eventType.value;
   }
   if (isBot.value) {
-    params.is_bot = Boolean(isBot.value);
+    params.is_bot = isBot.value;
   }
   if (eventType.value === 'pr') {
     if (eventState.value) {
