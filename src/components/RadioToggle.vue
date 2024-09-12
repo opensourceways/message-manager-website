@@ -19,6 +19,8 @@ const props = withDefaults(
     enableRenameTags?: boolean;
     /** 是否允许删除标签 */
     enableDeleteTags?: boolean;
+    /** 是否允许取消选中 */
+    enableCancelSelect?: boolean;
   }>(),
   {
     options: (): any[] => [],
@@ -57,7 +59,25 @@ const normalizedDefaultOptions = computed(() =>
 
 const radioVal = useVModel(props, 'modelValue', emit);
 
+const changeRadioVal = (val: string | number | boolean) => {
+  emit('change', val);
+};
+
 const clickOutsideCancelFnMap = new Map<string | number, () => void>();
+
+/**
+ * 取消当前选中
+ * @param value 点击标签的值
+ * @param ev 鼠标事件
+ */
+const cancel = (value: string | number, ev?: MouseEvent) => {
+  if (props.enableCancelSelect && radioVal.value === value) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    radioVal.value = '';
+    emit('change', '');
+  }
+};
 
 // ----------------添加新标签----------------
 const isAddNew = useVModel(props, 'addNew', emit);
@@ -91,7 +111,7 @@ const confirmAdd = () => {
 const renameContent = ref('');
 const currentlyRenameTagIndex = ref<number | null>();
 
-const rename = (
+const onClickLabel = (
   val: {
     label: string;
     value: any;
@@ -100,9 +120,11 @@ const rename = (
   ev?: MouseEvent
 ) => {
   if (!props.enableRenameTags) {
+    cancel(val.value, ev);
     return;
   }
   if (val.value !== radioVal.value) {
+    cancel(val.value, ev);
     return;
   }
   ev?.stopPropagation();
@@ -151,7 +173,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <ORadioGroup v-model="radioVal" @change="$emit('change', $event)" style="--radio-group-gap: 8px; row-gap: 8px">
+  <ORadioGroup v-model="radioVal" @change="changeRadioVal" style="--radio-group-gap: 8px; row-gap: 8px">
     <template v-if="defaultOptions.length">
       <ORadio v-for="item in normalizedDefaultOptions" :key="item.value" :value="item.value">
         <template #radio="{ checked }">
@@ -166,8 +188,7 @@ onBeforeUnmount(() => {
     </template>
     <ORadio
       v-for="(item, index) in normalizedOptions"
-      @click.right.prevent="rename(item, index)"
-      @click.left="rename(item, index, $event)"
+      @click.left="onClickLabel(item, index, $event)"
       :ref="(el) => setFilterTagClickOutside(el, index)"
       :key="item.value"
       :value="item.value"

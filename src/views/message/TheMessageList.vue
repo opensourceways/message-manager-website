@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeMount, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { inject, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -15,6 +15,7 @@ import {
   ODivider,
   OIcon,
   OPopup,
+  OBadge,
 } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -23,7 +24,7 @@ import IconRead from '~icons/app/icon-read.svg';
 
 import { EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, getRepoList, getAllSigs, readMessages, filterByRule } from '@/api/messages';
+import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/messages';
 import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useLoginStore } from '@/stores/user';
@@ -31,7 +32,6 @@ import { useUnreadMsgCountStore } from '@/stores/common';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
 import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
-import { getAllSubs, getFilterRules } from '@/api/api-settings';
 import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
@@ -78,13 +78,13 @@ let lastQueryRule: any;
 
 onMounted(() => {
   getData();
-  intervalId = setInterval(() => {
+  /* intervalId = setInterval(() => {
     if (lastPollType === 'inner') {
       getData(lastFilterParams.value);
     } else {
       selectRule(lastQueryRule);
     }
-  }, 10_000);
+  }, 10_000); */
 });
 
 onUnmounted(() => clearInterval(intervalId));
@@ -122,22 +122,14 @@ const applyQuickFilter = (mode_name: string) => selectRule({ source: route.query
 
 const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 
-const filterPopupVisibleChange = (visible: boolean) => {
-  if (!visible) {
-    getData(filterRef.value?.getFilterParams());
-  }
-};
-
 // ------------------------多选框事件------------------------
 const {
-  checkboxes,
-  parentCheckbox,
+  checkAllVal,
+  checkboxVal,
   indeterminate,
-  isCheckedAll,
-  checkAll,
   clearCheckboxes,
 } = useCheckbox(messages, (msg) => msg.id);
-provide('checkboxes', checkboxes);
+provide('checkboxVal', checkboxVal);
 
 // ------------------------消息过滤------------------------
 const filterParams = reactive<Record<string, string | number>>({
@@ -208,7 +200,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
   lastPollType = 'inner';
   lastFilterParams.value = filterParams;
   getMessages({
-    source: route.query.source as string,
+    source: decodeURIComponent(route.query.source as string),
     ...pageInfo,
     ...lastFilterParams.value,
     ...timeRange
@@ -251,9 +243,9 @@ const onMenuChange = (source: string) => {
 watch(
   () => route.query,
   () => {
-    const { source } = route.query;
+    const source = decodeURIComponent(route.query.source as string)
     if (source && source !== activeMenu.value) {
-      activeMenu.value = decodeURIComponent(source as string);
+      activeMenu.value = source;
     }
     getData();
   },
@@ -288,10 +280,10 @@ const delMessage = async (msg: MessageT) => {
  * 删除多条
  */
 const delMultiMessages = async () => {
-  if (checkboxes.value.length === 0) {
+  if (checkboxVal.value.length === 0) {
     return;
   }
-  const set = new Set(checkboxes.value);
+  const set = new Set(checkboxVal.value);
   confirmDialogOptions.title = '删除消息';
   if (set.size > 1) {
     confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
@@ -307,7 +299,7 @@ const delMultiMessages = async () => {
         } else {
           message.success({ content: '删除成功' });
         }
-        checkboxes.value = [];
+        checkboxVal.value = [];
         getData();
       })
       .catch((error) => {
@@ -340,10 +332,10 @@ const markReadMessage = (msg: MessageT) => {
  * 已读多条
  */
 const markReadMultiMessages = () => {
-  if (checkboxes.value.length === 0) {
+  if (checkboxVal.value.length === 0) {
     return;
   }
-  const set = new Set(checkboxes.value);
+  const set = new Set(checkboxVal.value);
   readMessages(...messages.value.filter((item) => set.has(item.id)))
     .then(() => {
       getData();
@@ -372,7 +364,7 @@ watch(readStatus, (val: string | number) => {
 // ------------------------移动端------------------------
 const phoneStore = usePhoneStore();
 
-watch(checkboxes, (val) => {
+watch(checkboxVal, (val) => {
   phoneStore.checkedCount = val.length;
 });
 
@@ -385,7 +377,7 @@ watch(
   }
 );
 
-watch(
+/* watch(
   () => phoneStore.checkedAll,
   (val) => {
     if (val && !isCheckedAll.value) {
@@ -393,18 +385,18 @@ watch(
       return;
     }
     if (!val && isCheckedAll.value) {
-      clearCheckboxes();
+      clearcheckboxVal();
     }
   }
-);
+); */
 
-watch(isCheckedAll, (val) => {
+/* watch(isCheckedAll, (val) => {
   if (val) {
     phoneStore.checkedAll = true;
   } else {
     phoneStore.checkedAll = false;
   }
-});
+}); */
 
 const phoneFilterConfirm = (source: string) => {
   if (!source) {
@@ -436,7 +428,13 @@ const phoneFilterConfirm = (source: string) => {
         </OPopover>
       </div>
       <OMenu v-model="activeMenu" @change="onMenuChange">
-        <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url"> {{ EventSourceNames[url] }} </OMenuItem>
+        <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
+          <p style="display: flex; justify-content: space-between;">
+            {{ EventSourceNames[url] }}
+            <OBadge color="danger" v-if="unreadCountStore.sourceCountMap.get(source)" :value="unreadCountStore.sourceCountMap.get(source)">
+            </OBadge>
+          </p>
+        </OMenuItem>
       </OMenu>
     </aside>
 
@@ -444,10 +442,10 @@ const phoneFilterConfirm = (source: string) => {
       <div class="message-list">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="parentCheckbox" :indeterminate="indeterminate" :value="1">
-              {{ checkboxes.length ? `已选${checkboxes.length}条消息` : '全选' }}
+            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1">
+              {{ checkboxVal.length ? `已选${checkboxVal.length}条消息` : '全选' }}
             </OCheckbox>
-            <template v-if="!checkboxes.length">
+            <template v-if="!checkboxVal.length">
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
               <RadioToggle v-model="filterParams.is_read" :options="readStatusOptions" />
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
@@ -455,7 +453,7 @@ const phoneFilterConfirm = (source: string) => {
             </template>
           </div>
           <div class="right">
-            <template v-if="checkboxes.length">
+            <template v-if="checkboxVal.length">
               <IconLink :label-class-names="['message-delete-read']" iconSize="20px" @click="markReadMultiMessages">
                 <template #prefix><IconRead /></template>
                 标记已读
@@ -466,12 +464,12 @@ const phoneFilterConfirm = (source: string) => {
               </IconLink>
             </template>
             <template v-else>
-              <OPopup trigger="click" position="br" @change="filterPopupVisibleChange" :unmount-on-hide="false">
+              <OPopup trigger="click" position="br" :unmount-on-hide="false">
                 <template #target>
                   <p style="cursor: pointer;">筛选</p>
                 </template>
                 <ContentWrapper vertical-padding="24px" style="border-radius: 4px; box-shadow: var(--o-shadow-2); width: 450px; background-color: var(--o-color-fill2); --layout-content-padding: 16px">
-                  <MessageCommonFilter ref="filterRef" @quick-fiter="applyQuickFilter" />
+                  <MessageCommonFilter ref="filterRef" @apply-quick-fiter="applyQuickFilter" @apply-filter="getData" />
                 </ContentWrapper>
               </OPopup>
             </template>
@@ -514,6 +512,10 @@ const phoneFilterConfirm = (source: string) => {
 </template>
 
 <style scoped lang="scss">
+:deep(.o-menu-item-content) {
+  width: 100%;
+}
+
 :deep(.message-delete-read) {
   @include tip1;
 }

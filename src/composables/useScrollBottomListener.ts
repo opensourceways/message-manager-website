@@ -12,7 +12,7 @@ const useScrollBottomListener = (oScrollerRef: Ref<InstanceType<typeof OScroller
   onMounted(() => {
     nextTick(() => {
       oScrollerRef.value?.getContainerEl()?.addEventListener('scroll', onScroll);
-    })
+    });
   });
   
   onUnmounted(() => {

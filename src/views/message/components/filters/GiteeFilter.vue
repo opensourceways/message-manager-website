@@ -1,48 +1,98 @@
 <script setup lang="ts">
-import { getAllSigs } from '@/api/messages';
+import { getMyRepos } from '@/api/messages';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
+import useSigFilter from '@/composables/useSigFilter';
 import { useUserInfoStore } from '@/stores/user';
 import { OForm, OFormItem, OOption, OSelect } from '@opensig/opendesign';
 import { computed, inject, onBeforeMount, ref, watch, type Ref } from 'vue';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
+const applyFilter = inject<() => void>('applyFilter');
+
+const {
+  sigBelong,
+  sigBelongOptions,
+  allSigReposMap,
+  sigList,
+  getSigs,
+  selectedSigs,
+  selectedRepos,
+} = useSigFilter();
+
+// ----------------repo归属----------------
+const repoBelong = ref<'myRepo' | 'otherRepo' | '' | undefined>();
+const repoBelongOptions = [
+  { label: '我管理的仓库', value: 'myRepo' },
+  { label: '其他仓库', value: 'otherRepo' },
+];
 
 // ----------------sig/repo----------------
-const allSigReposMap = ref(new Map<string, string[]>());
 onBeforeMount(() => {
-  getAllSigs().then(data => {
-    for (const item of data) {
-      allSigReposMap.value.set(item.sig_name, item.repos);
+  getSigs();
+  getMyRepos(userInfoStore.giteeLoginName as string).then((repos) => {
+    if (repos?.length) {
+      myRepoList.value = repos;
     }
   });
 });
 
-const sigList = computed(() => Array.from(allSigReposMap.value.keys()));
+const myRepoList = ref<string[]>([]);
 const repoList = computed(() => {
   if (selectedSigs.value.length) {
-    return selectedSigs.value.flatMap((sig) => allSigReposMap.value.get(sig as string) ?? []);
+    const repos = selectedSigs.value.flatMap((sig) => allSigReposMap.value.get(sig as string) ?? []);
+    if (repoBelong.value === 'myRepo') {
+      const set = new Set(myRepoList.value);
+      return repos.filter((item) => set.has(item));
+    }
+    if (repoBelong.value === 'otherRepo') {
+      const set = new Set(myRepoList.value);
+      return repos.filter((item) => !set.has(item));
+    }
+    return repos;
   }
-  return Array.from(allSigReposMap.value.values()).flat();
+  const repos = Array.from(allSigReposMap.value.values()).flat();
+  if (repoBelong.value === 'myRepo') {
+    const set = new Set(myRepoList.value);
+    return repos.filter((item) => set.has(item));
+  }
+  if (repoBelong.value === 'otherRepo') {
+    const set = new Set(myRepoList.value);
+    return repos.filter((item) => !set.has(item));
+  }
+  return repos;
 });
-const selectedSigs = ref<string[]>([]);
-const selectedRepos = ref<string[]>([]);
 
-const onSigChange = (sigs: (string | number)[]) => {
-  selectedSigs.value = sigs as string[];
+/**
+ * 下拉选择可见性改变
+ */
+const onSelectVisibilityChange = (val: boolean) => {
+  if (!val) {
+    if (applyFilter) {
+      applyFilter();
+    }
+  }
 };
 
-const onRepoChange = (val: (string | number)[]) => {
-  selectedRepos.value = val as string[];
+const onSelectClear = () => {
+  if (applyFilter) {
+    applyFilter();
+  }
+};
+
+const onSelectRemove = () => {
+  if (applyFilter) {
+    applyFilter();
+  }
 };
 
 // ----------------事件类型----------------
 const eventType = ref('');
 const eventTypes = [
-  { label: 'Issue',value: 'issue' },
-  { label: 'PR',value: 'pr' },
-  { label: '评论',value: 'note' },
+  { label: 'Issue', value: 'issue' },
+  { label: 'PR', value: 'pr' },
+  { label: '评论', value: 'note' },
 ];
 
 // ----------------提交人----------------
@@ -85,16 +135,11 @@ const displayEventState = computed(() => {
   }
   return [];
 });
-watch(displayEventState, () => eventState.value = '');
+watch(displayEventState, () => (eventState.value = ''));
 
 // ----------------评论归属----------------
 const noteType = ref('');
-const noteTypes = [
-  'Issue',
-  'PullRequest',
-  'Commit',
-];
-
+const noteTypes = ['Issue', 'PullRequest', 'Commit'];
 
 const reset = () => {
   selectedSigs.value = [];
@@ -106,19 +151,27 @@ const reset = () => {
   noteType.value = '';
 };
 
-const getFilterParams = () => {
+const getFilterParams = (): Record<string, string> => {
   const params: Record<string, string> = {};
   if (selectedSigs.value?.length) {
-    params.sig = selectedSigs.value.join();
+    if (sigBelong.value === 'mySig') {
+      params.my_sig = selectedSigs.value.join();
+    } else {
+      params.sig = selectedSigs.value.join();
+    }
   }
   if (selectedRepos.value?.length) {
-    params.repos = selectedRepos.value.join();
+    if (repoBelong.value === 'myRepo') {
+      params.my_management = selectedRepos.value.join();
+    } else {
+      params.repos = selectedRepos.value.join();
+    }
   }
   if (eventType.value) {
     params.event_type = eventType.value;
   }
   if (isBot.value) {
-    params.is_bot = isBot.value;
+    params.is_bot = Boolean(isBot.value);
   }
   if (eventType.value === 'pr') {
     if (eventState.value) {
@@ -150,21 +203,56 @@ defineExpose({
 
 <template>
   <OForm style="margin-top: 16px; --form-item-gap: 16px">
-    <OFormItem label="SIG组">
-      <FilterableSelect filterable :values="sigList" inputWidth="100%" :options-wrapper="popupContainer" @change="onSigChange"></FilterableSelect>
+    <OFormItem label="SIG归属">
+      <RadioToggle v-model="sigBelong" enable-cancel-select :options="sigBelongOptions" />
     </OFormItem>
-    <OFormItem label="仓库">
-      <FilterableSelect filterable :values="repoList" inputWidth="100%" :options-wrapper="popupContainer" @change="onRepoChange"></FilterableSelect>
+    <OFormItem label="SIG名称">
+      <FilterableSelect
+        v-model="selectedSigs"
+        filterable
+        clearable
+        placeholder="请选择SIG组"
+        :values="sigList"
+        inputWidth="100%"
+        :options-wrapper="popupContainer"
+        @visibility-change="onSelectVisibilityChange"
+        @clear="onSelectClear"
+        @remove="onSelectRemove"
+      ></FilterableSelect>
+    </OFormItem>
+    <OFormItem label="仓库归属">
+      <RadioToggle v-model="repoBelong" enable-cancel-select :options="repoBelongOptions" />
+    </OFormItem>
+    <OFormItem label="仓库名称">
+      <FilterableSelect
+        v-model="selectedRepos"
+        filterable
+        clearable
+        placeholder="请选择仓库"
+        :values="repoList"
+        inputWidth="100%"
+        :options-wrapper="popupContainer"
+        @visibility-change="onSelectVisibilityChange"
+        @clear="onSelectClear"
+        @remove="onSelectRemove"
+      ></FilterableSelect>
     </OFormItem>
     <OFormItem label="事件类型">
-      <RadioToggle v-model="eventType" :options="eventTypes" />
+      <RadioToggle v-model="eventType" @change="applyFilter" enable-cancel-select :options="eventTypes" />
     </OFormItem>
     <template v-if="eventType === 'pr' || eventType === 'issue'">
       <OFormItem label="事件关系">
-        <RadioToggle v-model="eventRelation" :options="eventRelations" />
+        <RadioToggle v-model="eventRelation" @change="applyFilter" enable-cancel-select :options="eventRelations" />
       </OFormItem>
       <OFormItem label="事件状态">
-        <OSelect v-model="eventState" clearable option-position="bottom" style="width: 100%; --select-radius: 4px" :options-wrapper="popupContainer">
+        <OSelect
+          v-model="eventState"
+          @options-visible-change="onSelectVisibilityChange"
+          clearable
+          option-position="bottom"
+          style="width: 100%; --select-radius: 4px"
+          :options-wrapper="popupContainer"
+        >
           <OOption v-for="item in displayEventState" :key="item.value" :value="item.value" :label="item.label">
             {{ item.label }}
           </OOption>
@@ -172,14 +260,21 @@ defineExpose({
       </OFormItem>
     </template>
     <OFormItem v-if="eventType === 'note'" label="评论归属">
-      <OSelect v-model="noteType" clearable option-position="bottom" style="width: 100%; --select-radius: 4px" :options-wrapper="popupContainer">
+      <OSelect
+        v-model="noteType"
+        @options-visible-change="onSelectVisibilityChange"
+        clearable
+        option-position="bottom"
+        style="width: 100%; --select-radius: 4px"
+        :options-wrapper="popupContainer"
+      >
         <OOption v-for="item in noteTypes" :key="item" :value="item" :label="item">
           {{ item }}
         </OOption>
       </OSelect>
     </OFormItem>
     <OFormItem label="提交人">
-      <RadioToggle v-model="isBot" :options="isBotOptions" />
+      <RadioToggle v-model="isBot" @change="applyFilter" enable-cancel-select :options="isBotOptions" />
     </OFormItem>
   </OForm>
 </template>

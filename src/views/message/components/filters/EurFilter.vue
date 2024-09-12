@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { inject, ref, type Ref } from 'vue';
+import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import { EUR_BUILD_STATUS } from '@/data/event';
 import { useUserInfoStore } from '@/stores/user';
-import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
-import { computed, inject, ref, type Ref } from 'vue';
 
 const userInfoStore = useUserInfoStore();
+const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
+const applyFilter = inject<() => void>('applyFilter');
 
 const projRelations = [
   { label: '我的项目', value: 'myProj' },
@@ -14,7 +16,11 @@ const projRelations = [
 const projRelation = ref();
 const buildStatus = ref<string[]>();
 
-const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
+const projRelationChange = () => {
+  if (applyFilter) {
+    applyFilter();
+  }
+};
 
 const reset = () => {
   projRelation.value = '';
@@ -45,7 +51,7 @@ defineExpose({
 <template>
   <OForm style="margin-top: 16px; --form-item-gap: 16px">
     <OFormItem label="项目关系">
-      <RadioToggle v-model="projRelation" :options="projRelations" />
+      <RadioToggle v-model="projRelation" :options="projRelations" @change="projRelationChange" />
     </OFormItem>
     <OFormItem label="构建状态">
       <OSelect

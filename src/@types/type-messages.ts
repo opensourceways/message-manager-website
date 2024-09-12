@@ -49,3 +49,8 @@ export interface Sig {
   sig_name: string;
   repos: string[];
 }
+
+export interface MySig {
+  sig: string;
+  type: string[];
+}

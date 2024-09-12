@@ -1,5 +1,5 @@
 import { request } from "@/shared/axios";
-import type { MessageT, Sig } from "@/@types/type-messages";
+import type { MessageT, MySig, Sig } from "@/@types/type-messages";
 import type { PagedResponseT } from "@/@types/types-common";
 
 /**
@@ -33,8 +33,8 @@ export function deleteMessages(...msgs: MessageT[]): Promise<any> {
  * 获取未读消息数量
  * @param msgs 消息列表
  */
-export function getUnreadCount(): Promise<number> {
-  return request.get('/message_center/inner/count').then(res => res.data.count).catch(() => 0);
+export function getUnreadCount() {
+  return request.get<{ count: { source: string, count: number }[] }>('/message_center/inner/count').then(res => res.data.count).catch(() => []);
 }
 
 export function getAllSigs() {
@@ -46,7 +46,11 @@ export function getRepoList() {
 }
 
 export function getMySigs(loginName: string) {
-  return request.get<{ data: Sig[] }>('/api-dsapi/query/sig/info?community=openeuler&search=fuzzy').then(res => res.data.data);
+  return request.get<{ data: MySig[] }>(`/api-dsapi/query/user/ownertype?community=openeuler&user=${loginName}`).then(res => res.data.data);
+}
+
+export function getMyRepos(loginName: string) {
+  return request.get<{ data: string[] }>(`/api-dsapi/query/user/owner/repos?community=openeuler&user=${loginName}`).then(res => res.data.data);
 }
 
 /**

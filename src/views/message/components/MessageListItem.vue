@@ -20,7 +20,7 @@ const props = defineProps<{
 
 const isPhone = inject<Ref<boolean>>('isPhone');
 
-const checkboxes = inject<Ref<(string | number)[]>>('checkboxes');
+const checkboxVal = inject<Ref<(string | number)[]>>('checkboxVal');
 
 const EXTRACT_REGEX = /<a href=".+">(.*?)<\/a>/;
 
@@ -84,12 +84,12 @@ const phoneStore = usePhoneStore();
       </div>
       <p class="time">{{ msg.formattedTime }}</p>
     </div>
-    <OCheckbox v-if="phoneStore.isManaging" class="checkbox" :value="msg.id" v-model="checkboxes" />
+    <OCheckbox v-if="phoneStore.isManaging" class="checkbox" :value="msg.id" v-model="checkboxVal" />
   </div>
 
   <div v-else class="message-list-item">
     <div class="list-item-left">
-      <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxes" />
+      <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
       <div>
         <p class="user-info">
           <OBadge :dot="true" v-if="!msg.is_read" color="danger">

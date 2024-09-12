@@ -1,21 +1,22 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
 
 export const useCheckbox = <T>(datasource: MaybeRefOrGetter<T[]>, cbValueExtractor: (item: T) => string | number) => {
-  const checkboxes = ref<(string | number)[]>([]);
+  const checkboxVal = ref<(string | number)[]>([]);
   const indeterminate = ref<boolean>(false);
-  const parentCheckbox = ref<(string | number)[]>([]);
-  const isCheckedAll = computed(() => parentCheckbox.value.length > 0);
+  const checkAllVal = ref<(string | number)[]>([]);
+  const isCheckedAll = computed(() => checkAllVal.value.length > 0);
   const ONE = [1];
   const EMPTY: any[] = [];
 
   const checkAll = () => {
     indeterminate.value = false;
-    parentCheckbox.value = ONE;
+    checkAllVal.value = ONE;
   };
 
   const clearCheckboxes = () => {
     indeterminate.value = false;
-    parentCheckbox.value = EMPTY;
+    checkAllVal.value = EMPTY;
+    checkboxVal.value = EMPTY;
   };
 
   watch(
@@ -28,44 +29,45 @@ export const useCheckbox = <T>(datasource: MaybeRefOrGetter<T[]>, cbValueExtract
   );
 
   watch(
-    () => parentCheckbox.value.length,
+    () => checkAllVal.value.length,
     (length) => {
       const ds = toValue(datasource);
       if (ds.length === 0) {
         return;
       }
       if (length) {
-        if (checkboxes.value.length < ds.length) {
-          checkboxes.value = ds.map(cbValueExtractor);
+        if (checkboxVal.value.length < ds.length) {
+          checkboxVal.value = ds.map(cbValueExtractor);
         }
       } else {
-        if (!indeterminate.value && checkboxes.value.length > 0) {
-          checkboxes.value = EMPTY;
+        if (!indeterminate.value && checkboxVal.value.length > 0) {
+          checkboxVal.value = EMPTY;
         }
       }
     }
   );
 
   watch(
-    () => checkboxes.value.length,
+    () => checkboxVal.value.length,
     (length) => {
       const ds = toValue(datasource);
       if (ds.length === 0) {
         return;
       }
+      const isCheckedAll = checkAllVal.value.length > 0;
       if (length === ds.length) {
-        if (!isCheckedAll.value) {
-          parentCheckbox.value = ONE;
+        if (!isCheckedAll) {
+          checkAllVal.value = ONE;
         }
         indeterminate.value = false;
       } else if (length === 0) {
-        if (isCheckedAll.value) {
-          parentCheckbox.value = EMPTY;
+        if (isCheckedAll) {
+          checkAllVal.value = EMPTY;
         }
         indeterminate.value = false;
       } else {
-        if (isCheckedAll.value) {
-          parentCheckbox.value = EMPTY;
+        if (isCheckedAll) {
+          checkAllVal.value = EMPTY;
         }
         indeterminate.value = true;
       }
@@ -73,9 +75,9 @@ export const useCheckbox = <T>(datasource: MaybeRefOrGetter<T[]>, cbValueExtract
   );
 
   return {
-    checkboxes,
+    checkboxVal,
     indeterminate,
-    parentCheckbox,
+    checkAllVal,
     isCheckedAll,
     clearCheckboxes,
     checkAll,

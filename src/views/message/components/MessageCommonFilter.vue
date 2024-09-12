@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, provide, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
@@ -14,42 +15,52 @@ import IconLink from '@/components/IconLink.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import EurFilter from './filters/EurFilter.vue';
 import GiteeFilter from './filters/GiteeFilter.vue';
-import { useRoute } from 'vue-router';
+import CveFilter from './filters/CveFilter.vue';
 
 const popupContainer = ref();
 provide('popupContainer', popupContainer);
+
 const message = useMessage();
 const route = useRoute();
-const source = computed<string>(() => route.query.source as string);
+const source = computed<string>(() => decodeURIComponent(route.query.source as string));
+
 const emit = defineEmits<{
   (event: 'reset'): void;
-  (event: 'quickFiter', val: string): void;
+  (event: 'applyQuickFiter', val: string): void;
+  (event: 'applyFilter', val: Record<string, any>): void;
 }>();
+
 const compMap = {
   [EventSources.EUR]: EurFilter,
   [EventSources.GITEE]: GiteeFilter,
+  [EventSources.CVE]: CveFilter,
 };
 const currentFilterComp = computed(() => compMap[source.value]);
 const currentCompRef = ref();
+const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
 
-const setCurrenCompRef = (el: any) => currentCompRef.value = el;
+provide('applyFilter', () =>
+  emit('applyFilter', {
+    source: source.value,
+    ...currentCompRef.value?.getFilterParams(),
+  })
+);
 
 // ----------------快捷筛选----------------
 /** 选中的快捷筛选 */
 const selectedQuickFilter = ref('');
 
+/** key: 事件源 */
 const quickFilterMap = ref(new Map<string, FilterRuleT[]>());
 const currentFilters = computed(() => quickFilterMap.value.get(source.value));
 
+/** 默认快捷筛选 */
 const defaultQuickFilters = computed(() => {
-  return currentFilters.value
-    ?.filter((filter) => filter.is_default)
-    .map((filter) => ({ label: filter.mode_name, value: filter.id }));
+  return currentFilters.value?.filter((filter) => filter.is_default).map((filter) => ({ label: filter.mode_name, value: filter.id }));
 });
+/** 用户创建筛选 */
 const quickFilters = computed(() => {
-  return currentFilters.value
-    ?.filter((filter) => !filter.is_default)
-    .map((filter) => ({ label: filter.mode_name, value: filter.id }));
+  return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => ({ label: filter.mode_name, value: filter.id }));
 });
 
 onMounted(() => {
@@ -73,7 +84,10 @@ const deleteFilter = (id: string | number) => {
     .then(() => {
       const filters = quickFilterMap.value.get(source);
       if (filters) {
-        filters.splice(filters.findIndex((fil) => fil.id === id), 1);
+        filters.splice(
+          filters.findIndex((fil) => fil.id === id),
+          1
+        );
       }
     })
     .catch(() => message.danger({ content: '删除失败' }));
@@ -113,24 +127,17 @@ const confirmSave = (id: string) => {
 };
 
 const applyQuickFilter = (id: string) => {
-  emit('quickFiter', currentFilters.value?.find((filter) => filter.id === id)?.mode_name as string);
-};
-
-const getFilterParams = (): Record<string, any> => {
-  return {
-    source: source.value,
-    ...currentCompRef.value?.getFilterParams(),
-  };
+  emit('applyQuickFiter', currentFilters.value?.find((filter) => filter.id === id)?.mode_name as string);
 };
 
 const reset = () => onReset(false);
 
-defineExpose({ getFilterParams, reset });
+defineExpose({ reset });
 </script>
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <template v-if="quickFilterMap.size">
+    <template v-if="quickFilterMap.size && source === EventSources.GITEE">
       <p class="sec-title">快捷筛选</p>
       <RadioToggle
         v-model="selectedQuickFilter"

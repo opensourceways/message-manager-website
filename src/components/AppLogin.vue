@@ -23,7 +23,7 @@ const toMsgCenter = () => router.push('/');
 <template>
   <template v-if="loginStore.isLogined">
     <div class="user-info" ref="userInfo">
-      <OBadge color="danger" v-if="unreadCountStore.count > 0" :value="unreadCountStore.count">
+      <OBadge color="danger" v-if="unreadCountStore.totalCount > 0" :value="unreadCountStore.totalCount">
         <img :src="userInfoStore.photo" />
         {{ userInfoStore.username }}
       </OBadge>
@@ -36,7 +36,7 @@ const toMsgCenter = () => router.push('/');
       <ul class="header-user-menu">
         <li @click="toUserCenter">个人中心</li>
         <li @click="toMsgCenter">
-          <OBadge color="danger" v-if="unreadCountStore.count > 0" :value="unreadCountStore.count"> 消息中心 </OBadge>
+          <OBadge color="danger" v-if="unreadCountStore.totalCount > 0" :value="unreadCountStore.totalCount"> 消息中心 </OBadge>
           <span v-else>消息中心</span>
         </li>
         <li @click="logout">退出登录</li>
