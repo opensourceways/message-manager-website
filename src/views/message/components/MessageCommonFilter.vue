@@ -27,7 +27,7 @@ const source = computed<string>(() => decodeURIComponent(route.query.source as s
 
 const emit = defineEmits<{
   (event: 'reset'): void;
-  (event: 'applyQuickFiter', val: string): void;
+  (event: 'applyQuickFilter', val: string): void;
   (event: 'applyFilter', val: Record<string, any>): void;
 }>();
 
@@ -67,8 +67,11 @@ const quickFilters = computed(() => {
   return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => ({ label: filter.mode_name, value: filter.id }));
 });
 
-onMounted(() => {
+onMounted(() => queryFilterRules());
+
+const queryFilterRules = () => {
   getFilterRules().then((data) => {
+    quickFilterMap.value.clear();
     data.forEach((item) => {
       const key = item.source;
       const filters = quickFilterMap.value.get(key);
@@ -79,7 +82,7 @@ onMounted(() => {
       }
     });
   });
-});
+}
 
 // ----------------删除快捷筛选----------------
 const deleteFilter = (id: string | number) => {
@@ -118,24 +121,32 @@ const onReset = (allowEmit = true) => {
   if (allowEmit) {
     emit('reset');
   }
+  webFilter.value = null;
 };
 
 const emailSwitch = ref(false);
 const weChatSwitch = ref(false);
 
 const saveRuleFlag = ref(false);
-const confirmSave = (id: string) => {
-  const mode_name = currentFilters.value?.find((filter) => filter.id === id)?.mode_name;
+const confirmSave = (mode_name: string) => {
   saveRule({
     spec_version: '1.0',
     mode_name,
     source: source.value,
     ...currentCompRef.value?.getFilterParams(),
-  }).then(() => message.success({ content: '保存成功' }));
+  }).then(() => {
+    queryFilterRules();
+    message.success({ content: '保存成功' });
+  });
 };
 
+const webFilter = ref<Record<string, any> | null | undefined>();
+provide('webFilter', webFilter);
+
 const applyQuickFilter = (id: string) => {
-  emit('applyQuickFiter', currentFilters.value?.find((filter) => filter.id === id)?.mode_name as string);
+  const filter = currentFilters.value?.find((filter) => filter.id === id);
+  emit('applyQuickFilter', filter?.mode_name as string);
+  webFilter.value = filter?.web_filter;
 };
 
 const reset = () => onReset(false);
@@ -145,21 +156,19 @@ defineExpose({ reset });
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <template v-if="quickFilterMap.size && source === EventSources.GITEE">
-      <p class="sec-title">快捷筛选</p>
-      <RadioToggle
-        v-model="selectedQuickFilter"
-        v-model:add-new="saveRuleFlag"
-        @confirm-add="confirmSave"
-        @change="applyQuickFilter"
-        :options="quickFilters"
-        :defaultOptions="defaultQuickFilters"
-        enable-rename-tags
-        enable-delete-tags
-        @remove="deleteFilter"
-        @rename="renameFilter"
-      />
-    </template>
+    <p class="sec-title">快捷筛选</p>
+    <RadioToggle
+      v-model="selectedQuickFilter"
+      v-model:add-new="saveRuleFlag"
+      @confirm-add="confirmSave"
+      @change="applyQuickFilter"
+      :options="quickFilters"
+      :defaultOptions="defaultQuickFilters"
+      enable-rename-tags
+      enable-delete-tags
+      @remove="deleteFilter"
+      @rename="renameFilter"
+    />
     <p class="sec-title">高级筛选</p>
     <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 

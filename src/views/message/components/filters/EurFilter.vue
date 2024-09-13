@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, type Ref } from 'vue';
+import { inject, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import { EUR_BUILD_STATUS } from '@/data/event';
@@ -8,6 +8,23 @@ import { useUserInfoStore } from '@/stores/user';
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter');
+
+const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
+
+watch(webFilter, val => {
+  if (!val) {
+    return;
+  }
+  if (val.build_owner) {
+    projRelation.value = 'myProj'
+  }
+  if (val.build_creator) {
+    projRelation.value = 'myExec'
+  }
+  if (val.build_status) {
+    buildStatus.value = val.build_status.split(',').map(Number);
+  }
+});
 
 const projRelations = [
   { label: '我的项目', value: 'myProj' },

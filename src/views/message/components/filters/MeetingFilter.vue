@@ -13,6 +13,18 @@ onBeforeMount(getSigs);
 
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter');
+const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
+
+watch(webFilter, (val) => {
+  if (val) {
+    if (val.meeting_sig) {
+      selectedSigs.value = val.meeting_sig.split(',');
+    }
+    if (val.start_time) {
+      date.value = new Date(val.start_time);
+    }
+  }
+});
 
 const datePickerRef = ref();
 

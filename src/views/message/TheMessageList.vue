@@ -467,7 +467,7 @@ const phoneFilterConfirm = (source: string) => {
                   <p style="cursor: pointer;">筛选</p>
                 </template>
                 <ContentWrapper vertical-padding="24px" style="border-radius: 4px; box-shadow: var(--o-shadow-2); width: 450px; background-color: var(--o-color-fill2); --layout-content-padding: 16px">
-                  <MessageCommonFilter ref="filterRef" @apply-quick-fiter="applyQuickFilter" @apply-filter="getData" />
+                  <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @apply-filter="getData" />
                 </ContentWrapper>
               </OPopup>
             </template>

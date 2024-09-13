@@ -13,4 +13,5 @@ export interface FilterRuleT {
   /** 版本 */
   spec_version: string;
   is_default: boolean;
+  web_filter: Record<string, any>;
 }

@@ -20,6 +20,53 @@ const {
   selectedSigs,
 } = useSigFilter();
 
+const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
+
+watch(webFilter, val => {
+  if (!val) {
+    return;
+  }
+  if (val.my_sig) {
+    sigBelong.value = 'mySig';
+    selectedSigs.value = val.sig.split(',');
+  } else if (val.other_sig) {
+    sigBelong.value = 'otherSig';
+    selectedSigs.value = val.sig.split(',');
+  } else if (val.sig) {
+    selectedSigs.value = val.sig.split(',');
+  }
+  if (val.my_management) {
+    repoBelong.value === 'myRepo'
+    selectedRepos.value = val.repos.split(',');
+  } else if (val.other_management) {
+    repoBelong.value === 'otherRepo'
+    selectedRepos.value = val.repos.split(',');
+  } else if (val.repos) {
+    selectedRepos.value = val.repos.split(',');
+  }
+  if (val.event_type) {
+    eventType.value = val.event_type;
+  }
+  if (val.is_bot) {
+    isBot.value = val.is_bot.toString();
+  }
+  if (val.pr_creator || val.issue_creator) {
+    eventRelation.value = '_creator'
+  }
+  if (val.pr_assignee || val.issue_assignee) {
+    eventRelation.value = '_assignee'
+  }
+  if (val.pr_state) {
+    eventState.value = val.pr_state
+  }
+  if (val.issue_state) {
+    eventState.value = val.issue_state
+  }
+  if (val.note_type) {
+    noteType.value = val.note_type
+  }
+});
+
 // ----------------repo归属----------------
 const repoBelong = ref<'myRepo' | 'otherRepo' | '' | undefined>();
 const repoBelongOptions = [
@@ -156,6 +203,8 @@ const getFilterParams = (): Record<string, string> => {
   if (selectedSigs.value?.length) {
     if (sigBelong.value === 'mySig') {
       params.my_sig = selectedSigs.value.join();
+    } else if (sigBelong.value === 'otherSig') {
+      params.other_sig = selectedSigs.value.join();
     } else {
       params.sig = selectedSigs.value.join();
     }
@@ -163,6 +212,8 @@ const getFilterParams = (): Record<string, string> => {
   if (selectedRepos.value?.length) {
     if (repoBelong.value === 'myRepo') {
       params.my_management = selectedRepos.value.join();
+    } else if (repoBelong.value === 'otherRepo') {
+      params.other_management = selectedRepos.value.join();
     } else {
       params.repos = selectedRepos.value.join();
     }

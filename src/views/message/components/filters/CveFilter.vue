@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeMount, ref, type Ref } from 'vue';
+import { computed, inject, onBeforeMount, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
@@ -17,37 +17,61 @@ const {
   selectedSigs,
 } = useSigFilter();
 
+const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
+
+watch(webFilter, val => {
+  if (!val) {
+    return;
+  }
+  if (val.my_sig) {
+    sigBelong.value = 'mySig';
+    selectedSigs.value = val.sig.split(',');
+  } else if (val.other_sig) {
+    sigBelong.value = 'otherSig';
+    selectedSigs.value = val.sig.split(',');
+  } else if (val.sig) {
+    selectedSigs.value = val.sig.split(',');
+  }
+
+  if (val.repos) {
+    selectedRepos.value = val.repos.split(',');
+  }
+  if (val.cve_affected) {
+    affected.value = val.cve_affected.split(',');
+  }
+});
+
 const versions = [
-  'openeuler-20.03_LTS_SP1-aarch64',
-  'openeuler-20.03_LTS_SP1-x86_64',
-  'openeuler-20.03_LTS_SP3-aarch64',
-  'openeuler-20.03_LTS_SP3-x86_64',
-  'openeuler-20.03_LTS_SP4-aarch64',
-  'openeuler-20.03_LTS_SP4-x86_64',
-  'openeuler-20.09-aarch64',
-  'openeuler-20.09-x86_64',
-  'openeuler-21.03-aarch64',
-  'openeuler-21.03-x86_64',
-  'openeuler-21.09-aarch64',
-  'openeuler-21.09-x86_64',
-  'openeuler-22.03_LTS-aarch64',
-  'openeuler-22.03_LTS-x86_64',
-  'openeuler-22.03_LTS_SP1-aarch64',
-  'openeuler-22.03_LTS_SP1-x86_64',
-  'openeuler-22.03_LTS_SP2-aarch64',
-  'openeuler-22.03_LTS_SP2-x86_64',
-  'openeuler-22.03_LTS_SP3-aarch64',
-  'openeuler-22.03_LTS_SP3-x86_64',
-  'openeuler-22.03_LTS_SP4-aarch64',
-  'openeuler-22.03_LTS_SP4-x86_64',
-  'openeuler-22.09-aarch64',
-  'openeuler-22.09-x86_64',
-  'openeuler-23.03-aarch64',
-  'openeuler-23.03-x86_64',
-  'openeuler-23.09-aarch64',
-  'openeuler-23.09-x86_64',
-  'openeuler-24.03_LTS-aarch64',
-  'openeuler-24.03_LTS-x86_64',
+  'openeuler-20.03_LTS_SP1',
+  'openeuler-20.03_LTS_SP1',
+  'openeuler-20.03_LTS_SP3',
+  'openeuler-20.03_LTS_SP3',
+  'openeuler-20.03_LTS_SP4',
+  'openeuler-20.03_LTS_SP4',
+  'openeuler-20.09',
+  'openeuler-20.09',
+  'openeuler-21.03',
+  'openeuler-21.03',
+  'openeuler-21.09',
+  'openeuler-21.09',
+  'openeuler-22.03_LTS',
+  'openeuler-22.03_LTS',
+  'openeuler-22.03_LTS_SP1',
+  'openeuler-22.03_LTS_SP1',
+  'openeuler-22.03_LTS_SP2',
+  'openeuler-22.03_LTS_SP2',
+  'openeuler-22.03_LTS_SP3',
+  'openeuler-22.03_LTS_SP3',
+  'openeuler-22.03_LTS_SP4',
+  'openeuler-22.03_LTS_SP4',
+  'openeuler-22.09',
+  'openeuler-22.09',
+  'openeuler-23.03',
+  'openeuler-23.03',
+  'openeuler-23.09',
+  'openeuler-23.09',
+  'openeuler-24.03_LTS',
+  'openeuler-24.03_LTS',
 ];
 
 // ----------------sve状态----------------
