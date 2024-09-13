@@ -15,8 +15,40 @@ const {
   sigList,
   getSigs,
   selectedSigs,
-  selectedRepos,
 } = useSigFilter();
+
+const versions = [
+  'openeuler-20.03_LTS_SP1-aarch64',
+  'openeuler-20.03_LTS_SP1-x86_64',
+  'openeuler-20.03_LTS_SP3-aarch64',
+  'openeuler-20.03_LTS_SP3-x86_64',
+  'openeuler-20.03_LTS_SP4-aarch64',
+  'openeuler-20.03_LTS_SP4-x86_64',
+  'openeuler-20.09-aarch64',
+  'openeuler-20.09-x86_64',
+  'openeuler-21.03-aarch64',
+  'openeuler-21.03-x86_64',
+  'openeuler-21.09-aarch64',
+  'openeuler-21.09-x86_64',
+  'openeuler-22.03_LTS-aarch64',
+  'openeuler-22.03_LTS-x86_64',
+  'openeuler-22.03_LTS_SP1-aarch64',
+  'openeuler-22.03_LTS_SP1-x86_64',
+  'openeuler-22.03_LTS_SP2-aarch64',
+  'openeuler-22.03_LTS_SP2-x86_64',
+  'openeuler-22.03_LTS_SP3-aarch64',
+  'openeuler-22.03_LTS_SP3-x86_64',
+  'openeuler-22.03_LTS_SP4-aarch64',
+  'openeuler-22.03_LTS_SP4-x86_64',
+  'openeuler-22.09-aarch64',
+  'openeuler-22.09-x86_64',
+  'openeuler-23.03-aarch64',
+  'openeuler-23.03-x86_64',
+  'openeuler-23.09-aarch64',
+  'openeuler-23.09-x86_64',
+  'openeuler-24.03_LTS-aarch64',
+  'openeuler-24.03_LTS-x86_64',
+];
 
 // ----------------sve状态----------------
 const cveState = ref('');
@@ -27,6 +59,7 @@ const cveStateOptions = [
 
 // ----------------sig/repo----------------
 onBeforeMount(getSigs);
+const selectedRepos = ref<string[]>([]);
 
 const repoList = computed(() => {
   if (selectedSigs.value.length) {
@@ -84,7 +117,7 @@ const getFilterParams = (): Record<string, string> => {
     params.cve_state = cveState.value;
   }
   if (affected.value?.length) {
-    params.repos = affected.value.join();
+    params.cve_affected = affected.value.join();
   }
   return params;
 };
@@ -133,11 +166,11 @@ defineExpose({
     </OFormItem>
     <OFormItem label="影响系统版本">
       <FilterableSelect
-        v-model="selectedRepos"
+        v-model="affected"
         filterable
         clearable
         placeholder="请选择仓库"
-        :values="repoList"
+        :values="versions"
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"

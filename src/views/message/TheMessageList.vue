@@ -77,14 +77,13 @@ let lastPollType: 'inner' | 'quick' = 'inner';
 let lastQueryRule: any;
 
 onMounted(() => {
-  getData();
-  /* intervalId = setInterval(() => {
+  intervalId = setInterval(() => {
     if (lastPollType === 'inner') {
       getData(lastFilterParams.value);
     } else {
       selectRule(lastQueryRule);
     }
-  }, 10_000); */
+  }, 10_000);
 });
 
 onUnmounted(() => clearInterval(intervalId));
@@ -177,8 +176,8 @@ const selectRule = (val: { source: string, mode_name: string }) => {
     filterByRule({
       source: val.source,
       mode_name: val.mode_name,
-      page: filterParams.page as number,
-      count_per_page: filterParams.count_per_page as number,
+      page: pageInfo.page as number,
+      count_per_page: pageInfo.count_per_page as number,
     }).then((res) => {
       const { count, query_info } = res.data;
       total.value = count;
@@ -202,8 +201,8 @@ const getData = (filterParams: Record<string, any> = {}) => {
   getMessages({
     source: decodeURIComponent(route.query.source as string),
     ...pageInfo,
+    ...timeRange,
     ...lastFilterParams.value,
-    ...timeRange
   })
     .then((res) => {
       const { count, query_info } = res.data;
@@ -352,7 +351,6 @@ const markReadMultiMessages = () => {
 const readStatus = ref('');
 const readStatusOptions = ref([
   { value: '', label: '全部' },
-  // { value: '1', label: '已读消息' },
   { value: '0', label: '未读' },
 ]);
 

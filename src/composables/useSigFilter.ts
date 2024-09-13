@@ -4,7 +4,6 @@ import { computed, ref } from 'vue';
 
 const useSigFilter = () => {
   const selectedSigs = ref<string[]>([]);
-  const selectedRepos = ref<string[]>([]);
   // ----------------sig归属----------------
   const sigBelong = ref<'mySig' | 'otherSig' | '' | undefined>();
   const sigBelongOptions = [
@@ -46,7 +45,6 @@ const useSigFilter = () => {
     sigList,
     getSigs,
     selectedSigs,
-    selectedRepos,
   };
 };
 

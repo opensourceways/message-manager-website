@@ -18,7 +18,6 @@ const {
   sigList,
   getSigs,
   selectedSigs,
-  selectedRepos,
 } = useSigFilter();
 
 // ----------------repo归属----------------
@@ -38,6 +37,7 @@ onBeforeMount(() => {
   });
 });
 
+const selectedRepos = ref<string[]>([]);
 const myRepoList = ref<string[]>([]);
 const repoList = computed(() => {
   if (selectedSigs.value.length) {

@@ -34,7 +34,7 @@ const emit = defineEmits<{
   (event: 'change', val: any): void;
   (event: 'confirmAdd', val: string): void;
   (event: 'remove', val: string | number, index: number): void;
-  (event: 'rename', val: string | number, newName: string, resolve: () => void, reject: (reason?: any) => void): void;
+  (event: 'rename', val: string | number, newName: string): void;
   (event: 'update:modelValue', val: any): void;
   (event: 'update:addNew', val: any): void;
 }>();
@@ -138,10 +138,12 @@ const confirmRename = () => {
     return;
   }
   if (typeof currentlyRenameTagIndex.value === 'number') {
-    new Promise<void>((resolve, reject) => {
-      emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value as number].value, renameContent.value, resolve, reject);
-    }).finally(() => (currentlyRenameTagIndex.value = null));
+    emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value as number].value, renameContent.value);
   }
+};
+
+const removeTag = (val: string | number, index: number) => {
+  emit('remove', val, index);
 };
 
 const setFilterTagClickOutside = (el: any, index: number) => {
@@ -149,7 +151,6 @@ const setFilterTagClickOutside = (el: any, index: number) => {
     return;
   }
   if (!el) {
-    console.log('remove', index)
     clickOutsideCancelFnMap.get(index)?.();
     clickOutsideCancelFnMap.delete(index);
     return;
@@ -195,7 +196,7 @@ onBeforeUnmount(() => {
     >
       <template #radio="{ checked }">
         <div class="toggle-item-wrapper" style="position: relative">
-          <div v-if="enableDeleteTags" class="close-icon" @click.stop.prevent="$emit('remove', item.value, index)">
+          <div v-if="enableDeleteTags" class="close-icon" @click.stop.prevent="removeTag(item.value, index)">
             <OIcon style="color: var(--o-color-fill2)"><IconClose /></OIcon>
           </div>
           <OToggle v-if="currentlyRenameTagIndex !== index" :checked="checked" style="--toggle-radius: 4px">

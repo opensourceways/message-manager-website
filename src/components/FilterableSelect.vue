@@ -205,6 +205,7 @@ const clearClick = (e: Event) => {
       position="bottom"
       trigger="click"
       @change="onVisibleChange"
+      style="--popup-shadow: var(--o-shadow-1)"
     >
       <div style="background-color: var(--o-color-fill2); padding: 12px; border-radius: 4px; overflow: hidden">
         <div class="mask" v-if="!values.length">

@@ -29,18 +29,14 @@ export function postSubsRule(data: Partial<FilterRuleT>, config?: RequestConfig)
 }
 
 /**
- * 修改消息接收规则
- * @param data 消息接收规则
- * @returns 调用结果
+ * 重命名快捷筛选
  */
-export function putSubsRule(data: {
-  update_info: { id: string; event_type: string }[];
-  delete_info?: { id: string }[];
-  create_info?: { event_type: string }[];
+export function putFilterRule(data: {
   source: string;
-  mode_name: string;
+  old_name: string;
+  new_name: string;
 }) {
-  return request.put('/message_center/config/subs', Object.assign(data, { spec_version: '1.0' }));
+  return request.put('/message_center/config/subs', Object.assign(data));
 }
 
 /**

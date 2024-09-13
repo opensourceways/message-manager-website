@@ -5,7 +5,7 @@ import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
 import type { FilterRuleT } from '@/@types/type-settings';
-import { deleteFilterRule, getFilterRules } from '@/api/api-settings';
+import { deleteFilterRule, getFilterRules, putFilterRule } from '@/api/api-settings';
 import { saveRule } from '@/api/messages';
 
 import IconClear from '~icons/app/icon-clear.svg';
@@ -16,6 +16,7 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import EurFilter from './filters/EurFilter.vue';
 import GiteeFilter from './filters/GiteeFilter.vue';
 import CveFilter from './filters/CveFilter.vue';
+import MeetingFilter from './filters/MeetingFilter.vue';
 
 const popupContainer = ref();
 provide('popupContainer', popupContainer);
@@ -34,16 +35,19 @@ const compMap = {
   [EventSources.EUR]: EurFilter,
   [EventSources.GITEE]: GiteeFilter,
   [EventSources.CVE]: CveFilter,
+  [EventSources.MEETING]: MeetingFilter,
 };
 const currentFilterComp = computed(() => compMap[source.value]);
 const currentCompRef = ref();
 const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
 
-provide('applyFilter', () =>
+provide('applyFilter', () =>{
+  console.log('?????', currentCompRef.value?.getFilterParams())
   emit('applyFilter', {
     source: source.value,
     ...currentCompRef.value?.getFilterParams(),
   })
+}
 );
 
 // ----------------快捷筛选----------------
@@ -94,13 +98,17 @@ const deleteFilter = (id: string | number) => {
 };
 
 // ----------------重命名筛选----------------
-const renameFilter = (filterId: string | number, newName: string, resolve: () => void, reject: () => void) => {
-  const filters = quickFilterMap.value.get(source.value);
-  if (filters) {
-    (filters.find((fil) => fil.id === filterId) as FilterRuleT).mode_name = newName;
+const renameFilter = (filterId: string | number, newName: string) => {
+  const filter = quickFilterMap.value.get(source.value)?.find((fil) => fil.id === filterId);
+  if (filter) {
+    putFilterRule({
+      source: source.value,
+      new_name: newName,
+      old_name: filter.mode_name,
+    })
+      .then(() => filter.mode_name = newName)
+      .catch(() => message.danger({ content: '重命名失败' }));
   }
-  // _TODO rename
-  resolve();
 };
 
 // ----------------重置----------------
