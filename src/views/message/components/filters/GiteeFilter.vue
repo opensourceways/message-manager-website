@@ -26,23 +26,21 @@ watch(webFilter, val => {
   if (!val) {
     return;
   }
-  if (val.my_sig) {
-    sigBelong.value = 'mySig';
-    selectedSigs.value = val.sig.split(',');
-  } else if (val.other_sig) {
-    sigBelong.value = 'otherSig';
-    selectedSigs.value = val.sig.split(',');
-  } else if (val.sig) {
+  if (val.sig) {
     selectedSigs.value = val.sig.split(',');
   }
+  if (val.repos) {
+    selectedRepos.value = val.repos.split(',');
+  }
+  if (val.my_sig) {
+    sigBelong.value = 'my_sig';
+  } else if (val.other_sig) {
+    sigBelong.value = 'other_sig';
+  }
   if (val.my_management) {
-    repoBelong.value === 'myRepo'
-    selectedRepos.value = val.repos.split(',');
+    repoBelong.value = 'my_management';
   } else if (val.other_management) {
-    repoBelong.value === 'otherRepo'
-    selectedRepos.value = val.repos.split(',');
-  } else if (val.repos) {
-    selectedRepos.value = val.repos.split(',');
+    repoBelong.value = 'other_management';
   }
   if (val.event_type) {
     eventType.value = val.event_type;
@@ -68,10 +66,10 @@ watch(webFilter, val => {
 });
 
 // ----------------repo归属----------------
-const repoBelong = ref<'myRepo' | 'otherRepo' | '' | undefined>();
+const repoBelong = ref<'my_management' | 'other_management' | '' | undefined>();
 const repoBelongOptions = [
-  { label: '我管理的仓库', value: 'myRepo' },
-  { label: '其他仓库', value: 'otherRepo' },
+  { label: '我管理的仓库', value: 'my_management' },
+  { label: '其他仓库', value: 'other_management' },
 ];
 
 // ----------------sig/repo----------------
@@ -89,22 +87,22 @@ const myRepoList = ref<string[]>([]);
 const repoList = computed(() => {
   if (selectedSigs.value.length) {
     const repos = selectedSigs.value.flatMap((sig) => allSigReposMap.value.get(sig as string) ?? []);
-    if (repoBelong.value === 'myRepo') {
+    if (repoBelong.value === 'my_management') {
       const set = new Set(myRepoList.value);
       return repos.filter((item) => set.has(item));
     }
-    if (repoBelong.value === 'otherRepo') {
+    if (repoBelong.value === 'other_management') {
       const set = new Set(myRepoList.value);
       return repos.filter((item) => !set.has(item));
     }
     return repos;
   }
   const repos = Array.from(allSigReposMap.value.values()).flat();
-  if (repoBelong.value === 'myRepo') {
+  if (repoBelong.value === 'my_management') {
     const set = new Set(myRepoList.value);
     return repos.filter((item) => set.has(item));
   }
-  if (repoBelong.value === 'otherRepo') {
+  if (repoBelong.value === 'other_management') {
     const set = new Set(myRepoList.value);
     return repos.filter((item) => !set.has(item));
   }
@@ -200,23 +198,17 @@ const reset = () => {
 
 const getFilterParams = (): Record<string, string> => {
   const params: Record<string, string> = {};
+  if (sigBelong.value) {
+    params[sigBelong.value] = userInfoStore.giteeLoginName as string;
+  }
+  if (repoBelong.value) {
+    params[repoBelong.value] = userInfoStore.giteeLoginName as string;
+  }
   if (selectedSigs.value?.length) {
-    if (sigBelong.value === 'mySig') {
-      params.my_sig = selectedSigs.value.join();
-    } else if (sigBelong.value === 'otherSig') {
-      params.other_sig = selectedSigs.value.join();
-    } else {
-      params.sig = selectedSigs.value.join();
-    }
+    params.sig = selectedSigs.value.join();
   }
   if (selectedRepos.value?.length) {
-    if (repoBelong.value === 'myRepo') {
-      params.my_management = selectedRepos.value.join();
-    } else if (repoBelong.value === 'otherRepo') {
-      params.other_management = selectedRepos.value.join();
-    } else {
-      params.repos = selectedRepos.value.join();
-    }
+    params.sig = selectedRepos.value.join();
   }
   if (eventType.value) {
     params.event_type = eventType.value;

@@ -5,19 +5,19 @@ import { computed, ref } from 'vue';
 const useSigFilter = () => {
   const selectedSigs = ref<string[]>([]);
   // ----------------sig归属----------------
-  const sigBelong = ref<'mySig' | 'otherSig' | '' | undefined>();
+  const sigBelong = ref<'my_sig' | 'other_sig' | '' | undefined>();
   const sigBelongOptions = [
-    { label: '我的SIG组', value: 'mySig' },
-    { label: '其它SIG组', value: 'otherSig' },
+    { label: '我的SIG组', value: 'my_sig' },
+    { label: '其它SIG组', value: 'other_sig' },
   ];
   const allSigReposMap = ref(new Map<string, string[]>());
 
   const mySigList = ref<string[]>([]);
   const sigList = computed(() => {
-    if (sigBelong.value === 'mySig') {
+    if (sigBelong.value === 'my_sig') {
       return mySigList.value;
     }
-    if (sigBelong.value === 'otherSig') {
+    if (sigBelong.value === 'other_sig') {
       const mySigSet = new Set(mySigList.value);
       return Array.from(allSigReposMap.value.keys()).filter((item) => !mySigSet.has(item));
     }

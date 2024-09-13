@@ -4,7 +4,9 @@ import { OForm, OFormItem } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import useSigFilter from '@/composables/useSigFilter';
+import { useUserInfoStore } from '@/stores/user';
 
+const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter');
 
@@ -23,14 +25,16 @@ watch(webFilter, val => {
   if (!val) {
     return;
   }
+  if (val.sig) {
+    selectedSigs.value = val.sig.split(',');
+  }
+  if (val.repos) {
+    selectedRepos.value = val.repos.split(',');
+  }
   if (val.my_sig) {
-    sigBelong.value = 'mySig';
-    selectedSigs.value = val.sig.split(',');
+    sigBelong.value = 'my_sig';
   } else if (val.other_sig) {
-    sigBelong.value = 'otherSig';
-    selectedSigs.value = val.sig.split(',');
-  } else if (val.sig) {
-    selectedSigs.value = val.sig.split(',');
+    sigBelong.value = 'other_sig';
   }
 
   if (val.repos) {
@@ -127,12 +131,11 @@ const reset = () => {
 
 const getFilterParams = (): Record<string, string> => {
   const params: Record<string, any> = {};
+  if (sigBelong.value) {
+    params[sigBelong.value] = userInfoStore.giteeLoginName as string;
+  }
   if (selectedSigs.value?.length) {
-    if (sigBelong.value === 'mySig') {
-      params.my_sig = selectedSigs.value.join();
-    } else {
-      params.sig = selectedSigs.value.join();
-    }
+    params.sig = selectedSigs.value.join();
   }
   if (selectedRepos.value?.length) {
     params.repos = selectedRepos.value.join();

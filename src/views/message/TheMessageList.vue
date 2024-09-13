@@ -10,7 +10,6 @@ import {
   OMenu,
   OMenuItem,
   useMessage,
-  OPopover,
   OLink,
   ODivider,
   OIcon,
@@ -44,7 +43,6 @@ const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const loginStore = useLoginStore();
 
-const settingsIcon = ref();
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
 const showTipPopOver = ref(false);
@@ -418,12 +416,6 @@ const phoneFilterConfirm = (source: string) => {
     <aside v-if="!isPhone">
       <div class="title">
         消息中心
-        <OPopover :target="settingsIcon" :visible="showTipPopOver" trigger="none">
-          <div class="first-time-login-tip">
-            <p>可在消息订阅管理中订阅你所关注的消息</p>
-            <OLink variant="text" @click="showTipPopOver = false">知道了</OLink>
-          </div>
-        </OPopover>
       </div>
       <OMenu v-model="activeMenu" @change="onMenuChange">
         <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
