@@ -156,19 +156,21 @@ defineExpose({ reset });
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <p class="sec-title">快捷筛选</p>
-    <RadioToggle
-      v-model="selectedQuickFilter"
-      v-model:add-new="saveRuleFlag"
-      @confirm-add="confirmSave"
-      @change="applyQuickFilter"
-      :options="quickFilters"
-      :defaultOptions="defaultQuickFilters"
-      enable-rename-tags
-      enable-delete-tags
-      @remove="deleteFilter"
-      @rename="renameFilter"
-    />
+    <template v-if="saveRuleFlag || currentFilters?.length">
+      <p class="sec-title">快捷筛选</p>
+      <RadioToggle
+        v-model="selectedQuickFilter"
+        v-model:add-new="saveRuleFlag"
+        @confirm-add="confirmSave"
+        @change="applyQuickFilter"
+        :options="quickFilters"
+        :defaultOptions="defaultQuickFilters"
+        enable-rename-tags
+        enable-delete-tags
+        @remove="deleteFilter"
+        @rename="renameFilter"
+      />
+    </template>
     <p class="sec-title">高级筛选</p>
     <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 

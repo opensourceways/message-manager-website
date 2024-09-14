@@ -20,8 +20,8 @@ watch(webFilter, (val) => {
     if (val.meeting_sig) {
       selectedSigs.value = val.meeting_sig.split(',');
     }
-    if (val.start_time) {
-      date.value = new Date(val.start_time);
+    if (val.meeting_start_time) {
+      date.value = new Date(Number(val.meeting_start_time));
     }
   }
 });
@@ -85,10 +85,7 @@ const getFilterParams = () => {
     params.meeting_sig = selectedSigs.value.join();
   }
   if (date.value) {
-    params.start_time = date.value.getTime();
-    const end = new Date(date.value);
-    end.setDate(end.getDate() + 1);
-    params.end_time = end.getTime();
+    params.meeting_start_time = date.value.getTime().toString();
   }
   return params;
 };
@@ -135,6 +132,7 @@ defineExpose({
           style="
             --input-bg-color-disabled: var(--input-bg-color);
             --input-bd-color-disabled: var(--input-bd-color);
+            height: 100%;
             width: 100%;
             position: absolute;
             left: 0;

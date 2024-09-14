@@ -5,17 +5,7 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import {
-  OCheckbox,
-  OMenu,
-  OMenuItem,
-  useMessage,
-  OLink,
-  ODivider,
-  OIcon,
-  OPopup,
-  OBadge,
-} from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OIcon, OPopup, OBadge } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IconDelete from '~icons/app/icon-delete.svg';
@@ -42,6 +32,7 @@ const router = useRouter();
 const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
 const loginStore = useLoginStore();
+const unreadCountStore = useUnreadMsgCountStore();
 
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
@@ -51,10 +42,6 @@ const total = ref(0);
 const pageInfo = reactive({
   page: 1,
   count_per_page: 10,
-});
-
-watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
-
 });
 
 watchEffect(() => {
@@ -87,87 +74,25 @@ onMounted(() => {
 onUnmounted(() => clearInterval(intervalId));
 
 // ----------------时间范围----------------
+const current = dayjs();
 const timeOptions = [
-  { label: '全部', value: 'all' },
-  { label: '近一周', value: 'week' },
-  { label: '近一月', value: 'month' },
+  { label: '全部', value: '' },
+  { label: '近一周', value: current.subtract(7, 'day').valueOf() },
+  { label: '近一月', value: current.subtract(1, 'month').valueOf() },
 ];
-
-const timeRange = reactive({
-  start_time: '' as string | number,
-  end_time: '' as string | number,
-});
-
-const timeRangeChange = (val: string) => {
-  if (val === 'all') {
-    timeRange.start_time = '';
-    timeRange.end_time = '';
-    return;
-  }
-  const current = dayjs();
-  if (val === 'week') {
-    timeRange.start_time = current.subtract(7, 'day').valueOf();
-    timeRange.end_time = current.valueOf();
-  } else if (val === 'month') {
-    timeRange.start_time = current.subtract(1, 'month').valueOf();
-    timeRange.end_time = current.valueOf();
-  }
-  getData();
-};
+const startTime = ref<number>();
 
 const applyQuickFilter = (mode_name: string) => selectRule({ source: route.query.source as string, mode_name });
 
 const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 
 // ------------------------多选框事件------------------------
-const {
-  checkAllVal,
-  checkboxVal,
-  indeterminate,
-  clearCheckboxes,
-} = useCheckbox(messages, (msg) => msg.id);
+const { checkAllVal, checkboxVal, indeterminate, clearCheckboxes } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxVal', checkboxVal);
-
-// ------------------------消息过滤------------------------
-const filterParams = reactive<Record<string, string | number>>({
-  source: '',
-  event_type: '',
-  is_read: '',
-  key_word: '',
-  is_bot: '',
-  is_special: '',
-  sig: '',
-  repos: '',
-  count_per_page: 10,
-  page: 1,
-  start_time: '',
-  end_time: '',
-  build_env: '',
-  meeting_start_time: '',
-  meeting_end_time: '',
-  meeting_action: '',
-  meeting_sig: '',
-  pr_state: '',
-  pr_creator: '',
-  pr_assignee: '',
-  issue_state: '',
-  issue_creator: '',
-  issue_assignee: '',
-  build_status: '',
-  build_creator: '',
-  build_owner: '',
-  note_type: '',
-  about: '',
-  my_sig: '',
-  my_management: '',
-  cve_component: '',
-  cve_state: '',
-  cve_affected: '',
-});
 
 const lastFilterParams = ref<Record<string, any>>({});
 
-const selectRule = (val: { source: string, mode_name: string }) => {
+const selectRule = (val: { source: string; mode_name: string }) => {
   if (val) {
     lastPollType = 'quick';
     lastQueryRule = val;
@@ -188,9 +113,16 @@ const selectRule = (val: { source: string, mode_name: string }) => {
       }
       clearCheckboxes();
       messages.value = query_info ?? [];
-    })
+    });
   }
 };
+
+// ------------------------切换已读未读消息------------------------
+const readStatus = ref('');
+const readStatusOptions = ref([
+  { value: '', label: '全部' },
+  { value: '0', label: '未读' },
+]);
 
 // ------------------------获取数据------------------------
 const getData = (filterParams: Record<string, any> = {}) => {
@@ -198,8 +130,9 @@ const getData = (filterParams: Record<string, any> = {}) => {
   lastFilterParams.value = filterParams;
   getMessages({
     source: decodeURIComponent(route.query.source as string),
+    is_read: readStatus.value,
+    start_time: startTime.value,
     ...pageInfo,
-    ...timeRange,
     ...lastFilterParams.value,
   })
     .then((res) => {
@@ -217,7 +150,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
     })
     .catch(() => {
       total.value = 0;
-    })
+    });
 };
 
 // ------------------------菜单事件------------------------
@@ -240,7 +173,7 @@ const onMenuChange = (source: string) => {
 watch(
   () => route.query,
   () => {
-    const source = decodeURIComponent(route.query.source as string)
+    const source = decodeURIComponent(route.query.source as string);
     if (source && source !== activeMenu.value) {
       activeMenu.value = source;
     }
@@ -264,6 +197,7 @@ const delMessage = async (msg: MessageT) => {
       .then(() => {
         message.success({ content: '删除成功' });
         getData();
+        clearCheckboxes();
       })
       .catch((error) => {
         if (error?.response?.data?.message) {
@@ -296,7 +230,7 @@ const delMultiMessages = async () => {
         } else {
           message.success({ content: '删除成功' });
         }
-        checkboxVal.value = [];
+        clearCheckboxes();
         getData();
       })
       .catch((error) => {
@@ -308,7 +242,6 @@ const delMultiMessages = async () => {
 };
 
 // ------------------------标记已读消息------------------------
-const unreadCountStore = useUnreadMsgCountStore();
 const markReadMessage = (msg: MessageT) => {
   if (msg.is_read) {
     return;
@@ -337,6 +270,7 @@ const markReadMultiMessages = () => {
     .then(() => {
       getData();
       unreadCountStore.updateCount();
+      clearCheckboxes();
     })
     .catch((error) => {
       if (error?.response?.data?.message) {
@@ -344,18 +278,6 @@ const markReadMultiMessages = () => {
       }
     });
 };
-
-// ------------------------切换已读未读消息------------------------
-const readStatus = ref('');
-const readStatusOptions = ref([
-  { value: '', label: '全部' },
-  { value: '0', label: '未读' },
-]);
-
-watch(readStatus, (val: string | number) => {
-  filterParams.is_read = val as string;
-  getData();
-});
 
 // ------------------------移动端------------------------
 const phoneStore = usePhoneStore();
@@ -414,15 +336,12 @@ const phoneFilterConfirm = (source: string) => {
 
   <div class="messages-container">
     <aside v-if="!isPhone">
-      <div class="title">
-        消息中心
-      </div>
+      <div class="title">消息中心</div>
       <OMenu v-model="activeMenu" @change="onMenuChange">
         <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
-          <p style="display: flex; justify-content: space-between;">
+          <p style="display: flex; justify-content: space-between">
             {{ EventSourceNames[url] }}
-            <OBadge color="danger" v-if="unreadCountStore.sourceCountMap.get(source)" :value="unreadCountStore.sourceCountMap.get(source)">
-            </OBadge>
+            <OBadge color="danger" v-if="unreadCountStore.sourceCountMap.get(url)" :value="unreadCountStore.sourceCountMap.get(url)"> </OBadge>
           </p>
         </OMenuItem>
       </OMenu>
@@ -437,9 +356,9 @@ const phoneFilterConfirm = (source: string) => {
             </OCheckbox>
             <template v-if="!checkboxVal.length">
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-              <RadioToggle v-model="filterParams.is_read" :options="readStatusOptions" />
+              <RadioToggle v-model="readStatus" @change="getData()" :options="readStatusOptions" />
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-              <RadioToggle @change="timeRangeChange" :options="timeOptions" />
+              <RadioToggle v-model="startTime" @change="getData()" :options="timeOptions" />
             </template>
           </div>
           <div class="right">
@@ -456,9 +375,18 @@ const phoneFilterConfirm = (source: string) => {
             <template v-else>
               <OPopup trigger="click" position="br" :unmount-on-hide="false">
                 <template #target>
-                  <p style="cursor: pointer;">筛选</p>
+                  <p style="cursor: pointer">筛选</p>
                 </template>
-                <ContentWrapper vertical-padding="24px" style="border-radius: 4px; box-shadow: var(--o-shadow-2); width: 450px; background-color: var(--o-color-fill2); --layout-content-padding: 16px">
+                <ContentWrapper
+                  vertical-padding="24px"
+                  style="
+                    border-radius: 4px;
+                    box-shadow: var(--o-shadow-2);
+                    width: 450px;
+                    background-color: var(--o-color-fill2);
+                    --layout-content-padding: 16px;
+                  "
+                >
                   <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @apply-filter="getData" />
                 </ContentWrapper>
               </OPopup>

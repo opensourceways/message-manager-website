@@ -185,8 +185,8 @@ onBeforeUnmount(() => {
           </OToggle>
         </template>
       </ORadio>
-      <ODivider direction="v" style="height: var(--toggle-size)"></ODivider>
     </template>
+    <ODivider v-if="normalizedDefaultOptions.length && normalizedOptions.length" direction="v" style="height: var(--toggle-size)" />
     <ORadio
       v-for="(item, index) in normalizedOptions"
       @click.left="onClickLabel(item, index, $event)"
