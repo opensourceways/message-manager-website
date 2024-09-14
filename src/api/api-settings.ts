@@ -56,26 +56,18 @@ export function deleteFilterRule(source: string, mode_name: string, event_type: 
 }
 
 /**
- * 消息接收设置，接受规则内接收方式多选框状态改变时调用
- *
- * @param needStatus 接收方式数组
+ * @param rule 接收方式数组
  * @param recipient_id 接收人ID
- * @param subscribe_id 接受规则id
  * @returns 调用结果
  */
-/* export function updateNeedStatus(rule: FilterRuleT) {
+export function updateMailStatus(filterId: string | number, recipient_id: string, need_mail = true) {
   const data: Record<string, any> = {
-    need_inner_message: false,
-    need_mail: false,
     need_message: false,
     need_phone: false,
-    recipient_id: rule.recipient_id.toString(),
-    subscribe_id: rule.ids.map(Number),
+    need_inner_message: true,
+    need_mail,
+    recipient_id,
+    subscribe_id: [filterId],
   };
-  rule.needCheckboxes?.forEach((item) => (data[item] = true));
   return request.put('/message_center/config/push', data);
-} */
-
-/* export function postPushConfig(data: any) {
-  return request.post('/message_center/config/push', data, { ignoreDuplicates: true });
-} */
+}

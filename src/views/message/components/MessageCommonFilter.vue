@@ -5,7 +5,7 @@ import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
 import type { FilterRuleT } from '@/@types/type-settings';
-import { deleteFilterRule, getFilterRules, putFilterRule } from '@/api/api-settings';
+import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-settings';
 import { saveRule } from '@/api/messages';
 
 import IconClear from '~icons/app/icon-clear.svg';
@@ -17,6 +17,7 @@ import EurFilter from './filters/EurFilter.vue';
 import GiteeFilter from './filters/GiteeFilter.vue';
 import CveFilter from './filters/CveFilter.vue';
 import MeetingFilter from './filters/MeetingFilter.vue';
+import { useUserInfoStore } from '@/stores/user';
 
 const popupContainer = ref();
 provide('popupContainer', popupContainer);
@@ -24,6 +25,7 @@ provide('popupContainer', popupContainer);
 const message = useMessage();
 const route = useRoute();
 const source = computed<string>(() => decodeURIComponent(route.query.source as string));
+const userInfo = useUserInfoStore();
 
 const emit = defineEmits<{
   (event: 'reset'): void;
@@ -41,14 +43,13 @@ const currentFilterComp = computed(() => compMap[source.value]);
 const currentCompRef = ref();
 const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
 
-provide('applyFilter', () =>{
-  console.log('?????', currentCompRef.value?.getFilterParams())
+provide('applyFilter', () => {
+  console.log('?????', currentCompRef.value?.getFilterParams());
   emit('applyFilter', {
     source: source.value,
     ...currentCompRef.value?.getFilterParams(),
-  })
-}
-);
+  });
+});
 
 // ----------------快捷筛选----------------
 /** 选中的快捷筛选 */
@@ -82,7 +83,7 @@ const queryFilterRules = () => {
       }
     });
   });
-}
+};
 
 // ----------------删除快捷筛选----------------
 const deleteFilter = (id: string | number) => {
@@ -109,7 +110,7 @@ const renameFilter = (filterId: string | number, newName: string) => {
       new_name: newName,
       old_name: filter.mode_name,
     })
-      .then(() => filter.mode_name = newName)
+      .then(() => (filter.mode_name = newName))
       .catch(() => message.danger({ content: '重命名失败' }));
   }
 };
@@ -126,6 +127,15 @@ const onReset = (allowEmit = true) => {
 
 const emailSwitch = ref(false);
 const weChatSwitch = ref(false);
+
+const onEmailChange = (val: string | number | boolean) => {
+  const filterId = selectedQuickFilter.value;
+  if (val) {
+    updateMailStatus(filterId, userInfo.recipientId?.toString() as string);
+  } else {
+    updateMailStatus(filterId, userInfo.recipientId?.toString() as string, false);
+  }
+};
 
 const saveRuleFlag = ref(false);
 const confirmSave = (mode_name: string) => {
@@ -184,9 +194,9 @@ defineExpose({ reset });
     <p>同步用以下方式通知我</p>
     <div class="switches">
       <p>邮箱通知</p>
-      <OSwitch v-model="emailSwitch"></OSwitch>
-      <p>微信通知</p>
-      <OSwitch v-model="weChatSwitch"></OSwitch>
+      <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter"></OSwitch>
+      <p style="color: var(--o-color-control1)">微信通知</p>
+      <OSwitch v-model="weChatSwitch" disabled></OSwitch>
     </div>
 
     <IconLink @click="onReset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: -6px">
