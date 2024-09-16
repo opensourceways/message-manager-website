@@ -10,19 +10,12 @@ const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter');
 
-const {
-  sigBelong,
-  sigBelongOptions,
-  allSigReposMap,
-  sigList,
-  getSigs,
-  selectedSigs,
-} = useSigFilter();
+const { sigBelong, sigBelongOptions, allSigReposMap, sigList, getSigs, selectedSigs } = useSigFilter();
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-watch(webFilter, val => {
-  if (!val) {
+const syncParams = (val: Record<string, any>) => {
+  if (!val || !Object.keys(val).length) {
     return;
   }
   if (val.sig) {
@@ -43,38 +36,25 @@ watch(webFilter, val => {
   if (val.cve_affected) {
     affected.value = val.cve_affected.split(',');
   }
-});
+};
+
+watch(webFilter, syncParams);
 
 const versions = [
   'openeuler-20.03_LTS_SP1',
-  'openeuler-20.03_LTS_SP1',
-  'openeuler-20.03_LTS_SP3',
   'openeuler-20.03_LTS_SP3',
   'openeuler-20.03_LTS_SP4',
-  'openeuler-20.03_LTS_SP4',
-  'openeuler-20.09',
   'openeuler-20.09',
   'openeuler-21.03',
-  'openeuler-21.03',
-  'openeuler-21.09',
   'openeuler-21.09',
   'openeuler-22.03_LTS',
-  'openeuler-22.03_LTS',
-  'openeuler-22.03_LTS_SP1',
   'openeuler-22.03_LTS_SP1',
   'openeuler-22.03_LTS_SP2',
-  'openeuler-22.03_LTS_SP2',
-  'openeuler-22.03_LTS_SP3',
   'openeuler-22.03_LTS_SP3',
   'openeuler-22.03_LTS_SP4',
-  'openeuler-22.03_LTS_SP4',
-  'openeuler-22.09',
   'openeuler-22.09',
   'openeuler-23.03',
-  'openeuler-23.03',
   'openeuler-23.09',
-  'openeuler-23.09',
-  'openeuler-24.03_LTS',
   'openeuler-24.03_LTS',
 ];
 
@@ -82,7 +62,7 @@ const versions = [
 const cveState = ref('');
 const cveStateOptions = [
   { label: '待我处理的', value: 'open' },
-  { label: '处理完成的', value: 'rejected,closed' }
+  { label: '处理完成的', value: 'rejected,closed' },
 ];
 
 // ----------------sig/repo----------------
@@ -102,7 +82,7 @@ const affected = ref<string[]>([]);
 /**
  * 下拉选择可见性改变
  */
- const onSelectVisibilityChange = (val: boolean) => {
+const onSelectVisibilityChange = (val: boolean) => {
   if (!val) {
     if (applyFilter) {
       applyFilter();
@@ -167,7 +147,6 @@ defineExpose({
         clearable
         placeholder="请选择SIG组"
         :values="sigList"
-        inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
         @clear="onSelectClear"

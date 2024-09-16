@@ -15,16 +15,19 @@ const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter');
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-watch(webFilter, (val) => {
-  if (val) {
-    if (val.meeting_sig) {
-      selectedSigs.value = val.meeting_sig.split(',');
-    }
-    if (val.meeting_start_time) {
-      date.value = new Date(Number(val.meeting_start_time));
-    }
+const syncParams = (val: Record<string, any>) => {
+  if (!val || !Object.keys(val).length) {
+    return;
   }
-});
+  if (val.meeting_sig) {
+    selectedSigs.value = val.meeting_sig.split(',');
+  }
+  if (val.meeting_start_time) {
+    date.value = new Date(Number(val.meeting_start_time));
+  }
+};
+
+watch(webFilter, syncParams);
 
 const datePickerRef = ref();
 

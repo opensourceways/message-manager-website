@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { inject, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OIcon, OPopup, OBadge } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OIcon, OPopup, OBadge, OIconFilter } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IconDelete from '~icons/app/icon-delete.svg';
 import IconRead from '~icons/app/icon-read.svg';
 
-import { EventSourceNames, EventSources } from '@/data/event';
+import { EmptyTip, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/messages';
 import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
-import { useLoginStore } from '@/stores/user';
+import { useLoginStore, useUserInfoStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
@@ -26,6 +26,7 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
 import IconLink from '@/components/IconLink.vue';
 
+const userInfoStore = useUserInfoStore();
 const message = useMessage();
 const { locale } = useI18n();
 const router = useRouter();
@@ -73,6 +74,11 @@ onMounted(() => {
 
 onUnmounted(() => clearInterval(intervalId));
 
+/** 当前事件源 */
+const source = computed(() => decodeURIComponent(route.query.source as string));
+
+const filterPopupWidth = computed(() => (source.value === EventSources.CVE ? '480px' : '450px'));
+
 // ----------------时间范围----------------
 const current = dayjs();
 const timeOptions = [
@@ -82,7 +88,7 @@ const timeOptions = [
 ];
 const startTime = ref<number>();
 
-const applyQuickFilter = (mode_name: string) => selectRule({ source: route.query.source as string, mode_name });
+const applyQuickFilter = (mode_name: string) => selectRule({ source: source.value, mode_name });
 
 const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 
@@ -129,7 +135,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
   lastPollType = 'inner';
   lastFilterParams.value = filterParams;
   getMessages({
-    source: decodeURIComponent(route.query.source as string),
+    source: source.value,
     is_read: readStatus.value,
     start_time: startTime.value,
     ...pageInfo,
@@ -171,11 +177,10 @@ const onMenuChange = (source: string) => {
 
 // ------------------------监听路由改变------------------------
 watch(
-  () => route.query,
-  () => {
-    const source = decodeURIComponent(route.query.source as string);
-    if (source && source !== activeMenu.value) {
-      activeMenu.value = source;
+  source,
+  (val) => {
+    if (val && val !== activeMenu.value) {
+      activeMenu.value = val;
     }
     getData();
   },
@@ -279,6 +284,10 @@ const markReadMultiMessages = () => {
     });
 };
 
+const goBindGiteeAcc = () => {
+  window.open('https://id.openeuler.org/zh/profile');
+};
+
 // ------------------------移动端------------------------
 const phoneStore = usePhoneStore();
 
@@ -375,17 +384,22 @@ const phoneFilterConfirm = (source: string) => {
             <template v-else>
               <OPopup trigger="click" position="br" :unmount-on-hide="false">
                 <template #target>
-                  <p style="cursor: pointer">筛选</p>
+                  <OLink style="--link-color-hover: var(--o-color-primary1)">
+                    筛选
+                    <template #icon>
+                      <OIcon><OIconFilter /></OIcon>
+                    </template>
+                  </OLink>
                 </template>
                 <ContentWrapper
                   vertical-padding="24px"
-                  style="
-                    border-radius: 4px;
-                    box-shadow: var(--o-shadow-2);
-                    width: 450px;
-                    background-color: var(--o-color-fill2);
-                    --layout-content-padding: 16px;
-                  "
+                  :style="{
+                    'border-radius': '4px',
+                    'box-shadow': 'var(--o-shadow-2)',
+                    width: filterPopupWidth,
+                    'background-color': 'var(--o-color-fill2)',
+                    '--layout-content-padding': '16px',
+                  }"
                 >
                   <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @apply-filter="getData" />
                 </ContentWrapper>
@@ -405,7 +419,8 @@ const phoneFilterConfirm = (source: string) => {
         </template>
         <div v-else class="no-messages">
           <img src="@/assets/svg-icons/icon-no-messages.svg" />
-          <p>暂无消息</p>
+          <p>{{ EmptyTip[source] }}</p>
+          <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">接收Gitee消息，请<OLink @click="goBindGiteeAcc">绑定Gitee账号</OLink></p>
         </div>
 
         <template v-if="isPhone && phoneStore.isManaging">
@@ -603,7 +618,7 @@ const phoneFilterConfirm = (source: string) => {
       position: relative;
       display: flex;
       border-radius: 4px;
-      padding: 0 12px;
+      padding-left: 12px;
 
       @include respond-to('phone') {
         height: auto;

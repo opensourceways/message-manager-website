@@ -23,11 +23,13 @@ const isPhone = inject<Ref<boolean>>('isPhone');
 const checkboxVal = inject<Ref<(string | number)[]>>('checkboxVal');
 
 const EXTRACT_REGEX = /<a href=".+">(.*?)<\/a>/;
+const LINE_BR = /\n/g;
 
 const Title = (props: { msg: MessageT }) => {
-  const matched = props.msg.summary.match(EXTRACT_REGEX);
+  const summary = props.msg.summary.replace(LINE_BR, '');
+  const matched = summary.match(EXTRACT_REGEX);
   const extracted = matched && matched[1];
-  const split = props.msg.summary.split(EXTRACT_REGEX);
+  const split = summary.split(EXTRACT_REGEX);
   let replaceIndex: number;
   if (extracted) {
     replaceIndex = split.findIndex((item) => item === extracted);

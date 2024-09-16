@@ -22,8 +22,8 @@ const {
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-watch(webFilter, val => {
-  if (!val) {
+const syncParams = (val: Record<string, any>) => {
+  if (!val || !Object.keys(val).length) {
     return;
   }
   if (val.sig) {
@@ -63,7 +63,9 @@ watch(webFilter, val => {
   if (val.note_type) {
     noteType.value = val.note_type
   }
-});
+};
+
+watch(webFilter, syncParams);
 
 // ----------------repo归属----------------
 const repoBelong = ref<'my_management' | 'other_management' | '' | undefined>();
@@ -141,9 +143,9 @@ const eventTypes = [
 ];
 
 // ----------------提交人----------------
-const isBot = ref();
+const isBot = ref('');
 const isBotOptions = [
-  { label: '全部', value: '' },
+  { label: '全部', value: 'all' },
   { label: '非机器人', value: 'false' },
 ];
 
@@ -187,10 +189,12 @@ const noteType = ref('');
 const noteTypes = ['Issue', 'PullRequest', 'Commit'];
 
 const reset = () => {
+  sigBelong.value = '';
+  repoBelong.value = '';
   selectedSigs.value = [];
   selectedRepos.value = [];
   eventType.value = '';
-  isBot.value = null;
+  isBot.value = '';
   eventState.value = '';
   eventRelation.value = '';
   noteType.value = '';
@@ -213,7 +217,7 @@ const getFilterParams = (): Record<string, string> => {
   if (eventType.value) {
     params.event_type = eventType.value;
   }
-  if (isBot.value) {
+  if (isBot.value && isBot.value !== 'all') {
     params.is_bot = isBot.value;
   }
   if (eventType.value === 'pr') {

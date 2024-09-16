@@ -11,8 +11,8 @@ const applyFilter = inject<() => void>('applyFilter');
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-watch(webFilter, val => {
-  if (!val) {
+const syncParams = (val: Record<string, any>) => {
+  if (!val || !Object.keys(val).length) {
     return;
   }
   if (val.build_owner) {
@@ -24,7 +24,9 @@ watch(webFilter, val => {
   if (val.build_status) {
     buildStatus.value = val.build_status.split(',').map(Number);
   }
-});
+};
+
+watch(webFilter, syncParams);
 
 const projRelations = [
   { label: '我的项目', value: 'myProj' },
@@ -57,6 +59,12 @@ const getFilterParams = () => {
   return params;
 };
 
+const onOptionsVisibleChange = () => {
+  if (applyFilter) {
+    applyFilter();
+  }
+}
+
 const exceededLabel = (vals: SelectOptionT[]) => `${vals.length}个选项被选中`;
 
 defineExpose({
@@ -81,6 +89,7 @@ defineExpose({
         option-position="bottom"
         style="width: 100%; --select-radius: 4px"
         :options-wrapper="popupContainer"
+        @options-visible-change="onOptionsVisibleChange"
       >
         <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
           {{ item.label }}

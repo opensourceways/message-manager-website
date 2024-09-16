@@ -34,10 +34,12 @@ const emit = defineEmits<{
   (event: 'change', val: any): void;
   (event: 'confirmAdd', val: string): void;
   (event: 'remove', val: string | number, index: number): void;
-  (event: 'rename', val: string | number, newName: string): void;
+  (event: 'rename', val: { label: string; value: string | number }, newName: string): void;
   (event: 'update:modelValue', val: any): void;
   (event: 'update:addNew', val: any): void;
 }>();
+
+const radioVal = useVModel(props, 'modelValue', emit);
 
 const normalizedOptions = computed(() =>
   props.options.map((item) => {
@@ -56,8 +58,6 @@ const normalizedDefaultOptions = computed(() =>
     return item;
   })
 );
-
-const radioVal = useVModel(props, 'modelValue', emit);
 
 const changeRadioVal = (val: string | number | boolean) => {
   emit('change', val);
@@ -138,8 +138,9 @@ const confirmRename = () => {
     return;
   }
   if (typeof currentlyRenameTagIndex.value === 'number') {
-    emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value as number].value, renameContent.value);
+    emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value as number], renameContent.value);
   }
+  currentlyRenameTagIndex.value = null;
 };
 
 const removeTag = (val: string | number, index: number) => {

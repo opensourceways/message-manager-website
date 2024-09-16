@@ -44,7 +44,6 @@ const currentCompRef = ref();
 const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
 
 provide('applyFilter', () => {
-  console.log('?????', currentCompRef.value?.getFilterParams());
   emit('applyFilter', {
     source: source.value,
     ...currentCompRef.value?.getFilterParams(),
@@ -56,16 +55,16 @@ provide('applyFilter', () => {
 const selectedQuickFilter = ref('');
 
 /** key: 事件源 */
-const quickFilterMap = ref(new Map<string, FilterRuleT[]>());
+const quickFilterMap = ref(new Map<string, Partial<FilterRuleT>[]>());
 const currentFilters = computed(() => quickFilterMap.value.get(source.value));
 
 /** 默认快捷筛选 */
 const defaultQuickFilters = computed(() => {
-  return currentFilters.value?.filter((filter) => filter.is_default).map((filter) => ({ label: filter.mode_name, value: filter.id }));
+  return currentFilters.value?.filter((filter) => filter.is_default).map((filter) => (filter.mode_name as string));
 });
 /** 用户创建筛选 */
 const quickFilters = computed(() => {
-  return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => ({ label: filter.mode_name, value: filter.id }));
+  return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => (filter.mode_name as string));
 });
 
 onMounted(() => queryFilterRules());
@@ -102,15 +101,15 @@ const deleteFilter = (id: string | number) => {
 };
 
 // ----------------重命名筛选----------------
-const renameFilter = (filterId: string | number, newName: string) => {
-  const filter = quickFilterMap.value.get(source.value)?.find((fil) => fil.id === filterId);
+const renameFilter = (oldVal: { label: string; value: string | number }, newName: string) => {
+  const filter = currentFilters.value?.find((fil) => fil.mode_name === oldVal.label);
   if (filter) {
+    filter.mode_name = newName;
     putFilterRule({
       source: source.value,
       new_name: newName,
       old_name: filter.mode_name,
     })
-      .then(() => (filter.mode_name = newName))
       .catch(() => message.danger({ content: '重命名失败' }));
   }
 };
@@ -138,24 +137,27 @@ const onEmailChange = (val: string | number | boolean) => {
 };
 
 const saveRuleFlag = ref(false);
+
+/** 新增 */
 const confirmSave = (mode_name: string) => {
   saveRule({
     spec_version: '1.0',
     mode_name,
     source: source.value,
     ...currentCompRef.value?.getFilterParams(),
-  }).then(() => {
-    queryFilterRules();
-    message.success({ content: '保存成功' });
+  }).catch(() => {
+    message.danger({ content: '保存失败' });
   });
+  quickFilterMap.value.get(source.value)?.push({ mode_name });
 };
 
+/** 选中的快捷筛选的detail，用来给高级筛选里回显 */
 const webFilter = ref<Record<string, any> | null | undefined>();
 provide('webFilter', webFilter);
 
-const applyQuickFilter = (id: string) => {
-  const filter = currentFilters.value?.find((filter) => filter.id === id);
-  emit('applyQuickFilter', filter?.mode_name as string);
+const applyQuickFilter = (mode_name: string) => {
+  emit('applyQuickFilter', mode_name);
+  const filter = currentFilters.value?.find((filter) => filter.mode_name === mode_name);
   webFilter.value = filter?.web_filter;
 };
 
