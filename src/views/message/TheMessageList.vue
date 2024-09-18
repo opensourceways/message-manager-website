@@ -347,7 +347,7 @@ const phoneFilterConfirm = (source: string) => {
 </script>
 
 <template>
-  <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" :show="showNoEmail" @confirm="goBindEmail" confirm-text="前往绑定"></ConfirmDialog>
+  <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindEmail" confirm-text="前往绑定"></ConfirmDialog>
 
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
 
