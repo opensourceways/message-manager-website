@@ -67,6 +67,7 @@ const showNoEmail = ref(false);
 
 const goBindEmail = () => {
   windowOpen(import.meta.env.VITE_LOGIN_URL);
+  showNoEmail.value = false;
 };
 
 onMounted(() => {

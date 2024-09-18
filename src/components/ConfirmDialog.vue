@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ODialog, type DialogActionT } from '@opensig/opendesign';
+import { useVModel } from '@vueuse/core';
 
 const emit = defineEmits<{
   (event: 'confirm'): void;
   (event: 'cancel'): void;
+  (event: 'update:show', val: boolean): void;
 }>();
 const props = defineProps<{
   show: boolean;
@@ -13,6 +15,8 @@ const props = defineProps<{
   cancelText?: string;
 }>();
 
+const visible = useVModel(props, 'show', emit);
+
 const actions: DialogActionT[] = [
   {
     id: 'cancel',
@@ -21,7 +25,10 @@ const actions: DialogActionT[] = [
     color: 'primary',
     size: 'large',
     round: 'pill',
-    onClick: () => emit('confirm'),
+    onClick: () => {
+      emit('confirm');
+      visible.value = false;
+    },
   },
   {
     id: 'ok',
@@ -30,13 +37,16 @@ const actions: DialogActionT[] = [
     variant: 'outline',
     round: 'pill',
     size: 'large',
-    onClick: () => emit('cancel'),
+    onClick: () => {
+      emit('cancel');
+      visible.value = false;
+    },
   },
 ];
 </script>
 
 <template>
-  <ODialog :maskClose="false" :visible="show" :actions="actions" size="small" style="--dlg-radius: 4px">
+  <ODialog :maskClose="false" v-model:visible="visible" :actions="actions" size="small" style="--dlg-radius: 4px">
     <template #header>{{ title }}</template>
     <div style="display: flex; justify-content: center">
       {{ content }}
