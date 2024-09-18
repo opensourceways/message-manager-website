@@ -107,11 +107,11 @@ const phoneStore = usePhoneStore();
       <p>{{ sourceGroupTitle + msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <IconLink @click="$emit('deleteMessage')">
-          <template #suffix><DeleteIcon /></template>
-        </IconLink>
         <IconLink @click="$emit('readMessage')" :disabled="msg.is_read">
           <template #suffix><ReadIcon /></template>
+        </IconLink>
+        <IconLink @click="$emit('deleteMessage')">
+          <template #suffix><DeleteIcon /></template>
         </IconLink>
       </div>
     </div>
