@@ -6,10 +6,10 @@ export const EventSources = {
 };
 
 export const EventSourceNames: Record<string, string> = {
-  [EventSources.EUR]: 'EUR',
-  [EventSources.GITEE]: 'Gitee',
-  [EventSources.MEETING]: '会议',
-  [EventSources.CVE]: '漏洞',
+  [EventSources.EUR]: 'EUR消息',
+  [EventSources.GITEE]: 'Gitee消息',
+  [EventSources.MEETING]: '会议通知',
+  [EventSources.CVE]: '漏洞消息',
 };
 
 export const EventSourceTypes = {

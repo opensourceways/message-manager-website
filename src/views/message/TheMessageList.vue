@@ -163,7 +163,6 @@ const getData = (filterParams: Record<string, any> = {}) => {
           msg.formattedTime = date.fromNow();
         }
       }
-      clearCheckboxes();
       messages.value = query_info ?? [];
     })
     .catch(() => {
@@ -191,6 +190,7 @@ const onMenuChange = (source: string) => {
 watch(
   source,
   (val) => {
+    clearCheckboxes();
     if (val && val !== activeMenu.value) {
       activeMenu.value = val;
     }
@@ -352,10 +352,10 @@ const phoneFilterConfirm = (source: string) => {
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
 
   <!-- 移动端特有弹窗 -->
-  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg>
+  <!-- <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg> -->
 
   <!-- 移动端特有弹窗 -->
-  <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg>
+  <!-- <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg> -->
 
   <div class="messages-container">
     <aside v-if="!isPhone">
@@ -419,7 +419,7 @@ const phoneFilterConfirm = (source: string) => {
                 </ContentWrapper>
               </OPopup>
             </template>
-            <OLink v-if="isPhone && !phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink>
+            <!-- <OLink v-if="isPhone && !phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink> -->
           </div>
         </div>
         <template v-if="total > 0">
@@ -439,7 +439,7 @@ const phoneFilterConfirm = (source: string) => {
           </p>
         </div>
 
-        <template v-if="isPhone && phoneStore.isManaging">
+        <!-- <template v-if="isPhone && phoneStore.isManaging">
           <div style="height: 62px"></div>
           <Teleport to="body">
             <div class="phone-footer">
@@ -453,7 +453,7 @@ const phoneFilterConfirm = (source: string) => {
               </div>
             </div>
           </Teleport>
-        </template>
+        </template> -->
       </div>
     </div>
   </div>
