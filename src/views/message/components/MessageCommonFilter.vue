@@ -85,16 +85,14 @@ const queryFilterRules = () => {
 };
 
 // ----------------删除快捷筛选----------------
-const deleteFilter = (id: string | number) => {
-  const { source, mode_name, event_type } = currentFilters.value?.find((fil) => fil.id === id) as FilterRuleT;
+const deleteFilter = (item: { label: string; value: string | number }) => {
+  const index = currentFilters.value?.findIndex((fil) => fil.mode_name === item.value) as number;
+  const { source, mode_name, event_type } = currentFilters.value?.[index] as FilterRuleT;
   deleteFilterRule(source, mode_name, event_type)
     .then(() => {
       const filters = quickFilterMap.value.get(source);
       if (filters) {
-        filters.splice(
-          filters.findIndex((fil) => fil.id === id),
-          1
-        );
+        filters.splice(index, 1);
       }
     })
     .catch(() => message.danger({ content: '删除失败' }));

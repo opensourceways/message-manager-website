@@ -5,16 +5,18 @@ const emit = defineEmits<{
   (event: 'confirm'): void;
   (event: 'cancel'): void;
 }>();
-defineProps<{
+const props = defineProps<{
   show: boolean;
   title: string;
   content: string;
+  confirmText?: string;
+  cancelText?: string;
 }>();
 
 const actions: DialogActionT[] = [
   {
     id: 'cancel',
-    label: '确定',
+    label: props.confirmText || '确定',
     variant: 'solid',
     color: 'primary',
     size: 'large',
@@ -23,7 +25,7 @@ const actions: DialogActionT[] = [
   },
   {
     id: 'ok',
-    label: '取消',
+    label: props.cancelText || '取消',
     color: 'primary',
     variant: 'outline',
     round: 'pill',

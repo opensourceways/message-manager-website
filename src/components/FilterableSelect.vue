@@ -53,8 +53,7 @@ const emit = defineEmits<{
 }>();
 
 const popupWidth = ref('');
-
-const vMounted = {
+const vUpdated = {
   updated(el: HTMLDivElement) {
     nextTick(() => {
       const { width } = el.getBoundingClientRect();
@@ -157,7 +156,7 @@ const clearClick = (e: Event) => {
 </script>
 
 <template>
-  <div ref="selectRef" v-mounted :class="['select-head', 'o-select', 'o-select-normal', 'o-select-outline', 'o-select-medium', clearable ? 'o-select-clearable' : '']">
+  <div ref="selectRef" v-updated :class="['select-head', 'o-select', 'o-select-normal', 'o-select-outline', 'o-select-medium', clearable ? 'o-select-clearable' : '']">
     <input
       v-if="checkboxVal.length === 0"
       type="text"
@@ -212,7 +211,7 @@ const clearClick = (e: Event) => {
       position="bottom"
       trigger="click"
       @change="onVisibleChange"
-      :style="{ '--popup-shadow': 'var(--o-shadow-1)', width: popupWidth }"
+      :style="{ '--popup-shadow': 'var(--o-shadow-1)', minWidth: popupWidth }"
     >
       <div style="background-color: var(--o-color-fill2); padding: 12px; border-radius: 4px; overflow: hidden">
         <div class="mask" v-if="!values.length">

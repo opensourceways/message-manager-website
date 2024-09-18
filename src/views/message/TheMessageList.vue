@@ -25,6 +25,7 @@ import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
 import IconLink from '@/components/IconLink.vue';
+import { windowOpen } from '@/utils/common';
 
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
@@ -62,7 +63,17 @@ let intervalId: ReturnType<typeof setInterval>;
 let lastPollType: 'inner' | 'quick' = 'inner';
 let lastQueryRule: any;
 
+const showNoEmail = ref(false);
+
+const goBindEmail = () => {
+  windowOpen(import.meta.env.VITE_LOGIN_URL);
+};
+
 onMounted(() => {
+  if (!userInfoStore.email) {
+    showNoEmail.value = true;
+    return;
+  }
   intervalId = setInterval(() => {
     if (lastPollType === 'inner') {
       getData(lastFilterParams.value);
@@ -335,6 +346,8 @@ const phoneFilterConfirm = (source: string) => {
 </script>
 
 <template>
+  <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" :show="showNoEmail" @confirm="goBindEmail" confirm-text="前往绑定"></ConfirmDialog>
+
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
 
   <!-- 移动端特有弹窗 -->
@@ -420,7 +433,9 @@ const phoneFilterConfirm = (source: string) => {
         <div v-else class="no-messages">
           <img src="@/assets/svg-icons/icon-no-messages.svg" />
           <p>{{ EmptyTip[source] }}</p>
-          <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">接收Gitee消息，请<OLink @click="goBindGiteeAcc">绑定Gitee账号</OLink></p>
+          <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
+            接收Gitee消息，请<OLink color="primary" @click="goBindGiteeAcc">绑定Gitee账号</OLink>
+          </p>
         </div>
 
         <template v-if="isPhone && phoneStore.isManaging">
@@ -647,7 +662,6 @@ const phoneFilterConfirm = (source: string) => {
   justify-content: center;
   align-items: center;
   height: 900px;
-  gap: 24px;
   font-size: 16px;
   color: var(--o-color-info3);
 
@@ -658,6 +672,7 @@ const phoneFilterConfirm = (source: string) => {
   img {
     height: 162px;
     width: 276px;
+    margin-bottom: 24px;
   }
 }
 

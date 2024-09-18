@@ -33,7 +33,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'change', val: any): void;
   (event: 'confirmAdd', val: string): void;
-  (event: 'remove', val: string | number, index: number): void;
+  (event: 'remove', val: { label: string; value: string | number }): void;
   (event: 'rename', val: { label: string; value: string | number }, newName: string): void;
   (event: 'update:modelValue', val: any): void;
   (event: 'update:addNew', val: any): void;
@@ -138,13 +138,13 @@ const confirmRename = () => {
     return;
   }
   if (typeof currentlyRenameTagIndex.value === 'number') {
-    emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value as number], renameContent.value);
+    emit('rename', { ...normalizedOptions.value[currentlyRenameTagIndex.value as number] }, renameContent.value);
   }
   currentlyRenameTagIndex.value = null;
 };
 
-const removeTag = (val: string | number, index: number) => {
-  emit('remove', val, index);
+const removeTag = (val: { label: string; value: string | number }) => {
+  emit('remove', val);
 };
 
 const setFilterTagClickOutside = (el: any, index: number) => {
@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
     >
       <template #radio="{ checked }">
         <div class="toggle-item-wrapper" style="position: relative">
-          <div v-if="enableDeleteTags" class="close-icon" @click.stop.prevent="removeTag(item.value, index)">
+          <div v-if="enableDeleteTags" class="close-icon" @click.stop.prevent="removeTag({ ...item })">
             <OIcon style="color: var(--o-color-fill2)"><IconClose /></OIcon>
           </div>
           <OToggle v-if="currentlyRenameTagIndex !== index" :checked="checked" style="--toggle-radius: 4px">
