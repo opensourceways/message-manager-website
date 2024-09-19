@@ -136,7 +136,7 @@ defineExpose({
 </script>
 
 <template>
-  <OForm style="margin-top: 16px; --form-item-gap: 16px">
+  <OForm style="margin-top: 16px; --form-item-gap: 16px" label-width="100px"  >
     <OFormItem label="SIG归属">
       <RadioToggle v-model="sigBelong" enable-cancel-select :options="sigBelongOptions" />
     </OFormItem>

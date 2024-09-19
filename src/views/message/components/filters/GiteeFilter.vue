@@ -9,7 +9,7 @@ import { computed, inject, onBeforeMount, ref, watch, type Ref } from 'vue';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter');
+const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const {
   sigBelong,
@@ -122,18 +122,6 @@ const onSelectVisibilityChange = (val: boolean) => {
   }
 };
 
-const onSelectClear = () => {
-  if (applyFilter) {
-    applyFilter();
-  }
-};
-
-const onSelectRemove = () => {
-  if (applyFilter) {
-    applyFilter();
-  }
-};
-
 // ----------------事件类型----------------
 const eventType = ref('');
 const eventTypes = [
@@ -198,6 +186,7 @@ const reset = () => {
   eventState.value = '';
   eventRelation.value = '';
   noteType.value = '';
+  applyFilter();
 };
 
 const getFilterParams = (): Record<string, string> => {
@@ -263,8 +252,8 @@ defineExpose({
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
-        @clear="onSelectClear"
-        @remove="onSelectRemove"
+        @clear="applyFilter"
+        @remove="applyFilter"
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="仓库归属">
@@ -280,8 +269,8 @@ defineExpose({
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
-        @clear="onSelectClear"
-        @remove="onSelectRemove"
+        @clear="applyFilter"
+        @remove="applyFilter"
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="事件类型">
@@ -296,6 +285,7 @@ defineExpose({
           v-model="eventState"
           @options-visible-change="onSelectVisibilityChange"
           clearable
+          @clear="applyFilter"
           option-position="bottom"
           style="width: 100%; --select-radius: 4px"
           :options-wrapper="popupContainer"

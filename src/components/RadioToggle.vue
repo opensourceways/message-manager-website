@@ -83,6 +83,18 @@ const cancel = (value: string | number, ev?: MouseEvent) => {
 const isAddNew = useVModel(props, 'addNew', emit);
 const newTagContent = ref('');
 watch(isAddNew, (val) => {
+  if (val) {
+    const nextCount = normalizedOptions.value.reduce((count, opt) => {
+      if (opt.label.startsWith('我创建的')) {
+        const num = Number.parseInt(opt.label.slice(4));
+        if (!Number.isNaN(num)) {
+          return Math.max(num, count) + 1;
+        }
+      }
+      return count;
+    }, 1);
+    newTagContent.value = `我创建的${nextCount}`;
+  }
   if (!val) {
     newTagContent.value = '';
   }

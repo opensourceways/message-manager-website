@@ -53,6 +53,7 @@ const Title = (props: { msg: MessageT }) => {
     {
       class: 'msg-title',
       unread: !props.msg.is_read,
+      style: { fontWeight: props.msg.is_read ? 'normal' : 'bold' }
     },
     title
   );
@@ -98,7 +99,7 @@ const phoneStore = usePhoneStore();
             <WordAvatar :name="msg.user" size="small" />
           </OBadge>
           <WordAvatar v-else :name="msg.user" size="small" />
-          <span>{{ msg.user }}</span>
+          <span :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.user }}</span>
         </p>
         <Title :msg="msg" />
       </div>
@@ -107,10 +108,10 @@ const phoneStore = usePhoneStore();
       <p>{{ sourceGroupTitle + msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <IconLink @click="$emit('readMessage')" hover-color="var(--o-color-danger1)" :disabled="msg.is_read">
+        <IconLink @click="$emit('readMessage')" :disabled="msg.is_read" title="已读">
           <template #suffix><ReadIcon /></template>
         </IconLink>
-        <IconLink @click="$emit('deleteMessage')">
+        <IconLink @click="$emit('deleteMessage')" hover-color="var(--o-color-danger1)" title="删除">
           <template #suffix><DeleteIcon /></template>
         </IconLink>
       </div>

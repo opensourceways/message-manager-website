@@ -20,7 +20,7 @@ import { useLoginStore, useUserInfoStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
-import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
+// import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
@@ -65,10 +65,7 @@ let lastQueryRule: any;
 
 const showNoEmail = ref(false);
 
-const goBindEmail = () => {
-  windowOpen(import.meta.env.VITE_LOGIN_URL);
-  showNoEmail.value = false;
-};
+const goBindUserInfo = () => windowOpen('https://id.openeuler.org/zh/profile');
 
 onMounted(() => {
   if (!userInfoStore.email) {
@@ -94,9 +91,9 @@ const filterPopupWidth = computed(() => (source.value === EventSources.CVE ? '48
 // ----------------时间范围----------------
 const current = dayjs();
 const timeOptions = [
-  { label: '全部', value: '' },
-  { label: '近一周', value: current.subtract(7, 'day').valueOf() },
+  { label: '至今', value: '' },
   { label: '近一月', value: current.subtract(1, 'month').valueOf() },
+  { label: '近一周', value: current.subtract(7, 'day').valueOf() },
 ];
 const startTime = ref<number>();
 
@@ -296,10 +293,6 @@ const markReadMultiMessages = () => {
     });
 };
 
-const goBindGiteeAcc = () => {
-  window.open('https://id.openeuler.org/zh/profile');
-};
-
 // ------------------------移动端------------------------
 const phoneStore = usePhoneStore();
 
@@ -335,7 +328,7 @@ watch(
   } else {
     phoneStore.checkedAll = false;
   }
-}); */
+});
 
 const phoneFilterConfirm = (source: string) => {
   if (!source) {
@@ -343,11 +336,11 @@ const phoneFilterConfirm = (source: string) => {
     return;
   }
   router.push({ path: '/', query: { source } });
-};
+}; */
 </script>
 
 <template>
-  <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindEmail" confirm-text="前往绑定"></ConfirmDialog>
+  <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindUserInfo" confirm-text="前往绑定"></ConfirmDialog>
 
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
 
@@ -390,7 +383,7 @@ const phoneFilterConfirm = (source: string) => {
                 <template #prefix><IconRead /></template>
                 标记已读
               </IconLink>
-              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" @click="delMultiMessages">
+              <IconLink :label-class-names="['message-delete-read']" hover-color="var(--o-color-danger1)" iconSize="20px" @click="delMultiMessages">
                 <template #prefix><IconDelete /></template>
                 删除
               </IconLink>
@@ -401,7 +394,7 @@ const phoneFilterConfirm = (source: string) => {
                   <OLink style="--link-color-hover: var(--o-color-primary1)">
                     筛选
                     <template #icon>
-                      <OIcon><OIconFilter /></OIcon>
+                      <OIcon style="width: 20px; font-size: 20px;"><OIconFilter /></OIcon>
                     </template>
                   </OLink>
                 </template>
@@ -435,7 +428,7 @@ const phoneFilterConfirm = (source: string) => {
           <img src="@/assets/svg-icons/icon-no-messages.svg" />
           <p>{{ EmptyTip[source] }}</p>
           <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
-            接收Gitee消息，请<OLink color="primary" @click="goBindGiteeAcc">绑定Gitee账号</OLink>
+            接收Gitee消息，请<OLink style="--link-color: var(--o-color-primary1); font-weight: bold" @click="goBindUserInfo">绑定Gitee账号</OLink>
           </p>
         </div>
 
@@ -509,6 +502,7 @@ const phoneFilterConfirm = (source: string) => {
 }
 
 .menu-item {
+  --menu-item-radius: 4px;
   --menu-item-bg-color-selected: var(--o-color-control3-light);
   --menu-item-bg-color-hover: var(--o-color-control2-light);
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));

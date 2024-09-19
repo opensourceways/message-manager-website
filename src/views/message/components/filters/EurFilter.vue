@@ -48,11 +48,11 @@ const reset = () => {
 
 const getFilterParams = () => {
   const params: Record<string, string> = { event_type: 'build' };
-  if (userInfoStore.giteeLoginName) {
+  if (userInfoStore.username) {
     if (projRelation.value === 'myProj') {
-      params.build_owner = userInfoStore.giteeLoginName;
+      params.build_owner = userInfoStore.username;
     } else if (projRelation.value === 'myExec') {
-      params.build_creator = userInfoStore.giteeLoginName;
+      params.build_creator = userInfoStore.username;
     }
   }
   buildStatus.value?.length && (params.build_status = buildStatus.value.join());
