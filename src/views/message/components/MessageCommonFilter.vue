@@ -60,11 +60,11 @@ const currentFilters = computed(() => quickFilterMap.value.get(source.value));
 
 /** 默认快捷筛选 */
 const defaultQuickFilters = computed(() => {
-  return currentFilters.value?.filter((filter) => filter.is_default).map((filter) => (filter.mode_name as string));
+  return currentFilters.value?.filter((filter) => filter.is_default).map((filter) => filter.mode_name as string);
 });
 /** 用户创建筛选 */
 const quickFilters = computed(() => {
-  return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => (filter.mode_name as string));
+  return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => filter.mode_name as string);
 });
 
 onMounted(() => queryFilterRules());
@@ -107,8 +107,7 @@ const renameFilter = (oldVal: { label: string; value: string | number }, newName
       source: source.value,
       new_name: newName,
       old_name: filter.mode_name,
-    })
-      .catch(() => message.danger({ content: '重命名失败' }));
+    }).catch(() => message.danger({ content: '重命名失败' }));
   }
 };
 
@@ -144,9 +143,11 @@ const confirmSave = (mode_name: string) => {
     mode_name,
     source: source.value,
     ...filterDetail,
-  }).catch(() => {
-    message.danger({ content: '保存失败' });
-  });
+  })
+    .then(queryFilterRules)
+    .catch(() => {
+      message.danger({ content: '保存失败' });
+    });
   quickFilterMap.value.get(source.value)?.push({ mode_name, web_filter: filterDetail });
 };
 
