@@ -7,7 +7,7 @@ import { useUserInfoStore } from '@/stores/user';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter');
+const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
@@ -35,12 +35,6 @@ const projRelations = [
 const projRelation = ref();
 const buildStatus = ref<string[]>();
 
-const projRelationChange = () => {
-  if (applyFilter) {
-    applyFilter();
-  }
-};
-
 const reset = () => {
   projRelation.value = '';
   buildStatus.value = [];
@@ -59,12 +53,6 @@ const getFilterParams = () => {
   return params;
 };
 
-const onOptionsVisibleChange = () => {
-  if (applyFilter) {
-    applyFilter();
-  }
-}
-
 const exceededLabel = (vals: SelectOptionT[]) => `${vals.length}个选项被选中`;
 
 defineExpose({
@@ -76,7 +64,7 @@ defineExpose({
 <template>
   <OForm style="margin-top: 16px; --form-item-gap: 16px">
     <OFormItem label="项目关系">
-      <RadioToggle v-model="projRelation" :options="projRelations" @change="projRelationChange" />
+      <RadioToggle v-model="projRelation" :options="projRelations" @change="applyFilter" />
     </OFormItem>
     <OFormItem label="构建状态">
       <OSelect
@@ -89,7 +77,7 @@ defineExpose({
         option-position="bottom"
         style="width: 100%; --select-radius: 4px"
         :options-wrapper="popupContainer"
-        @options-visible-change="onOptionsVisibleChange"
+        @options-visible-change="applyFilter"
       >
         <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
           {{ item.label }}

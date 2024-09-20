@@ -1,5 +1,5 @@
-import { getAllSigs, getMySigs } from '@/api/messages';
-import { useUserInfoStore } from '@/stores/user';
+import useSigStore from '@/stores/sigs';
+import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 
 const useSigFilter = () => {
@@ -10,9 +10,16 @@ const useSigFilter = () => {
     { label: '我的SIG组', value: 'my_sig' },
     { label: '其它SIG组', value: 'other_sig' },
   ];
-  const allSigReposMap = ref(new Map<string, string[]>());
 
-  const mySigList = ref<string[]>([]);
+  const sigStore = useSigStore();
+  const { allSigReposMap, mySigList } = storeToRefs(sigStore);
+  if (!allSigReposMap.value.size) {
+    sigStore.querySigs();
+  }
+  if (!mySigList.value.length) {
+    sigStore.queryMySigs();
+  }
+
   const sigList = computed(() => {
     if (sigBelong.value === 'my_sig') {
       return mySigList.value;
@@ -24,26 +31,12 @@ const useSigFilter = () => {
     return Array.from(allSigReposMap.value.keys());
   });
 
-  const getSigs = () => {
-    getAllSigs().then((data) => {
-      for (const item of data) {
-        allSigReposMap.value.set(item.sig_name, item.repos);
-      }
-    });
-    getMySigs(useUserInfoStore().giteeLoginName as string).then((data) => {
-      if (data?.length) {
-        mySigList.value = data.map((item) => item.sig);
-      }
-    });
-  };
-
   return {
     sigBelong,
     sigBelongOptions,
     allSigReposMap,
     mySigList,
     sigList,
-    getSigs,
     selectedSigs,
   };
 };

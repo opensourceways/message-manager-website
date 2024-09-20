@@ -33,27 +33,15 @@ const { locale } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const { isRevealed, reveal, confirm, cancel } = useConfirmDialog();
-const loginStore = useLoginStore();
 const unreadCountStore = useUnreadMsgCountStore();
 
 const messages = ref<MessageT[]>([]);
 dayjs.locale(locale.value);
-const showTipPopOver = ref(false);
 
 const total = ref(0);
 const pageInfo = reactive({
   page: 1,
   count_per_page: 10,
-});
-
-watchEffect(() => {
-  if (loginStore.isLogined) {
-    const showTipCount = Number(sessionStorage.getItem('showTipCount') ?? '0');
-    if (Number(showTipCount) < 1) {
-      showTipPopOver.value = true;
-      sessionStorage.setItem('showTipCount', (showTipCount + 1).toString());
-    }
-  }
 });
 
 const isPhone = inject<Ref<boolean>>('isPhone');
@@ -357,7 +345,13 @@ const phoneFilterConfirm = (source: string) => {
         <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
           <p style="display: flex; justify-content: space-between">
             {{ EventSourceNames[url] }}
-            <OBadge color="danger" v-if="unreadCountStore.sourceCountMap.get(url)" :value="unreadCountStore.sourceCountMap.get(url)"> </OBadge>
+            <OBadge
+              style="display: flex; align-items: center"
+              color="danger"
+              v-if="unreadCountStore.sourceCountMap.get(url)"
+              :value="unreadCountStore.sourceCountMap.get(url)"
+            >
+            </OBadge>
           </p>
         </OMenuItem>
       </OMenu>
@@ -393,9 +387,7 @@ const phoneFilterConfirm = (source: string) => {
                 <template #target>
                   <OLink style="--link-color-hover: var(--o-color-primary1)">
                     筛选
-                    <template #icon>
-                      <OIcon style="width: 20px; font-size: 20px;"><OIconFilter /></OIcon>
-                    </template>
+                    <template #icon><OIconFilter style="font-size: 24px" /></template>
                   </OLink>
                 </template>
                 <ContentWrapper
@@ -569,10 +561,9 @@ const phoneFilterConfirm = (source: string) => {
 }
 
 .message-list {
-  // flex-grow: 1;
   background-color: var(--o-color-fill2);
   padding: 16px;
-  // height: 100%;
+  padding-top: 28px;
   gap: 10px;
 
   @include respond-to('phone') {
@@ -581,8 +572,6 @@ const phoneFilterConfirm = (source: string) => {
   }
 
   .header {
-    // position: sticky;
-    // top: 0;
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
@@ -622,6 +611,7 @@ const phoneFilterConfirm = (source: string) => {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    margin-top: 24px;
 
     .item {
       height: 70px;

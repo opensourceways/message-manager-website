@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeMount, ref, watch, type Ref } from 'vue';
+import { computed, inject, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
@@ -8,9 +8,9 @@ import { useUserInfoStore } from '@/stores/user';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter');
+const applyFilter = inject<() => void>('applyFilter', () => {});
 
-const { sigBelong, sigBelongOptions, allSigReposMap, sigList, getSigs, selectedSigs } = useSigFilter();
+const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
@@ -66,7 +66,6 @@ const cveStateOptions = [
 ];
 
 // ----------------sig/repo----------------
-onBeforeMount(getSigs);
 const selectedRepos = ref<string[]>([]);
 
 const repoList = computed(() => {
@@ -84,20 +83,6 @@ const affected = ref<string[]>([]);
  */
 const onSelectVisibilityChange = (val: boolean) => {
   if (!val) {
-    if (applyFilter) {
-      applyFilter();
-    }
-  }
-};
-
-const onSelectClear = () => {
-  if (applyFilter) {
-    applyFilter();
-  }
-};
-
-const onSelectRemove = () => {
-  if (applyFilter) {
     applyFilter();
   }
 };
@@ -149,8 +134,8 @@ defineExpose({
         :values="sigList"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
-        @clear="onSelectClear"
-        @remove="onSelectRemove"
+        @clear="applyFilter"
+        @remove="applyFilter"
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="组件仓">
@@ -163,8 +148,8 @@ defineExpose({
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
-        @clear="onSelectClear"
-        @remove="onSelectRemove"
+        @clear="applyFilter"
+        @remove="applyFilter"
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="漏洞状态">
@@ -180,8 +165,8 @@ defineExpose({
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
-        @clear="onSelectClear"
-        @remove="onSelectRemove"
+        @clear="applyFilter"
+        @remove="applyFilter"
       ></FilterableSelect>
     </OFormItem>
   </OForm>

@@ -11,14 +11,7 @@ const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter', () => {});
 
-const {
-  sigBelong,
-  sigBelongOptions,
-  allSigReposMap,
-  sigList,
-  getSigs,
-  selectedSigs,
-} = useSigFilter();
+const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
@@ -49,19 +42,19 @@ const syncParams = (val: Record<string, any>) => {
     isBot.value = val.is_bot.toString();
   }
   if (val.pr_creator || val.issue_creator) {
-    eventRelation.value = '_creator'
+    eventRelation.value = '_creator';
   }
   if (val.pr_assignee || val.issue_assignee) {
-    eventRelation.value = '_assignee'
+    eventRelation.value = '_assignee';
   }
   if (val.pr_state) {
-    eventState.value = val.pr_state
+    eventState.value = val.pr_state;
   }
   if (val.issue_state) {
-    eventState.value = val.issue_state
+    eventState.value = val.issue_state;
   }
   if (val.note_type) {
-    noteType.value = val.note_type
+    noteType.value = val.note_type;
   }
 };
 
@@ -76,7 +69,6 @@ const repoBelongOptions = [
 
 // ----------------sig/repo----------------
 onBeforeMount(() => {
-  getSigs();
   getMyRepos(userInfoStore.giteeLoginName as string).then((repos) => {
     if (repos?.length) {
       myRepoList.value = repos;
