@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect, type Ref } from 'vue';
+import { computed, inject, onMounted, onUnmounted, provide, reactive, ref, watch, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OIcon, OPopup, OBadge, OIconFilter } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OPopup, OBadge, OIconFilter } from '@opensig/opendesign';
 import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IconDelete from '~icons/app/icon-delete.svg';
@@ -16,7 +16,7 @@ import type { MessageT } from '@/@types/type-messages';
 import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/messages';
 import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
-import { useLoginStore, useUserInfoStore } from '@/stores/user';
+import { useUserInfoStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import AppPagination from '@/components/AppPagination.vue';
 import { usePhoneStore } from '@/stores/phone';
@@ -149,6 +149,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
         }
       }
       messages.value = query_info ?? [];
+      unreadCountStore.updateCount();
     })
     .catch(() => {
       total.value = 0;
@@ -200,6 +201,7 @@ const delMessage = async (msg: MessageT) => {
         message.success({ content: '删除成功' });
         getData();
         clearCheckboxes();
+        unreadCountStore.updateCount();
       })
       .catch((error) => {
         if (error?.response?.data?.message) {
@@ -234,6 +236,7 @@ const delMultiMessages = async () => {
         }
         clearCheckboxes();
         getData();
+        unreadCountStore.updateCount();
       })
       .catch((error) => {
         if (error?.response?.data?.message) {

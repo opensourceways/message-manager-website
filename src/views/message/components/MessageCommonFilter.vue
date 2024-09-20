@@ -51,7 +51,7 @@ provide('applyFilter', () => {
 });
 
 // ----------------快捷筛选----------------
-/** 选中的快捷筛选 */
+/** 选中的快捷筛选的mode_name */
 const selectedQuickFilter = ref('');
 
 /** key: 事件源 */
@@ -126,7 +126,7 @@ const emailSwitch = ref(false);
 const weChatSwitch = ref(false);
 
 const onEmailChange = (val: string | number | boolean) => {
-  const filterId = selectedQuickFilter.value;
+  const filterId = currentFilters.value?.find((item) => item.mode_name === selectedQuickFilter.value)?.id as number;
   if (val) {
     updateMailStatus(filterId, userInfo.recipientId?.toString() as string);
   } else {
@@ -138,15 +138,16 @@ const saveRuleFlag = ref(false);
 
 /** 新增 */
 const confirmSave = (mode_name: string) => {
+  const filterDetail = currentCompRef.value?.getFilterParams();
   saveRule({
     spec_version: '1.0',
     mode_name,
     source: source.value,
-    ...currentCompRef.value?.getFilterParams(),
+    ...filterDetail,
   }).catch(() => {
     message.danger({ content: '保存失败' });
   });
-  quickFilterMap.value.get(source.value)?.push({ mode_name });
+  quickFilterMap.value.get(source.value)?.push({ mode_name, web_filter: filterDetail });
 };
 
 /** 选中的快捷筛选的detail，用来给高级筛选里回显 */

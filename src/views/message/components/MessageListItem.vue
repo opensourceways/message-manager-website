@@ -63,6 +63,8 @@ const sourceGroupTitle = computed(() => {
   switch (props.msg.source_group) {
     case EventSources.EUR:
       return '项目';
+    case EventSources.CVE:
+      return 'SIG组';
     default:
       return '仓库';
   }
