@@ -3,7 +3,7 @@
  */
 export interface FilterRuleT {
   /** id */
-  id: string;
+  id: number;
   /** 事件来源 */
   source: string;
   /** 事件类型 */
