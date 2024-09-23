@@ -193,7 +193,7 @@ const getFilterParams = (): Record<string, string> => {
     params.sig = selectedSigs.value.join();
   }
   if (selectedRepos.value?.length) {
-    params.sig = selectedRepos.value.join();
+    params.repos = selectedRepos.value.join();
   }
   if (eventType.value) {
     params.event_type = eventType.value;

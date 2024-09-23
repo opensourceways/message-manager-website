@@ -14,4 +14,5 @@ export interface FilterRuleT {
   spec_version: string;
   is_default: boolean;
   web_filter: Record<string, any>;
+  need_mail: boolean;
 }

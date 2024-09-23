@@ -164,6 +164,7 @@ const applyQuickFilter = (mode_name: string) => {
   emit('applyQuickFilter', mode_name);
   const filter = currentFilters.value?.find((filter) => filter.mode_name === mode_name);
   webFilter.value = filter?.web_filter;
+  emailSwitch.value = !!filter?.need_mail;
 };
 
 const reset = () => onReset(false);

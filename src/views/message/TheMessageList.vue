@@ -498,28 +498,10 @@ const phoneFilterConfirm = (source: string) => {
 
 .menu-item {
   --menu-item-radius: 4px;
-  --menu-item-bg-color-selected: var(--o-color-control3-light);
-  --menu-item-bg-color-hover: var(--o-color-control2-light);
+  --menu-item-bg-color-selected: rgb(var(--o-kleinblue-2));
+  --menu-item-bg-color-hover: rgb(var(--o-kleinblue-1));
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));
   @include text1;
-}
-
-.submenu-title {
-  margin-top: 2px;
-  --sub-menu-bg-color-hover: var(--o-color-control2-light);
-  --sub-menu-bg-color-selected: var(--o-color-control3-light);
-}
-
-.first-time-login-tip {
-  display: flex;
-  flex-direction: column;
-  align-items: end;
-  gap: 10px;
-  @include tip1;
-
-  p {
-    width: 168px;
-  }
 }
 
 .messages-container {
