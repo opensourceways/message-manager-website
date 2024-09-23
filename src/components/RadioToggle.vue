@@ -32,7 +32,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (event: 'change', val: any): void;
-  (event: 'confirmAdd', val: string): void;
+  (event: 'confirmAdd', val: string, callback: () => void): void;
   (event: 'remove', val: { label: string; value: string | number }): void;
   (event: 'rename', val: { label: string; value: string | number }, newName: string): void;
   (event: 'update:modelValue', val: any): void;
@@ -114,9 +114,10 @@ const vFocus = {
 };
 
 const confirmAdd = () => {
-  emit('confirmAdd', newTagContent.value);
-  isAddNew.value = false;
-  newTagContent.value = '';
+  emit('confirmAdd', newTagContent.value, () => {
+    isAddNew.value = false;
+    newTagContent.value = '';
+  });
 };
 
 // ----------------重命名标签----------------

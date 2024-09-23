@@ -136,8 +136,12 @@ const onEmailChange = (val: string | number | boolean) => {
 const saveRuleFlag = ref(false);
 
 /** 新增 */
-const confirmSave = (mode_name: string) => {
+const confirmSave = (mode_name: string, callback: () => void) => {
   const filterDetail = currentCompRef.value?.getFilterParams();
+  if (currentFilters.value?.findIndex((item) => item.mode_name === mode_name) !== -1) {
+    message.danger({ content: '名称重复' });
+    return;
+  }
   saveRule({
     spec_version: '1.0',
     mode_name,
@@ -148,6 +152,7 @@ const confirmSave = (mode_name: string) => {
     .catch(() => {
       message.danger({ content: '保存失败' });
     });
+  callback();
   quickFilterMap.value.get(source.value)?.push({ mode_name, web_filter: filterDetail });
 };
 
