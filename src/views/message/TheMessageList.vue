@@ -45,7 +45,6 @@ const pageInfo = reactive({
 });
 
 const isPhone = inject<Ref<boolean>>('isPhone');
-provide('isPhone', isPhone);
 let intervalId: ReturnType<typeof setInterval>;
 
 let lastPollType: 'inner' | 'quick' = 'inner';
@@ -342,7 +341,7 @@ const phoneFilterConfirm = (source: string) => {
   <!-- <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg> -->
 
   <div class="messages-container">
-    <aside v-if="!isPhone">
+    <aside>
       <div class="title">消息中心</div>
       <OMenu v-model="activeMenu" @change="onMenuChange">
         <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
