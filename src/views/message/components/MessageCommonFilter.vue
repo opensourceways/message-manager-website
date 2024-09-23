@@ -127,9 +127,9 @@ const weChatSwitch = ref(false);
 const onEmailChange = (val: string | number | boolean) => {
   const filterId = currentFilters.value?.find((item) => item.mode_name === selectedQuickFilter.value)?.id as number;
   if (val) {
-    updateMailStatus(filterId, userInfo.recipientId?.toString() as string);
+    updateMailStatus(filterId.toString(), userInfo.recipientId?.toString() as string);
   } else {
-    updateMailStatus(filterId, userInfo.recipientId?.toString() as string, false);
+    updateMailStatus(filterId.toString(), userInfo.recipientId?.toString() as string, false);
   }
 };
 

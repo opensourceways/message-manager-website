@@ -133,7 +133,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
   getMessages({
     source: source.value,
     is_read: readStatus.value,
-    start_time: startTime.value,
+    start_time: startTime.value?.toString(),
     ...pageInfo,
     ...lastFilterParams.value,
   })
