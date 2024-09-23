@@ -54,10 +54,13 @@ const showNoEmail = ref(false);
 
 const goBindUserInfo = () => windowOpen('https://id.openeuler.org/zh/profile');
 
-onMounted(() => {
-  if (!userInfoStore.email) {
-    showNoEmail.value = true;
-    return;
+const startPoll = (immediate?: boolean) => {
+  if (immediate) {
+    if (lastPollType === 'inner') {
+      getData(lastFilterParams.value);
+    } else {
+      selectRule(lastQueryRule);
+    }
   }
   intervalId = setInterval(() => {
     if (lastPollType === 'inner') {
@@ -66,6 +69,21 @@ onMounted(() => {
       selectRule(lastQueryRule);
     }
   }, 10_000);
+};
+
+watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+  startPoll(true);
+});
+
+onMounted(() => {
+  if (!userInfoStore.email) {
+    showNoEmail.value = true;
+    return;
+  }
+  startPoll();
 });
 
 onUnmounted(() => clearInterval(intervalId));
@@ -364,7 +382,7 @@ const phoneFilterConfirm = (source: string) => {
         <div class="header">
           <div class="left">
             <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1">
-              {{ checkboxVal.length ? `已选${checkboxVal.length}条消息` : '全选' }}
+              {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
             </OCheckbox>
             <template v-if="!checkboxVal.length">
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
@@ -413,7 +431,7 @@ const phoneFilterConfirm = (source: string) => {
           <!-- 消息列表 -->
           <div class="list">
             <div v-for="(msg, index) in messages" :key="msg.id" class="item">
-              <MessageListItem :msg="msg" @deleteMessage="() => delMessage(msg)" @readMessage="() => markReadMessage(msg)" />
+              <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
               <ODivider v-if="index < messages.length - 1" class="divider-line" />
             </div>
           </div>

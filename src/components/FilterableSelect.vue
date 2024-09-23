@@ -64,14 +64,29 @@ const vUpdated = {
 
 const selectRef = ref();
 
-const rawValues = computed(() =>
-  {
-    return props.values.map((val) => {
+const rawValues = computed(() => {
+  return props.values.map((val) => {
     if (typeof val === 'string') {
       return { label: val, value: val };
     }
     return val;
-  })}
+  });
+});
+
+/** 选中项的 value -> label 映射 */
+const checkedValueLabelMap = ref(new Map<string, string>());
+
+watch(
+  rawValues,
+  (val) => {
+    if (val) {
+      checkedValueLabelMap.value.clear();
+      val.forEach((item) => {
+        checkedValueLabelMap.value.set(item.value, item.label);
+      });
+    }
+  },
+  { immediate: true }
 );
 
 const searchVal = ref<string>();
@@ -109,11 +124,14 @@ watch(() => props.values, clearCheckboxes);
 
 watch(checkboxVal, (vals) => emit('update:modelValue', vals));
 
-watch(() => props.modelValue, (vals) => {
-  if (vals !== checkboxVal.value) {
-    checkboxVal.value = vals
+watch(
+  () => props.modelValue,
+  (vals) => {
+    if (vals !== checkboxVal.value) {
+      checkboxVal.value = vals;
+    }
   }
-});
+);
 
 const isSelecting = ref(false);
 
@@ -126,16 +144,10 @@ const onVisibleChange = (val: boolean) => {
   emit('visibilityChange', val);
 };
 
-/** 选中项的 value -> label 映射 */
-const checkedValueLabelMap = ref(new Map<string, string>());
-
 const onCheckboxChange = (value: string, label: string, e: Event) => {
   const { checked } = e.target as HTMLInputElement;
-  if (checked) {
-    checkedValueLabelMap.value.set(value, label);
-  } else {
+  if (!checked) {
     onRemoveTag(value);
-    checkedValueLabelMap.value.delete(value);
   }
 };
 
@@ -143,7 +155,6 @@ const onRemoveTag = (val: string | number) => {
   const idx = checkboxVal.value.indexOf(val as string);
   if (idx > -1) {
     checkboxVal.value.splice(idx, 1);
-    checkedValueLabelMap.value.delete(val as string);
     emit('remove', val);
   }
 };
@@ -156,14 +167,12 @@ const clearClick = (e: Event) => {
 </script>
 
 <template>
-  <div ref="selectRef" v-updated :class="['select-head', 'o-select', 'o-select-normal', 'o-select-outline', 'o-select-medium', clearable ? 'o-select-clearable' : '']">
-    <input
-      v-if="checkboxVal.length === 0"
-      type="text"
-      :placeholder="props.placeholder"
-      class="o-select-input"
-      readonly
-    />
+  <div
+    ref="selectRef"
+    v-updated
+    :class="['select-head', 'o-select', 'o-select-normal', 'o-select-outline', 'o-select-medium', clearable ? 'o-select-clearable' : '']"
+  >
+    <input v-if="checkboxVal.length === 0" type="text" :placeholder="props.placeholder" class="o-select-input" readonly />
     <OScroller class="o-select-tags-scroller" wrap-class="o-select-value-list" show-type="hover" size="small" disabled-x>
       <div class="o-select-tags-wrap">
         <template v-if="checkboxVal.length">
@@ -173,18 +182,9 @@ const clearClick = (e: Event) => {
               <div class="o-select-tag-remove" @click.stop="onRemoveTag(checkboxVal[0])"><OIconClose /></div>
             </div>
           </template>
-          <OPopover
-            v-else
-            :wrapper="optionsWrapper"
-            trigger="hover"
-            class="o-select-tag-popover"
-            position="bottom"
-            style="--popup-shadow: var(--o-shadow-1)"
-          >
+          <OPopover v-else :wrapper="optionsWrapper" trigger="hover" class="o-select-tag-popover" position="bottom" style="--popup-shadow: var(--o-shadow-1)">
             <template #target>
-              <div class="o-select-tag">
-                {{ checkboxVal.length }}个选项被选中
-              </div>
+              <div class="o-select-tag">{{ checkboxVal.length }}个选项被选中</div>
             </template>
             <div class="o-select-tags">
               <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
@@ -260,7 +260,7 @@ const clearClick = (e: Event) => {
 
 .select-head {
   border-radius: 4px;
-  width: 100%
+  width: 100%;
 }
 
 .o-select-arrow {

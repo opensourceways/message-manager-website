@@ -138,7 +138,7 @@ const saveRuleFlag = ref(false);
 /** 新增 */
 const confirmSave = (mode_name: string, callback: () => void) => {
   const filterDetail = currentCompRef.value?.getFilterParams();
-  if (currentFilters.value?.findIndex((item) => item.mode_name === mode_name) !== -1) {
+  if (currentFilters.value?.find((item) => item.mode_name === mode_name)) {
     message.danger({ content: '名称重复' });
     return;
   }
@@ -153,7 +153,11 @@ const confirmSave = (mode_name: string, callback: () => void) => {
       message.danger({ content: '保存失败' });
     });
   callback();
-  quickFilterMap.value.get(source.value)?.push({ mode_name, web_filter: filterDetail });
+  if (!quickFilterMap.value.has(source.value)) {
+    quickFilterMap.value.set(source.value, [{ mode_name, web_filter: filterDetail }]);
+  } else {
+    quickFilterMap.value.get(source.value)?.push({ mode_name, web_filter: filterDetail });
+  }
 };
 
 /** 选中的快捷筛选的detail，用来给高级筛选里回显 */

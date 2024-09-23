@@ -98,16 +98,7 @@ watch(isAddNew, (val) => {
   if (!val) {
     newTagContent.value = '';
   }
-});
-
-const setAddNewTagClickOutside = (el: any) => {
-  if (!el) {
-    clickOutsideCancelFnMap.get('_')?.();
-    clickOutsideCancelFnMap.delete('_');
-    return;
-  }
-  clickOutsideCancelFnMap.set('_', onClickOutside(el, () => (isAddNew.value = false)) as () => void);
-};
+}, { immediate: true });
 
 const vFocus = {
   mounted: (el: HTMLInputElement) => el.focus(),
@@ -118,6 +109,15 @@ const confirmAdd = () => {
     isAddNew.value = false;
     newTagContent.value = '';
   });
+};
+
+const setAddNewTagClickOutside = (el: any) => {
+  if (!el) {
+    clickOutsideCancelFnMap.get('_')?.();
+    clickOutsideCancelFnMap.delete('_');
+    return;
+  }
+  clickOutsideCancelFnMap.set('_', onClickOutside(el, confirmAdd) as () => void);
 };
 
 // ----------------重命名标签----------------

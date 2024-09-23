@@ -10,7 +10,6 @@ export const useUnreadMsgCountStore = defineStore('unreadMsgCount', () => {
     getUnreadCount()
       .then((res) => {
         res.forEach((item) => sourceCountMap.value.set(item.source, item.count));
-        console.log(sourceCountMap.value);
       })
       .catch(() => {});
   };

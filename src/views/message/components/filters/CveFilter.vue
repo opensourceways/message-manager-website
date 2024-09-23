@@ -36,6 +36,9 @@ const syncParams = (val: Record<string, any>) => {
   if (val.cve_affected) {
     affected.value = val.cve_affected.split(',');
   }
+  if (val.cve_state) {
+    cveState.value = val.cve_state;
+  }
 };
 
 watch(webFilter, syncParams);

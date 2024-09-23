@@ -10,9 +10,9 @@ import IconLink from '@/components/IconLink.vue';
 import { EventSources } from '@/data/event';
 import { usePhoneStore } from '@/stores/phone';
 
-defineEmits<{
-  (event: 'deleteMessage'): void;
-  (event: 'readMessage'): void;
+const emit = defineEmits<{
+  (event: 'deleteMessage', msg: MessageT): void;
+  (event: 'readMessage', msg: MessageT): void;
 }>();
 const props = defineProps<{
   msg: MessageT;
@@ -39,6 +39,7 @@ const Title = (props: { msg: MessageT }) => {
       return h(
         'a',
         {
+          onClick: () => emit('readMessage', { ...props.msg }),
           href: props.msg.source_url,
           target: '_blank',
           style: 'color: #002EA7',
@@ -110,10 +111,10 @@ const phoneStore = usePhoneStore();
       <p>{{ sourceGroupTitle + msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <IconLink @click="$emit('readMessage')" :disabled="msg.is_read" title="标记已读">
+        <IconLink @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
           <template #suffix><ReadIcon /></template>
         </IconLink>
-        <IconLink @click="$emit('deleteMessage')" hover-color="var(--o-color-danger1)" title="删除">
+        <IconLink @click="$emit('deleteMessage', { ...msg })" hover-color="var(--o-color-danger1)" title="删除">
           <template #suffix><DeleteIcon /></template>
         </IconLink>
       </div>

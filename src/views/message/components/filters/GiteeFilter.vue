@@ -5,7 +5,7 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';
 import { useUserInfoStore } from '@/stores/user';
 import { OForm, OFormItem, OOption, OSelect } from '@opensig/opendesign';
-import { computed, inject, onBeforeMount, ref, watch, type Ref } from 'vue';
+import { computed, inject, nextTick, onBeforeMount, ref, watch, type Ref } from 'vue';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
@@ -41,21 +41,23 @@ const syncParams = (val: Record<string, any>) => {
   if (val.is_bot) {
     isBot.value = val.is_bot.toString();
   }
-  if (val.pr_creator || val.issue_creator) {
-    eventRelation.value = '_creator';
-  }
-  if (val.pr_assignee || val.issue_assignee) {
-    eventRelation.value = '_assignee';
-  }
-  if (val.pr_state) {
-    eventState.value = val.pr_state;
-  }
-  if (val.issue_state) {
-    eventState.value = val.issue_state;
-  }
-  if (val.note_type) {
-    noteType.value = val.note_type;
-  }
+  nextTick(() => {
+    if (val.pr_creator || val.issue_creator) {
+      eventRelation.value = '_creator';
+    }
+    if (val.pr_assignee || val.issue_assignee) {
+      eventRelation.value = '_assignee';
+    }
+    if (val.pr_state) {
+      eventState.value = val.pr_state;
+    }
+    if (val.issue_state) {
+      eventState.value = val.issue_state;
+    }
+    if (val.note_type) {
+      noteType.value = val.note_type;
+    }
+  });
 };
 
 watch(webFilter, syncParams);
