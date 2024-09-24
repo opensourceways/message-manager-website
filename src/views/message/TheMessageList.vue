@@ -102,6 +102,12 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
   clearTimeout(timeoutId);
   if (abortController) {
     abortController.abort();
+    abortController = null;
+  }
+  if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
+    total.value = 0;
+    messages.value = [];
+    return;
   }
   try {
     abortController = new AbortController();
@@ -143,6 +149,12 @@ const getData = async (filterParams: Record<string, any> = {}) => {
   clearTimeout(timeoutId);
   if (abortController) {
     abortController.abort();
+    abortController = null;
+  }
+  if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
+    total.value = 0;
+    messages.value = [];
+    return;
   }
   try {
     abortController = new AbortController();

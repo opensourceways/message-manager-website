@@ -217,9 +217,9 @@ defineExpose({ reset });
     <p>同步用以下方式通知我</p>
     <div class="switches">
       <p>邮箱通知</p>
-      <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter"></OSwitch>
+      <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter" style="--switch-bg-color-disabled: var(--o-color-control1-light)"></OSwitch>
       <p style="color: var(--o-color-control1)">微信通知</p>
-      <OSwitch v-model="weChatSwitch" disabled></OSwitch>
+      <OSwitch v-model="weChatSwitch" disabled style="--switch-bg-color-disabled: var(--o-color-control1-light)"></OSwitch>
     </div>
 
     <IconLink @click="reset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: -6px">
