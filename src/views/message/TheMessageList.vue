@@ -46,33 +46,22 @@ const pageInfo = reactive({
 
 const isPhone = inject<Ref<boolean>>('isPhone');
 let intervalId: ReturnType<typeof setInterval>;
-
-let lastPollType: 'inner' | 'quick' = 'inner';
-let lastQueryRule: any;
+let timeoutId: ReturnType<typeof setTimeout>;
 
 const showNoEmail = ref(false);
 
 const goBindUserInfo = () => windowOpen('https://id.openeuler.org/zh/profile');
 
-const startPoll = (immediate?: boolean) => {
-  const fn = () => {
-    if (lastPollType === 'inner') {
-      getData(lastFilterParams.value);
-    } else {
-      selectRule(lastQueryRule);
-    }
-  };
-  if (immediate) {
-    fn();
-  }
-  intervalId = setInterval(fn, 10_000);
-};
+let lastQueryType: 'inner' | 'quick' = 'inner';
+let abortController: AbortController | null;
+let lastQueryParams: { source: string; mode_name: string } | Record<string, any>;
 
 watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
-  if (intervalId) {
-    clearInterval(intervalId);
+  if (lastQueryType === 'quick') {
+    selectRule(lastQueryParams as { source: string; mode_name: string });
+  } else {
+    getData(lastQueryParams);
   }
-  startPoll(true);
 });
 
 onMounted(() => {
@@ -80,7 +69,6 @@ onMounted(() => {
     showNoEmail.value = true;
     return;
   }
-  startPoll();
 });
 
 onUnmounted(() => clearInterval(intervalId));
@@ -107,37 +95,38 @@ const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 const { checkAllVal, checkboxVal, indeterminate, clearCheckboxes } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxVal', checkboxVal);
 
-const lastFilterParams = ref<Record<string, any>>({});
-
 /** 快捷筛选 */
-const selectRule = (val: { source: string; mode_name: string }) => {
-  if (val) {
-    lastPollType = 'quick';
-    lastQueryRule = { ...val };
-    filterByRule({
+const selectRule = async (val: { source: string; mode_name: string }) => {
+  lastQueryParams = val;
+  lastQueryType = 'quick';
+  clearTimeout(timeoutId);
+  if (abortController) {
+    abortController.abort();
+  }
+  try {
+    abortController = new AbortController();
+    const res = await filterByRule({
       source: val.source,
       mode_name: val.mode_name,
       ...pageInfo,
-    })
-      .then((res) => {
-        const { count, query_info } = res.data;
-        total.value = count;
-        if (query_info) {
-          for (const msg of query_info) {
-            msg.id = msg.source + msg.event_id;
-            const date = dayjs(msg.time);
-            msg.formattedTime = date.fromNow();
-          }
-        }
-        messages.value = query_info ?? [];
-        unreadCountStore.updateCount();
-      })
-      .catch((res) => {
-        console.log(res)
-        total.value = 0;
-        messages.value = [];
-      });
+    }, abortController);
+    abortController = null;
+    const { count, query_info } = res.data;
+    total.value = count;
+    if (query_info) {
+      for (const msg of query_info) {
+        msg.id = msg.source + msg.event_id;
+        const date = dayjs(msg.time);
+        msg.formattedTime = date.fromNow();
+      }
+    }
+    messages.value = query_info ?? [];
+    unreadCountStore.updateCount();
+  } catch {
+    total.value = 0;
+    messages.value = [];
   }
+  timeoutId = setTimeout(() => selectRule(val), 10_000);
 };
 
 // ------------------------切换已读未读消息------------------------
@@ -148,33 +137,39 @@ const readStatusOptions = ref([
 ]);
 
 // ------------------------获取数据------------------------
-const getData = (filterParams: Record<string, any> = {}) => {
-  lastPollType = 'inner';
-  lastFilterParams.value = { ...filterParams };
-  getMessages({
-    source: source.value,
-    is_read: readStatus.value,
-    start_time: startTime.value?.toString(),
-    ...pageInfo,
-    ...lastFilterParams.value,
-  })
-    .then((res) => {
-      const { count, query_info } = res.data;
-      total.value = count;
-      if (query_info) {
-        for (const msg of query_info) {
-          msg.id = msg.source + msg.event_id;
-          const date = dayjs(msg.time);
-          msg.formattedTime = date.fromNow();
-        }
+const getData = async (filterParams: Record<string, any> = {}) => {
+  lastQueryParams = filterParams;
+  lastQueryType = 'inner';
+  clearTimeout(timeoutId);
+  if (abortController) {
+    abortController.abort();
+  }
+  try {
+    abortController = new AbortController();
+    const res = await getMessages({
+      source: source.value,
+      is_read: readStatus.value,
+      start_time: startTime.value?.toString(),
+      ...pageInfo,
+      ...filterParams,
+    }, abortController);
+    abortController = null;
+    const { count, query_info } = res.data;
+    total.value = count;
+    if (query_info) {
+      for (const msg of query_info) {
+        msg.id = msg.source + msg.event_id;
+        const date = dayjs(msg.time);
+        msg.formattedTime = date.fromNow();
       }
-      messages.value = query_info ?? [];
-      unreadCountStore.updateCount();
-    })
-    .catch(() => {
-      total.value = 0;
-      messages.value = [];
-    });
+    }
+    messages.value = query_info ?? [];
+    unreadCountStore.updateCount();
+  } catch {
+    total.value = 0;
+    messages.value = [];
+  }
+  timeoutId = setTimeout(() => getData(filterParams), 10_000);
 };
 
 // ------------------------菜单事件------------------------
@@ -182,7 +177,6 @@ const activeMenu = ref(EventSources.EUR);
 
 const onMenuChange = (source: string) => {
   // 清空过滤
-  filterRef.value?.reset();
   if (source === 'all') {
     router.push({ path: '/' });
   } else {
@@ -370,7 +364,7 @@ const phoneFilterConfirm = (source: string) => {
             <OBadge
               style="display: flex; align-items: center"
               color="danger"
-              v-if="unreadCountStore.sourceCountMap.get(url)"
+              v-if="unreadCountStore.sourceCountMap.get(url) && (source !== 'GITEE' || userInfoStore.giteeLoginName)"
               :value="unreadCountStore.sourceCountMap.get(url)"
             >
             </OBadge>
@@ -429,7 +423,7 @@ const phoneFilterConfirm = (source: string) => {
             <!-- <OLink v-if="isPhone && !phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink> -->
           </div>
         </div>
-        <template v-if="total > 0">
+        <template v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)">
           <!-- 消息列表 -->
           <div class="list">
             <div v-for="(msg, index) in messages" :key="msg.id" class="item">

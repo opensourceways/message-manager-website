@@ -1,75 +1,83 @@
 <script setup lang="ts">
-import { inject, ref, watch, type Ref } from 'vue';
+import { computed, inject, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import { EUR_BUILD_STATUS } from '@/data/event';
 import { useUserInfoStore } from '@/stores/user';
+import { reactive } from 'vue';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter', () => {});
 
+const filterParams = reactive({
+  projRelation: '',
+  buildStatus: [] as number[],
+});
+
+const params = computed({
+  get() {
+    const data: Record<string, string> = { event_type: 'build' };
+    if (userInfoStore.username) {
+      if (filterParams.projRelation === 'myProj') {
+        data.build_owner = userInfoStore.username;
+      } else if (filterParams.projRelation === 'myExec') {
+        data.build_creator = userInfoStore.username;
+      }
+    }
+    if (filterParams.buildStatus?.length) {
+      data.build_status = filterParams.buildStatus.join()
+    }
+    return data;
+  },
+  set(val) {
+    if (val.build_owner) {
+      filterParams.projRelation = 'myProj'
+    }
+    if (val.build_creator) {
+      filterParams.projRelation = 'myExec'
+    }
+    if (val.build_status) {
+      filterParams.buildStatus = val.build_status.split(',').map(Number);
+    }
+  }
+});
+
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-const syncParams = (val: Record<string, any>) => {
-  if (!val || !Object.keys(val).length) {
-    return;
+watch(webFilter, val => {
+  if (val) {
+    params.value = val;
   }
-  if (val.build_owner) {
-    projRelation.value = 'myProj'
-  }
-  if (val.build_creator) {
-    projRelation.value = 'myExec'
-  }
-  if (val.build_status) {
-    buildStatus.value = val.build_status.split(',').map(Number);
-  }
-};
-
-watch(webFilter, syncParams);
+});
 
 const projRelations = [
   { label: '我的项目', value: 'myProj' },
   { label: '我执行的', value: 'myExec' },
 ];
-const projRelation = ref();
-const buildStatus = ref<string[]>();
 
 const reset = () => {
-  projRelation.value = '';
-  buildStatus.value = [];
+  filterParams.projRelation = '';
+  filterParams.buildStatus = [];
   applyFilter();
-};
-
-const getFilterParams = () => {
-  const params: Record<string, string> = { event_type: 'build' };
-  if (userInfoStore.username) {
-    if (projRelation.value === 'myProj') {
-      params.build_owner = userInfoStore.username;
-    } else if (projRelation.value === 'myExec') {
-      params.build_creator = userInfoStore.username;
-    }
-  }
-  buildStatus.value?.length && (params.build_status = buildStatus.value.join());
-  return params;
 };
 
 const exceededLabel = (vals: SelectOptionT[]) => `${vals.length}个选项被选中`;
 
 defineExpose({
   reset,
-  getFilterParams,
+  params,
 });
 </script>
 
 <template>
   <OForm style="margin-top: 16px; --form-item-gap: 16px">
     <OFormItem label="项目关系">
-      <RadioToggle v-model="projRelation" :options="projRelations" @change="applyFilter" />
+      <RadioToggle v-model="filterParams.projRelation" :options="projRelations" @change="applyFilter" />
     </OFormItem>
     <OFormItem label="构建状态">
       <OSelect
-        v-model="buildStatus"
+        v-model="filterParams.buildStatus"
         :fold-label="exceededLabel"
         show-fold-tags
         :max-tag-count="1"

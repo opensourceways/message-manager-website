@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch, type Ref } from 'vue';
+import { computed, inject, reactive, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
@@ -12,36 +12,66 @@ const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
+const filterParams = reactive({
+  selectedRepos: [] as string[],
+  cveState: '',
+  affected: [] as string[],
+});
+
+const params = computed({
+  get() {
+    const data: Record<string, any> = {};
+    if (sigBelong.value) {
+      data[sigBelong.value] = userInfoStore.giteeLoginName as string;
+    }
+    if (selectedSigs.value?.length) {
+      data.sig = selectedSigs.value.join();
+    }
+    if (filterParams.selectedRepos?.length) {
+      data.repos = filterParams.selectedRepos.join();
+    }
+    if (filterParams.cveState) {
+      data.cve_state = filterParams.cveState;
+    }
+    if (filterParams.affected?.length) {
+      data.cve_affected = filterParams.affected.join();
+    }
+    return data;
+  },
+  set(val) {
+    if (!val || !Object.keys(val).length) {
+      return;
+    }
+    if (val.sig) {
+      selectedSigs.value = val.sig.split(',');
+    }
+    if (val.repos) {
+      filterParams.selectedRepos = val.repos.split(',');
+    }
+    if (val.my_sig) {
+      sigBelong.value = 'my_sig';
+    } else if (val.other_sig) {
+      sigBelong.value = 'other_sig';
+    }
+    if (val.repos) {
+      filterParams.selectedRepos = val.repos.split(',');
+    }
+    if (val.cve_affected) {
+      filterParams.affected = val.cve_affected.split(',');
+    }
+    if (val.cve_state) {
+      filterParams.cveState = val.cve_state;
+    }
+  }
+})
+
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-const syncParams = (val: Record<string, any>) => {
-  if (!val || !Object.keys(val).length) {
-    return;
+watch(webFilter, val => {
+  if (val) {
+    params.value = val;
   }
-  if (val.sig) {
-    selectedSigs.value = val.sig.split(',');
-  }
-  if (val.repos) {
-    selectedRepos.value = val.repos.split(',');
-  }
-  if (val.my_sig) {
-    sigBelong.value = 'my_sig';
-  } else if (val.other_sig) {
-    sigBelong.value = 'other_sig';
-  }
-
-  if (val.repos) {
-    selectedRepos.value = val.repos.split(',');
-  }
-  if (val.cve_affected) {
-    affected.value = val.cve_affected.split(',');
-  }
-  if (val.cve_state) {
-    cveState.value = val.cve_state;
-  }
-};
-
-watch(webFilter, syncParams);
+});
 
 const versions = [
   'openeuler-20.03_LTS_SP1',
@@ -62,24 +92,18 @@ const versions = [
 ];
 
 // ----------------sve状态----------------
-const cveState = ref('');
 const cveStateOptions = [
   { label: '待我处理的', value: 'open' },
   { label: '处理完成的', value: 'rejected,closed' },
 ];
 
 // ----------------sig/repo----------------
-const selectedRepos = ref<string[]>([]);
-
 const repoList = computed(() => {
   if (selectedSigs.value.length) {
     return selectedSigs.value.flatMap((sig) => allSigReposMap.value.get(sig as string) ?? []);
   }
   return Array.from(allSigReposMap.value.values()).flat();
 });
-
-// ----------------系统版本----------------
-const affected = ref<string[]>([]);
 
 /**
  * 下拉选择可见性改变
@@ -92,35 +116,14 @@ const onSelectVisibilityChange = (val: boolean) => {
 
 const reset = () => {
   selectedSigs.value = [];
-  selectedRepos.value = [];
-  affected.value = [];
-  cveState.value = '';
+  filterParams.selectedRepos = [];
+  filterParams.affected = [];
+  filterParams.cveState = '';
   applyFilter();
-};
-
-const getFilterParams = (): Record<string, string> => {
-  const params: Record<string, any> = {};
-  if (sigBelong.value) {
-    params[sigBelong.value] = userInfoStore.giteeLoginName as string;
-  }
-  if (selectedSigs.value?.length) {
-    params.sig = selectedSigs.value.join();
-  }
-  if (selectedRepos.value?.length) {
-    params.repos = selectedRepos.value.join();
-  }
-  if (cveState.value) {
-    params.cve_state = cveState.value;
-  }
-  if (affected.value?.length) {
-    params.cve_affected = affected.value.join();
-  }
-  return params;
 };
 
 defineExpose({
   reset,
-  getFilterParams,
 });
 </script>
 
@@ -144,7 +147,7 @@ defineExpose({
     </OFormItem>
     <OFormItem label="组件仓">
       <FilterableSelect
-        v-model="selectedRepos"
+        v-model="filterParams.selectedRepos"
         filterable
         clearable
         placeholder="请选择仓库"
@@ -157,11 +160,11 @@ defineExpose({
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="漏洞状态">
-      <RadioToggle v-model="cveState" @change="applyFilter" enable-cancel-select :options="cveStateOptions" />
+      <RadioToggle v-model="filterParams.cveState" @change="applyFilter" enable-cancel-select :options="cveStateOptions" />
     </OFormItem>
     <OFormItem label="影响系统版本">
       <FilterableSelect
-        v-model="affected"
+        v-model="filterParams.affected"
         filterable
         clearable
         placeholder="请选择仓库"

@@ -5,7 +5,7 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';
 import { useUserInfoStore } from '@/stores/user';
 import { OForm, OFormItem, OOption, OSelect } from '@opensig/opendesign';
-import { computed, inject, nextTick, onBeforeMount, ref, watch, type Ref } from 'vue';
+import { computed, inject, nextTick, onBeforeMount, reactive, ref, watch, type Ref } from 'vue';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
@@ -13,57 +13,110 @@ const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
+const filterParams = reactive({
+  repoBelong: '',
+  selectedRepos: [] as string[],
+  eventType: '',
+  isBot: '',
+  eventRelation: '',
+  eventState: '',
+  noteType: '',
+});
+
+const params = computed({
+  get() {
+    const params: Record<string, string> = {};
+    if (sigBelong.value) {
+      params[sigBelong.value] = userInfoStore.giteeLoginName as string;
+    }
+    if (filterParams.repoBelong) {
+      params[filterParams.repoBelong] = userInfoStore.giteeLoginName as string;
+    }
+    if (selectedSigs.value?.length) {
+      params.sig = selectedSigs.value.join();
+    }
+    if (filterParams.selectedRepos?.length) {
+      params.repos = filterParams.selectedRepos.join();
+    }
+    if (filterParams.eventType) {
+      params.event_type = filterParams.eventType;
+    }
+    if (filterParams.isBot && filterParams.isBot !== 'all') {
+      params.is_bot = filterParams.isBot;
+    }
+    if (filterParams.eventType === 'pr') {
+      if (filterParams.eventState) {
+        params.pr_state = filterParams.eventState;
+      }
+      if (filterParams.eventRelation) {
+        params[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+      }
+    }
+    if (filterParams.eventType === 'issue') {
+      if (filterParams.eventState) {
+        params.issue_state = filterParams.eventState;
+      }
+      if (filterParams.eventRelation) {
+        params[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+      }
+    }
+    if (filterParams.eventType === 'note' && filterParams.noteType) {
+      params.note_type = filterParams.noteType;
+    }
+    return params;
+  },
+  set(val: Record<string, any>) {
+    if (val.sig) {
+      selectedSigs.value = val.sig.split(',');
+    }
+    if (val.repos) {
+      filterParams.selectedRepos = val.repos.split(',');
+    }
+    if (val.my_sig) {
+      sigBelong.value = 'my_sig';
+    } else if (val.other_sig) {
+      sigBelong.value = 'other_sig';
+    }
+    if (val.my_management) {
+      filterParams.repoBelong = 'my_management';
+    } else if (val.other_management) {
+      filterParams.repoBelong = 'other_management';
+    }
+    if (val.event_type) {
+      filterParams.eventType = val.event_type;
+    }
+    if (val.is_bot) {
+      filterParams.isBot = val.is_bot.toString();
+    }
+    nextTick(() => {
+      if (val.pr_creator || val.issue_creator) {
+        filterParams.eventRelation = '_creator';
+      }
+      if (val.pr_assignee || val.issue_assignee) {
+        filterParams.eventRelation = '_assignee';
+      }
+      if (val.pr_state) {
+        filterParams.eventState = val.pr_state;
+      }
+      if (val.issue_state) {
+        filterParams.eventState = val.issue_state;
+      }
+      if (val.note_type) {
+        filterParams.noteType = val.note_type;
+      }
+    });
+  }
+});
+
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-const syncParams = (val: Record<string, any>) => {
-  if (!val || !Object.keys(val).length) {
-    return;
+watch(webFilter, val => {
+  if (val) {
+    params.value = val;
   }
-  if (val.sig) {
-    selectedSigs.value = val.sig.split(',');
-  }
-  if (val.repos) {
-    selectedRepos.value = val.repos.split(',');
-  }
-  if (val.my_sig) {
-    sigBelong.value = 'my_sig';
-  } else if (val.other_sig) {
-    sigBelong.value = 'other_sig';
-  }
-  if (val.my_management) {
-    repoBelong.value = 'my_management';
-  } else if (val.other_management) {
-    repoBelong.value = 'other_management';
-  }
-  if (val.event_type) {
-    eventType.value = val.event_type;
-  }
-  if (val.is_bot) {
-    isBot.value = val.is_bot.toString();
-  }
-  nextTick(() => {
-    if (val.pr_creator || val.issue_creator) {
-      eventRelation.value = '_creator';
-    }
-    if (val.pr_assignee || val.issue_assignee) {
-      eventRelation.value = '_assignee';
-    }
-    if (val.pr_state) {
-      eventState.value = val.pr_state;
-    }
-    if (val.issue_state) {
-      eventState.value = val.issue_state;
-    }
-    if (val.note_type) {
-      noteType.value = val.note_type;
-    }
-  });
-};
-
-watch(webFilter, syncParams);
+});
 
 // ----------------repo归属----------------
-const repoBelong = ref<'my_management' | 'other_management' | '' | undefined>();
 const repoBelongOptions = [
   { label: '我管理的仓库', value: 'my_management' },
   { label: '其他仓库', value: 'other_management' },
@@ -78,27 +131,26 @@ onBeforeMount(() => {
   });
 });
 
-const selectedRepos = ref<string[]>([]);
 const myRepoList = ref<string[]>([]);
 const repoList = computed(() => {
   if (selectedSigs.value.length) {
     const repos = selectedSigs.value.flatMap((sig) => allSigReposMap.value.get(sig as string) ?? []);
-    if (repoBelong.value === 'my_management') {
+    if (filterParams.repoBelong === 'my_management') {
       const set = new Set(myRepoList.value);
       return repos.filter((item) => set.has(item));
     }
-    if (repoBelong.value === 'other_management') {
+    if (filterParams.repoBelong === 'other_management') {
       const set = new Set(myRepoList.value);
       return repos.filter((item) => !set.has(item));
     }
     return repos;
   }
   const repos = Array.from(allSigReposMap.value.values()).flat();
-  if (repoBelong.value === 'my_management') {
+  if (filterParams.repoBelong === 'my_management') {
     const set = new Set(myRepoList.value);
     return repos.filter((item) => set.has(item));
   }
-  if (repoBelong.value === 'other_management') {
+  if (filterParams.repoBelong === 'other_management') {
     const set = new Set(myRepoList.value);
     return repos.filter((item) => !set.has(item));
   }
@@ -117,7 +169,6 @@ const onSelectVisibilityChange = (val: boolean) => {
 };
 
 // ----------------事件类型----------------
-const eventType = ref('');
 const eventTypes = [
   { label: 'Issue', value: 'issue' },
   { label: 'PR', value: 'pr' },
@@ -125,22 +176,18 @@ const eventTypes = [
 ];
 
 // ----------------提交人----------------
-const isBot = ref('');
 const isBotOptions = [
   { label: '全部', value: 'all' },
   { label: '非机器人', value: 'false' },
 ];
 
 // ----------------事件关系----------------
-const eventRelation = ref('');
 const eventRelations = [
   { label: '我创建的', value: '_creator' },
   { label: '指派给我的', value: '_assignee' },
 ];
 
 // ----------------事件状态----------------
-const eventState = ref('');
-
 const issueState = [
   { value: 'open', label: '待办的' },
   { value: 'progressing', label: '进行中' },
@@ -156,78 +203,35 @@ const prState = [
 ];
 
 const displayEventState = computed(() => {
-  if (eventType.value === 'pr') {
+  if (filterParams.eventType === 'pr') {
     return prState;
   }
-  if (eventType.value === 'issue') {
+  if (filterParams.eventType === 'issue') {
     return issueState;
   }
   return [];
 });
-watch(displayEventState, () => (eventState.value = ''));
+watch(displayEventState, () => (filterParams.eventState = ''));
 
 // ----------------评论归属----------------
-const noteType = ref('');
 const noteTypes = ['Issue', 'PullRequest', 'Commit'];
 
 const reset = () => {
   sigBelong.value = '';
-  repoBelong.value = '';
   selectedSigs.value = [];
-  selectedRepos.value = [];
-  eventType.value = '';
-  isBot.value = '';
-  eventState.value = '';
-  eventRelation.value = '';
-  noteType.value = '';
+  filterParams.selectedRepos = [];
+  filterParams.repoBelong = '';
+  filterParams.eventType = '';
+  filterParams.isBot = '';
+  filterParams.eventState = '';
+  filterParams.eventRelation = '';
+  filterParams.noteType = '';
   applyFilter();
-};
-
-const getFilterParams = (): Record<string, string> => {
-  const params: Record<string, string> = {};
-  if (sigBelong.value) {
-    params[sigBelong.value] = userInfoStore.giteeLoginName as string;
-  }
-  if (repoBelong.value) {
-    params[repoBelong.value] = userInfoStore.giteeLoginName as string;
-  }
-  if (selectedSigs.value?.length) {
-    params.sig = selectedSigs.value.join();
-  }
-  if (selectedRepos.value?.length) {
-    params.repos = selectedRepos.value.join();
-  }
-  if (eventType.value) {
-    params.event_type = eventType.value;
-  }
-  if (isBot.value && isBot.value !== 'all') {
-    params.is_bot = isBot.value;
-  }
-  if (eventType.value === 'pr') {
-    if (eventState.value) {
-      params.pr_state = eventState.value;
-    }
-    if (eventRelation.value) {
-      params[`pr${eventRelation.value}`] = userInfoStore.giteeLoginName as string;
-    }
-  }
-  if (eventType.value === 'issue') {
-    if (eventState.value) {
-      params.issue_state = eventState.value;
-    }
-    if (eventRelation.value) {
-      params[`pr${eventRelation.value}`] = userInfoStore.giteeLoginName as string;
-    }
-  }
-  if (eventType.value === 'note' && noteType.value) {
-    params.note_type = noteType.value;
-  }
-  return params;
 };
 
 defineExpose({
   reset,
-  getFilterParams,
+  params,
 });
 </script>
 
@@ -251,11 +255,11 @@ defineExpose({
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="仓库归属">
-      <RadioToggle v-model="repoBelong" enable-cancel-select :options="repoBelongOptions" />
+      <RadioToggle v-model="filterParams.repoBelong" enable-cancel-select :options="repoBelongOptions" />
     </OFormItem>
     <OFormItem label="仓库名称">
       <FilterableSelect
-        v-model="selectedRepos"
+        v-model="filterParams.selectedRepos"
         filterable
         clearable
         placeholder="请选择仓库"
@@ -268,15 +272,15 @@ defineExpose({
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="事件类型">
-      <RadioToggle v-model="eventType" @change="applyFilter" enable-cancel-select :options="eventTypes" />
+      <RadioToggle v-model="filterParams.eventType" @change="applyFilter" enable-cancel-select :options="eventTypes" />
     </OFormItem>
-    <template v-if="eventType === 'pr' || eventType === 'issue'">
+    <template v-if="filterParams.eventType === 'pr' || filterParams.eventType === 'issue'">
       <OFormItem label="事件关系">
-        <RadioToggle v-model="eventRelation" @change="applyFilter" enable-cancel-select :options="eventRelations" />
+        <RadioToggle v-model="filterParams.eventRelation" @change="applyFilter" enable-cancel-select :options="eventRelations" />
       </OFormItem>
       <OFormItem label="事件状态">
         <OSelect
-          v-model="eventState"
+          v-model="filterParams.eventState"
           @options-visible-change="onSelectVisibilityChange"
           clearable
           @clear="applyFilter"
@@ -290,9 +294,9 @@ defineExpose({
         </OSelect>
       </OFormItem>
     </template>
-    <OFormItem v-if="eventType === 'note'" label="评论归属">
+    <OFormItem v-if="filterParams.eventType === 'note'" label="评论归属">
       <OSelect
-        v-model="noteType"
+        v-model="filterParams.noteType"
         @options-visible-change="onSelectVisibilityChange"
         clearable
         option-position="bottom"
@@ -305,7 +309,7 @@ defineExpose({
       </OSelect>
     </OFormItem>
     <OFormItem label="提交人">
-      <RadioToggle v-model="isBot" @change="applyFilter" enable-cancel-select :options="isBotOptions" />
+      <RadioToggle v-model="filterParams.isBot" @change="applyFilter" enable-cancel-select :options="isBotOptions" />
     </OFormItem>
   </OForm>
 </template>

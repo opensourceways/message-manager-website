@@ -46,7 +46,7 @@ const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
 provide('applyFilter', () => {
   emit('applyFilter', {
     source: source.value,
-    ...currentCompRef.value?.getFilterParams(),
+    ...currentCompRef.value?.params,
   });
 });
 
@@ -134,7 +134,7 @@ const saveRuleFlag = ref(false);
 
 /** 新增 */
 const confirmSave = (mode_name: string, callback: () => void) => {
-  const filterDetail = currentCompRef.value?.getFilterParams();
+  const filterDetail = { ...currentCompRef.value?.params };
   if (currentFilters.value?.find((item) => item.mode_name === mode_name)) {
     message.danger({ content: '名称重复' });
     return;

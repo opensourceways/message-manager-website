@@ -184,7 +184,7 @@ const responseInterceptorId = request.interceptors.response.use(
     // token过期，重新登录
     if (err.response?.status === 401) {
       clearUserAuth();
-      doLogin();
+      // doLogin();
     }
 
     return Promise.reject(err);

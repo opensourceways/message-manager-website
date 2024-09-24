@@ -7,8 +7,8 @@ import type { PagedResponseT } from "@/@types/types-common";
  * @param params 查询参数
  * @returns { Promise<MessageT[]> } 所有消息
  */
-export function getMessages(params: Record<string, any>) {
-  return request.post<PagedResponseT<MessageT>>(`/message_center/inner`, params, { ignoreDuplicates: true });
+export function getMessages(params: Record<string, any>, abort?: AbortController) {
+  return request.post<PagedResponseT<MessageT>>(`/message_center/inner`, params, { signal: abort?.signal, ignoreDuplicates: true });
 }
 
 /**
@@ -63,6 +63,6 @@ export function saveRule(rule: Record<string, any>) {
 /**
  * 
  */
-export function filterByRule(params: { source: string, mode_name: string, page: number, count_per_page: number }) {
-  return request.get<PagedResponseT<MessageT>>('/message_center/inner_quick', { params });
+export function filterByRule(params: { source: string, mode_name: string, page: number, count_per_page: number }, abort?: AbortController) {
+  return request.get<PagedResponseT<MessageT>>('/message_center/inner_quick', { params, signal: abort?.signal });
 }

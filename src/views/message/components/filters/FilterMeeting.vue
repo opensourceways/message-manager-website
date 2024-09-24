@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, watch, type Ref } from 'vue';
+import { computed, inject, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem } from '@opensig/opendesign';
 
 import FilterableSelect from '@/components/FilterableSelect.vue';
@@ -11,21 +11,37 @@ const { sigBelong, sigBelongOptions, sigList, selectedSigs } = useSigFilter();
 
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
 const applyFilter = inject<() => void>('applyFilter', () => {});
+
+const date = ref<Date>();
+
+const params = computed({
+  get() {
+    const data: Record<string, any> = {};
+    if (selectedSigs.value?.length) {
+      data.meeting_sig = selectedSigs.value.join();
+    }
+    if (date.value) {
+      data.meeting_start_time = date.value.getTime().toString();
+    }
+    return data;
+  },
+  set(val) {
+    if (val.meeting_sig) {
+      selectedSigs.value = val.meeting_sig.split(',');
+    }
+    if (val.meeting_start_time) {
+      date.value = new Date(Number(val.meeting_start_time));
+    }
+  }
+})
+
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-const syncParams = (val: Record<string, any>) => {
-  if (!val || !Object.keys(val).length) {
-    return;
+watch(webFilter, val => {
+  if (val) {
+    params.value = val;
   }
-  if (val.meeting_sig) {
-    selectedSigs.value = val.meeting_sig.split(',');
-  }
-  if (val.meeting_start_time) {
-    date.value = new Date(Number(val.meeting_start_time));
-  }
-};
-
-watch(webFilter, syncParams);
+});
 
 /**
  * 下拉选择可见性改变
@@ -36,22 +52,10 @@ const onSelectVisibilityChange = (val: boolean) => {
   }
 };
 
-const date = ref<Date>();
 
 watch(date, () => {
   applyFilter();
 });
-
-const getFilterParams = () => {
-  const params: Record<string, any> = {};
-  if (selectedSigs.value?.length) {
-    params.meeting_sig = selectedSigs.value.join();
-  }
-  if (date.value) {
-    params.meeting_start_time = date.value.getTime().toString();
-  }
-  return params;
-};
 
 const reset = () => {
   if (date.value) {
@@ -62,7 +66,7 @@ const reset = () => {
 };
 
 defineExpose({
-  getFilterParams,
+  params,
   reset,
 });
 </script>
