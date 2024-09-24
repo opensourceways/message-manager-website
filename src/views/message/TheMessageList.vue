@@ -448,7 +448,7 @@ const phoneFilterConfirm = (source: string) => {
           <img src="@/assets/svg-icons/icon-no-messages.svg" />
           <p>{{ EmptyTip[source] }}</p>
           <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
-            接收Gitee消息，请<OLink style="--link-color: var(--o-color-primary1); font-weight: bold" @click="goBindUserInfo">绑定Gitee账号</OLink>
+            接收Gitee消息，请<OLink style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))" @click="goBindUserInfo">绑定Gitee账号</OLink>
           </p>
         </div>
 

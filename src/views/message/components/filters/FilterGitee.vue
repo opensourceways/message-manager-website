@@ -262,7 +262,7 @@ defineExpose({
         v-model="filterParams.selectedRepos"
         filterable
         clearable
-        placeholder="请选择仓库"
+        placeholder="请输入仓库名"
         :values="repoList"
         inputWidth="100%"
         :options-wrapper="popupContainer"
