@@ -13,7 +13,7 @@ import IconRead from '~icons/app/icon-read.svg';
 
 import { EmptyTip, EventSourceNames, EventSources } from '@/data/event';
 import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/messages';
+import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/api-messages';
 import { useConfirmDialog } from '@vueuse/core';
 import { useCheckbox } from '@/composables/useCheckbox';
 import { useUserInfoStore } from '@/stores/user';

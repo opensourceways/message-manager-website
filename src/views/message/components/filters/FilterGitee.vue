@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getMyRepos } from '@/api/messages';
+import { getMyRepos } from '@/api/api-messages';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';

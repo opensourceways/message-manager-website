@@ -5,18 +5,18 @@ import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
 import type { FilterRuleT } from '@/@types/type-settings';
-import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-settings';
-import { saveRule } from '@/api/messages';
+import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-quick-filters';
+import { saveRule } from '@/api/api-messages';
 
 import IconClear from '~icons/app/icon-clear.svg';
 import IconAdd from '~icons/app/icon-add.svg';
 import IconLink from '@/components/IconLink.vue';
 
 import RadioToggle from '@/components/RadioToggle.vue';
-import EurFilter from './filters/EurFilter.vue';
-import GiteeFilter from './filters/GiteeFilter.vue';
-import CveFilter from './filters/CveFilter.vue';
-import MeetingFilter from './filters/MeetingFilter.vue';
+import EurFilter from './filters/FilterEur.vue';
+import GiteeFilter from './filters/FilterGitee.vue';
+import CveFilter from './filters/FilterCve.vue';
+import MeetingFilter from './filters/FilterMeeting.vue';
 import { useUserInfoStore } from '@/stores/user';
 
 const popupContainer = ref();

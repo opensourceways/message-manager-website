@@ -1,4 +1,4 @@
-import { getUnreadCount } from '@/api/messages';
+import { getUnreadCount } from '@/api/api-messages';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
@@ -20,7 +20,9 @@ export const useUnreadMsgCountStore = defineStore('unreadMsgCount', () => {
         }
         res.forEach((item) => sourceCountMap.value.set(item.source, item.count));
       })
-      .catch(() => {});
+      .catch(() => {
+        sourceCountMap.value.clear();
+      });
   };
 
   return {
