@@ -105,6 +105,9 @@ const vFocus = {
 };
 
 const confirmAdd = () => {
+  if (!newTagContent.value) {
+    return;
+  }
   emit('confirmAdd', newTagContent.value, () => {
     isAddNew.value = false;
     newTagContent.value = '';
@@ -235,10 +238,13 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+:deep(.o-toggle) {
+  max-width: 176px;
+}
+
 .toggle-content {
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 176px;
 }
 
 .input-text {
@@ -246,7 +252,6 @@ onBeforeUnmount(() => {
   outline: none;
   background-color: transparent;
   width: 90px;
-  max-width: 176px;
 }
 
 .toggle-item-wrapper {

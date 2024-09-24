@@ -116,3 +116,11 @@ export function diff<T>(sourceArr: T[], targetArr: T[]) {
     same,
   };
 }
+
+export function uniqueBy<T>(arr: T[], uniqueKeyGetter: (val: T) => any) {
+  const map = new Map<any, T>();
+  arr.forEach(item => {
+    map.set(uniqueKeyGetter(item), item);
+  });
+  return [...map.values()].flat();
+}

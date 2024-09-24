@@ -18,6 +18,7 @@ import GiteeFilter from './filters/FilterGitee.vue';
 import CveFilter from './filters/FilterCve.vue';
 import MeetingFilter from './filters/FilterMeeting.vue';
 import { useUserInfoStore } from '@/stores/user';
+import { uniqueBy } from '@/utils/common';
 
 const popupContainer = ref();
 provide('popupContainer', popupContainer);
@@ -72,7 +73,7 @@ onMounted(() => queryFilterRules());
 const queryFilterRules = () => {
   getFilterRules().then((data) => {
     quickFilterMap.value.clear();
-    data.forEach((item) => {
+    uniqueBy(data, item => item.mode_name).forEach((item) => {
       const key = item.source;
       const filters = quickFilterMap.value.get(key);
       if (filters) {
@@ -132,12 +133,27 @@ const onEmailChange = (val: string | number | boolean) => {
 
 const saveRuleFlag = ref(false);
 
+const disableSave = computed(() => {
+  if (currentCompRef.value?.params) {
+    return Object.entries(currentCompRef.value.params as Record<string, any>).every(([prop, val]) => {
+      if (prop === 'event_type') {
+        return true;
+      }
+      return val === undefined || val === null || Number.isNaN(val) || (Array.isArray(val) && val.length === 0) || !val;
+    });
+  }
+  return true;
+});
+
 /** 新增 */
 const confirmSave = (mode_name: string, callback: () => void) => {
   const filterDetail = { ...currentCompRef.value?.params };
   if (currentFilters.value?.find((item) => item.mode_name === mode_name)) {
     message.danger({ content: '名称重复' });
     return;
+  }
+  if (source.value === EventSources.GITEE && !filterDetail.event_type) {
+    filterDetail.event_type = 'pr,issue,note';
   }
   saveRule({
     spec_version: '1.0',
@@ -191,7 +207,7 @@ defineExpose({ reset });
     <p class="sec-title">高级筛选</p>
     <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 
-    <IconLink @click="saveRuleFlag = true" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
+    <IconLink :disabled="disableSave" @click="saveRuleFlag = true" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
       保存为快捷筛选项
       <template #prefix>
         <IconAdd />
