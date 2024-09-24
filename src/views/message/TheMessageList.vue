@@ -132,7 +132,8 @@ const selectRule = (val: { source: string; mode_name: string }) => {
         messages.value = query_info ?? [];
         unreadCountStore.updateCount();
       })
-      .catch(() => {
+      .catch((res) => {
+        console.log(res)
         total.value = 0;
         messages.value = [];
       });

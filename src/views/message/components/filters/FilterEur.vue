@@ -38,6 +38,7 @@ const buildStatus = ref<string[]>();
 const reset = () => {
   projRelation.value = '';
   buildStatus.value = [];
+  applyFilter();
 };
 
 const getFilterParams = () => {

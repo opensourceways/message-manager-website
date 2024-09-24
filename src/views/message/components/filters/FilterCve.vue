@@ -95,6 +95,7 @@ const reset = () => {
   selectedRepos.value = [];
   affected.value = [];
   cveState.value = '';
+  applyFilter();
 };
 
 const getFilterParams = (): Record<string, string> => {

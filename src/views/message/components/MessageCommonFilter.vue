@@ -112,12 +112,9 @@ const renameFilter = (oldVal: { label: string; value: string | number }, newName
 };
 
 // ----------------重置----------------
-const onReset = (allowEmit = true) => {
+const reset = () => {
   selectedQuickFilter.value = '';
   currentCompRef.value?.reset();
-  if (allowEmit) {
-    emit('reset');
-  }
   webFilter.value = null;
 };
 
@@ -171,8 +168,6 @@ const applyQuickFilter = (mode_name: string) => {
   emailSwitch.value = !!filter?.need_mail;
 };
 
-const reset = () => onReset(false);
-
 defineExpose({ reset });
 </script>
 
@@ -211,7 +206,7 @@ defineExpose({ reset });
       <OSwitch v-model="weChatSwitch" disabled></OSwitch>
     </div>
 
-    <IconLink @click="onReset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: -6px">
+    <IconLink @click="reset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: -6px">
       重置
       <template #prefix>
         <IconClear />

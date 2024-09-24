@@ -1,4 +1,4 @@
-import { getAllSigs, getMySigs } from '@/api/messages';
+import { getAllSigs, getMySigs } from '@/api/api-messages';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useUserInfoStore } from './user';

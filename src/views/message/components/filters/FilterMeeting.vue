@@ -58,6 +58,7 @@ const reset = () => {
     date.value = undefined;
   }
   selectedSigs.value = [];
+  applyFilter();
 };
 
 defineExpose({
