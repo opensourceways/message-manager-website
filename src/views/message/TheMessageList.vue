@@ -55,20 +55,17 @@ const showNoEmail = ref(false);
 const goBindUserInfo = () => windowOpen('https://id.openeuler.org/zh/profile');
 
 const startPoll = (immediate?: boolean) => {
+  const fn = () => {
+    if (lastPollType === 'inner') {
+      getData(lastFilterParams.value);
+    } else {
+      selectRule(lastQueryRule);
+    }
+  };
   if (immediate) {
-    if (lastPollType === 'inner') {
-      getData(lastFilterParams.value);
-    } else {
-      selectRule(lastQueryRule);
-    }
+    fn();
   }
-  intervalId = setInterval(() => {
-    if (lastPollType === 'inner') {
-      getData(lastFilterParams.value);
-    } else {
-      selectRule(lastQueryRule);
-    }
-  }, 10_000);
+  intervalId = setInterval(fn, 10_000);
 };
 
 watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
@@ -112,28 +109,33 @@ provide('checkboxVal', checkboxVal);
 
 const lastFilterParams = ref<Record<string, any>>({});
 
+/** 快捷筛选 */
 const selectRule = (val: { source: string; mode_name: string }) => {
   if (val) {
     lastPollType = 'quick';
-    lastQueryRule = val;
+    lastQueryRule = { ...val };
     filterByRule({
       source: val.source,
       mode_name: val.mode_name,
-      page: pageInfo.page as number,
-      count_per_page: pageInfo.count_per_page as number,
-    }).then((res) => {
-      const { count, query_info } = res.data;
-      total.value = count;
-      if (query_info) {
-        for (const msg of query_info) {
-          msg.id = msg.source + msg.event_id;
-          const date = dayjs(msg.time);
-          msg.formattedTime = date.fromNow();
+      ...pageInfo,
+    })
+      .then((res) => {
+        const { count, query_info } = res.data;
+        total.value = count;
+        if (query_info) {
+          for (const msg of query_info) {
+            msg.id = msg.source + msg.event_id;
+            const date = dayjs(msg.time);
+            msg.formattedTime = date.fromNow();
+          }
         }
-      }
-      clearCheckboxes();
-      messages.value = query_info ?? [];
-    });
+        messages.value = query_info ?? [];
+        unreadCountStore.updateCount();
+      })
+      .catch(() => {
+        total.value = 0;
+        messages.value = [];
+      });
   }
 };
 
@@ -147,7 +149,7 @@ const readStatusOptions = ref([
 // ------------------------获取数据------------------------
 const getData = (filterParams: Record<string, any> = {}) => {
   lastPollType = 'inner';
-  lastFilterParams.value = filterParams;
+  lastFilterParams.value = { ...filterParams };
   getMessages({
     source: source.value,
     is_read: readStatus.value,
@@ -170,6 +172,7 @@ const getData = (filterParams: Record<string, any> = {}) => {
     })
     .catch(() => {
       total.value = 0;
+      messages.value = [];
     });
 };
 
@@ -218,7 +221,6 @@ const delMessage = async (msg: MessageT) => {
         message.success({ content: '删除成功' });
         getData();
         clearCheckboxes();
-        unreadCountStore.updateCount();
       })
       .catch((error) => {
         if (error?.response?.data?.message) {
@@ -253,7 +255,6 @@ const delMultiMessages = async () => {
         }
         clearCheckboxes();
         getData();
-        unreadCountStore.updateCount();
       })
       .catch((error) => {
         if (error?.response?.data?.message) {
