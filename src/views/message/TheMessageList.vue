@@ -98,6 +98,7 @@ provide('checkboxVal', checkboxVal);
 const selectRule = async (val: { source: string; mode_name: string }) => {
   lastQueryParams = val;
   lastQueryType = 'quick';
+  console.log('clear', timeoutId);
   clearTimeout(timeoutId);
   if (abortController) {
     abortController.abort();
@@ -135,6 +136,7 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
     messages.value = [];
   }
   timeoutId = setTimeout(() => selectRule(val), 10_000);
+  console.log('start', timeoutId);
 };
 
 // ------------------------切换已读未读消息------------------------
@@ -148,6 +150,7 @@ const readStatusOptions = ref([
 const getData = async (filterParams: Record<string, any> = {}) => {
   lastQueryParams = filterParams;
   lastQueryType = 'inner';
+  console.log('clear', timeoutId);
   clearTimeout(timeoutId);
   if (abortController) {
     abortController.abort();
@@ -187,6 +190,7 @@ const getData = async (filterParams: Record<string, any> = {}) => {
     messages.value = [];
   }
   timeoutId = setTimeout(() => getData(filterParams), 10_000);
+  console.log('start', timeoutId);
 };
 
 // ------------------------菜单事件------------------------
