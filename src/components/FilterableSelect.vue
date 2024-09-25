@@ -67,9 +67,9 @@ const selectRef = ref();
 const rawValues = computed(() => {
   return props.values.map((val) => {
     if (typeof val === 'string') {
-      return { label: val, value: val };
+      return { label: val, value: val, upperCaseLabel: val.toUpperCase() };
     }
-    return val;
+    return { ...val, upperCaseLabel: val.label.toUpperCase() };
   });
 });
 
@@ -94,7 +94,7 @@ const searchVal = ref<string>();
 const filteredValues = computed(() => {
   const search = searchVal.value;
   if (search) {
-    return rawValues.value.filter((val) => val.label.includes(search));
+    return rawValues.value.filter((val) => val.upperCaseLabel.includes(search));
   } else {
     return rawValues.value;
   }
@@ -111,7 +111,7 @@ const { scrollTop } = useScrollBottomListener(scroller, () => (displayCount.valu
 const onFilterInput = useDebounceFn((search?: string) => {
   // 重置显示个数
   displayCount.value = 30;
-  searchVal.value = search;
+  searchVal.value = search?.toUpperCase();
 }, props.filterDebounceTimeout);
 
 const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes } = useCheckbox(

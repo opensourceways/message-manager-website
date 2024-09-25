@@ -178,6 +178,7 @@ const webFilter = ref<Record<string, any> | null | undefined>();
 provide('webFilter', webFilter);
 
 const applyQuickFilter = (mode_name: string) => {
+  console.log('????', mode_name)
   emit('applyQuickFilter', mode_name);
   const filter = currentFilters.value?.find((filter) => filter.mode_name === mode_name);
   webFilter.value = filter?.web_filter;

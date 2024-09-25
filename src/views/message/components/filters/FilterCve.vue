@@ -124,6 +124,7 @@ const reset = () => {
 
 defineExpose({
   reset,
+  params,
 });
 </script>
 

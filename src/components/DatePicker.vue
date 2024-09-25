@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { OIconCalendar, OInput } from '@opensig/opendesign';
 import { useVModel } from '@vueuse/core';
+import dayjs from 'dayjs';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import { computed, ref } from 'vue';
 
@@ -10,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update:modelValue', val: Date): void;
+  (event: 'change', val: Date): void;
 }>()
 
 const datePickerRef = ref();
@@ -24,8 +26,7 @@ const formattedDate = computed({
     if (!date.value) {
       return '';
     }
-    const d = date.value;
-    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    return dayjs(date.value).format('YYYY-MM-DD');
   },
   set(val) {
     if (val && val.match(DATE_PATTERN)) {
@@ -36,6 +37,8 @@ const formattedDate = computed({
     }
   },
 });
+
+const onDateChange = (date: Date) => emit('change', date);
 </script>
 
 <template>
@@ -62,7 +65,7 @@ const formattedDate = computed({
       </template>
     </OInput>
     <el-config-provider :locale="zhCn">
-      <el-date-picker ref="datePickerRef" v-model="date" type="date" placeholder="Pick a day" size="default" style="width: 100%" />
+      <el-date-picker @change="onDateChange"  ref="datePickerRef" v-model="date" type="date" placeholder="Pick a day" size="default" style="width: 100%" />
     </el-config-provider>
   </div>
 </template>

@@ -64,5 +64,5 @@ export function saveRule(rule: Record<string, any>) {
  * 
  */
 export function filterByRule(params: { source: string, mode_name: string, page: number, count_per_page: number }, abort?: AbortController) {
-  return request.get<PagedResponseT<MessageT>>('/message_center/inner_quick', { params, signal: abort?.signal });
+  return request.get<PagedResponseT<MessageT>>('/message_center/inner_quick', { params, signal: abort?.signal, ignoreDuplicates: true });
 }

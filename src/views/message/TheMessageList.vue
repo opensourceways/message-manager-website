@@ -52,7 +52,6 @@ const showNoEmail = ref(false);
 const goBindUserInfo = () => (window.location.href = import.meta.env.VITE_LOGIN_URL);
 
 let lastQueryType: 'inner' | 'quick' = 'inner';
-let abortController: AbortController | null;
 let lastQueryParams: { source: string; mode_name: string } | Record<string, any>;
 
 watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
@@ -100,26 +99,19 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
   lastQueryType = 'quick';
   console.log('clear', timeoutId);
   clearTimeout(timeoutId);
-  if (abortController) {
-    abortController.abort();
-    abortController = null;
-  }
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
     return;
   }
   try {
-    abortController = new AbortController();
     const res = await filterByRule(
       {
         source: val.source,
         mode_name: val.mode_name,
         ...pageInfo,
       },
-      abortController
     );
-    abortController = null;
     const { count, query_info } = res.data;
     total.value = count;
     if (query_info) {
@@ -131,7 +123,8 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
     }
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
-  } catch {
+  } catch (err) {
+    console.warn(err)
     total.value = 0;
     messages.value = [];
   }
@@ -152,17 +145,12 @@ const getData = async (filterParams: Record<string, any> = {}) => {
   lastQueryType = 'inner';
   console.log('clear', timeoutId);
   clearTimeout(timeoutId);
-  if (abortController) {
-    abortController.abort();
-    abortController = null;
-  }
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
     return;
   }
   try {
-    abortController = new AbortController();
     const res = await getMessages(
       {
         source: source.value,
@@ -171,9 +159,7 @@ const getData = async (filterParams: Record<string, any> = {}) => {
         ...pageInfo,
         ...filterParams,
       },
-      abortController
     );
-    abortController = null;
     const { count, query_info } = res.data;
     total.value = count;
     if (query_info) {
@@ -185,7 +171,8 @@ const getData = async (filterParams: Record<string, any> = {}) => {
     }
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
-  } catch {
+  } catch (err) {
+    console.warn(err)
     total.value = 0;
     messages.value = [];
   }

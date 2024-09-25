@@ -52,10 +52,11 @@ const onSelectVisibilityChange = (val: boolean) => {
   }
 };
 
-
-watch(date, () => {
-  applyFilter();
-});
+const onDateChange = (val?: Date) => {
+  if (val) {
+    applyFilter();
+  }
+}
 
 const reset = () => {
   if (date.value) {
@@ -91,7 +92,7 @@ defineExpose({
       ></FilterableSelect>
     </OFormItem>
     <OFormItem label="会议日期">
-      <DatePicker style="width: 100%; position: relative" v-model="date" />
+      <DatePicker @change="onDateChange" style="width: 100%; position: relative" v-model="date" />
     </OFormItem>
   </OForm>
 </template>
