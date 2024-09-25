@@ -57,7 +57,7 @@ const params = computed({
         params.issue_state = filterParams.eventState;
       }
       if (filterParams.eventRelation) {
-        params[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+        params[`issue${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
       }
     }
     if (filterParams.eventType === 'note' && filterParams.noteType) {
