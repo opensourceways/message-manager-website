@@ -16,7 +16,7 @@ const date = ref<Date>();
 
 const params = computed({
   get() {
-    const data: Record<string, any> = {};
+    const data: Record<string, any> = { event_type: 'meeting' };
     if (selectedSigs.value?.length) {
       data.meeting_sig = selectedSigs.value.join();
     }

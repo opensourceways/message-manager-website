@@ -25,7 +25,6 @@ import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
 import IconLink from '@/components/IconLink.vue';
-import { windowOpen } from '@/utils/common';
 
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
@@ -50,7 +49,7 @@ let timeoutId: ReturnType<typeof setTimeout>;
 
 const showNoEmail = ref(false);
 
-const goBindUserInfo = () => windowOpen('https://id.openeuler.org/zh/profile');
+const goBindUserInfo = () => (window.location.href = import.meta.env.VITE_LOGIN_URL);
 
 let lastQueryType: 'inner' | 'quick' = 'inner';
 let abortController: AbortController | null;
@@ -111,11 +110,14 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
   }
   try {
     abortController = new AbortController();
-    const res = await filterByRule({
-      source: val.source,
-      mode_name: val.mode_name,
-      ...pageInfo,
-    }, abortController);
+    const res = await filterByRule(
+      {
+        source: val.source,
+        mode_name: val.mode_name,
+        ...pageInfo,
+      },
+      abortController
+    );
     abortController = null;
     const { count, query_info } = res.data;
     total.value = count;
@@ -158,13 +160,16 @@ const getData = async (filterParams: Record<string, any> = {}) => {
   }
   try {
     abortController = new AbortController();
-    const res = await getMessages({
-      source: source.value,
-      is_read: readStatus.value,
-      start_time: startTime.value?.toString(),
-      ...pageInfo,
-      ...filterParams,
-    }, abortController);
+    const res = await getMessages(
+      {
+        source: source.value,
+        is_read: readStatus.value,
+        start_time: startTime.value?.toString(),
+        ...pageInfo,
+        ...filterParams,
+      },
+      abortController
+    );
     abortController = null;
     const { count, query_info } = res.data;
     total.value = count;
@@ -448,7 +453,11 @@ const phoneFilterConfirm = (source: string) => {
           <img src="@/assets/svg-icons/icon-no-messages.svg" />
           <p>{{ EmptyTip[source] }}</p>
           <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
-            接收Gitee消息，请<OLink style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))" @click="goBindUserInfo">绑定Gitee账号</OLink>
+            接收Gitee消息，请<OLink
+              style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
+              @click="goBindUserInfo"
+              >绑定Gitee账号</OLink
+            >
           </p>
         </div>
 

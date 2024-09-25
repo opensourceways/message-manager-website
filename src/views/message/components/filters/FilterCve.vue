@@ -20,7 +20,7 @@ const filterParams = reactive({
 
 const params = computed({
   get() {
-    const data: Record<string, any> = {};
+    const data: Record<string, any> = { event_type: 'issue' };
     if (sigBelong.value) {
       data[sigBelong.value] = userInfoStore.giteeLoginName as string;
     }
