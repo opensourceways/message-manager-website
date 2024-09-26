@@ -97,7 +97,6 @@ provide('checkboxVal', checkboxVal);
 const selectRule = async (val: { source: string; mode_name: string }) => {
   lastQueryParams = val;
   lastQueryType = 'quick';
-  console.log('clear', timeoutId);
   clearTimeout(timeoutId);
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
@@ -124,12 +123,10 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
   } catch (err) {
-    console.warn(err)
     total.value = 0;
     messages.value = [];
   }
   timeoutId = setTimeout(() => selectRule(val), 10_000);
-  console.log('start', timeoutId);
 };
 
 // ------------------------切换已读未读消息------------------------
@@ -143,7 +140,6 @@ const readStatusOptions = ref([
 const getData = async (filterParams: Record<string, any> = {}) => {
   lastQueryParams = filterParams;
   lastQueryType = 'inner';
-  console.log('clear', timeoutId);
   clearTimeout(timeoutId);
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
@@ -172,12 +168,10 @@ const getData = async (filterParams: Record<string, any> = {}) => {
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
   } catch (err) {
-    console.warn(err)
     total.value = 0;
     messages.value = [];
   }
   timeoutId = setTimeout(() => getData(filterParams), 10_000);
-  console.log('start', timeoutId);
 };
 
 // ------------------------菜单事件------------------------
