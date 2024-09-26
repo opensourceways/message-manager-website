@@ -66,6 +66,7 @@ const params = computed({
     return params;
   },
   set(val: Record<string, any>) {
+    reset(false);
     if (val.sig) {
       selectedSigs.value = val.sig.split(',');
     }
@@ -216,7 +217,7 @@ watch(displayEventState, () => (filterParams.eventState = ''));
 // ----------------评论归属----------------
 const noteTypes = ['Issue', 'PullRequest', 'Commit'];
 
-const reset = () => {
+const reset = (shouldApply = true) => {
   sigBelong.value = '';
   selectedSigs.value = [];
   filterParams.selectedRepos = [];
@@ -226,7 +227,9 @@ const reset = () => {
   filterParams.eventState = '';
   filterParams.eventRelation = '';
   filterParams.noteType = '';
-  applyFilter();
+  if (shouldApply) {
+    applyFilter();
+  }
 };
 
 defineExpose({

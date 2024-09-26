@@ -42,6 +42,7 @@ const params = computed({
     if (!val || !Object.keys(val).length) {
       return;
     }
+    reset(false);
     if (val.sig) {
       selectedSigs.value = val.sig.split(',');
     }
@@ -114,12 +115,14 @@ const onSelectVisibilityChange = (val: boolean) => {
   }
 };
 
-const reset = () => {
+const reset = (shouldApply = true) => {
   selectedSigs.value = [];
   filterParams.selectedRepos = [];
   filterParams.affected = [];
   filterParams.cveState = '';
-  applyFilter();
+  if (shouldApply) {
+    applyFilter();
+  }
 };
 
 defineExpose({

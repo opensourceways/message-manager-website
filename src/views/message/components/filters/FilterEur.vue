@@ -31,6 +31,7 @@ const params = computed({
     return data;
   },
   set(val) {
+    reset(false);
     if (val.build_owner) {
       filterParams.projRelation = 'myProj'
     }
@@ -56,10 +57,12 @@ const projRelations = [
   { label: '我执行的', value: 'myExec' },
 ];
 
-const reset = () => {
+const reset = (shouldApply = true) => {
   filterParams.projRelation = '';
   filterParams.buildStatus = [];
-  applyFilter();
+  if (shouldApply) {
+    applyFilter();
+  }
 };
 
 const exceededLabel = (vals: SelectOptionT[]) => `${vals.length}个选项被选中`;

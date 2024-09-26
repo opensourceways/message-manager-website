@@ -26,6 +26,7 @@ const params = computed({
     return data;
   },
   set(val) {
+    reset(false);
     if (val.meeting_sig) {
       selectedSigs.value = val.meeting_sig.split(',');
     }
@@ -58,12 +59,14 @@ const onDateChange = (val?: Date) => {
   }
 }
 
-const reset = () => {
+const reset = (shouldApply = true) => {
   if (date.value) {
     date.value = undefined;
   }
   selectedSigs.value = [];
-  applyFilter();
+  if (shouldApply) {
+    applyFilter();
+  }
 };
 
 defineExpose({
