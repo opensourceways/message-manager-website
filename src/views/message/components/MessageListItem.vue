@@ -23,7 +23,7 @@ const isPhone = inject<Ref<boolean>>('isPhone');
 const checkboxVal = inject<Ref<(string | number)[]>>('checkboxVal');
 
 const EXTRACT_REGEX = /<a href=".+">(.*?)<\/a>/;
-const LINE_BR = /\n/g;
+const LINE_BR = /[\r\n]/g;
 
 const Title = (props: { msg: MessageT }) => {
   const summary = props.msg.summary.replace(LINE_BR, '');
