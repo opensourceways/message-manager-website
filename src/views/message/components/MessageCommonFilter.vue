@@ -73,7 +73,8 @@ onMounted(() => queryFilterRules());
 const queryFilterRules = () => {
   getFilterRules().then((data) => {
     quickFilterMap.value.clear();
-    uniqueBy(data, item => item.mode_name).forEach((item) => {
+    const aa = uniqueBy(data, item => item.source + item.mode_name);
+    aa.forEach((item) => {
       const key = item.source;
       const filters = quickFilterMap.value.get(key);
       if (filters) {
@@ -131,7 +132,21 @@ const onEmailChange = (val: string | number | boolean) => {
   }
 };
 
-const saveRuleFlag = ref(false);
+// ----------------添加新规则----------------
+const togglesRef = ref();
+const isAddingNewRule = ref(false);
+
+const changeAddState = () => {
+  const radioGroupHeight = togglesRef.value.$el.getBoundingClientRect().height
+  const radioHeight = togglesRef.value.$el.querySelector('.o-toggle').getBoundingClientRect().height
+  if (radioGroupHeight >= radioHeight * 7 + 48) {
+    message.warning({
+      content: '快捷筛选项已达上限，请删除不常用选项'
+    });
+    return;
+  }
+  isAddingNewRule.value = true;
+}
 
 const disableSave = computed(() => {
   if (currentCompRef.value?.params) {
@@ -189,11 +204,12 @@ defineExpose({ reset });
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <template v-if="saveRuleFlag || currentFilters?.length">
+    <template v-if="isAddingNewRule || currentFilters?.length">
       <p class="sec-title">快捷筛选</p>
       <RadioToggle
+        ref="togglesRef"
         v-model="selectedQuickFilter"
-        v-model:add-new="saveRuleFlag"
+        v-model:add-new="isAddingNewRule"
         @confirm-add="confirmSave"
         @change="applyQuickFilter"
         :options="quickFilters"
@@ -207,7 +223,7 @@ defineExpose({ reset });
     <p class="sec-title">高级筛选</p>
     <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 
-    <IconLink :disabled="disableSave" @click="saveRuleFlag = true" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
+    <IconLink :disabled="disableSave" @click="changeAddState" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
       保存为快捷筛选项
       <template #prefix>
         <IconAdd />

@@ -21,6 +21,7 @@ const props = withDefaults(
     enableDeleteTags?: boolean;
     /** 是否允许取消选中 */
     enableCancelSelect?: boolean;
+    asdasd?: boolean;
   }>(),
   {
     options: (): any[] => [],
@@ -174,11 +175,7 @@ const setFilterTagClickOutside = (el: any, index: number) => {
   }
   clickOutsideCancelFnMap.set(
     index,
-    onClickOutside(el, () => {
-      // 取消重命名
-      currentlyRenameTagIndex.value = null;
-      renameContent.value = '';
-    }) as () => void
+    onClickOutside(el, confirmRename) as () => void
   );
 };
 

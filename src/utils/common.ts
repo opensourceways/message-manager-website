@@ -122,5 +122,5 @@ export function uniqueBy<T>(arr: T[], uniqueKeyGetter: (val: T) => any) {
   arr.forEach(item => {
     map.set(uniqueKeyGetter(item), item);
   });
-  return [...map.values()].flat();
+  return [...map.values()];
 }
