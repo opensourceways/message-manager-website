@@ -42,6 +42,10 @@ const props = defineProps({
     type: [String, Object] as PropType<string | HTMLElement | null>,
     default: 'body',
   },
+  emptyHint: {
+    type: String,
+    default: '没有匹配的数据',
+  },
 });
 
 const emit = defineEmits<{
@@ -213,9 +217,9 @@ const clearClick = (e: Event) => {
       @change="onVisibleChange"
       :style="{ '--popup-shadow': 'var(--o-shadow-1)', minWidth: popupWidth }"
     >
-      <div style="background-color: var(--o-color-fill2); padding: 12px; border-radius: 4px; overflow: hidden">
+      <div style="box-shadow: var(--o-shadow-2); border-radius: var(--o-radius_control-m); background-color: var(--o-color-fill2); padding: 12px; border-radius: 4px; overflow: hidden">
         <div class="mask" v-if="!values.length">
-          <p class="info">没有匹配的数据</p>
+          <p class="info">{{ emptyHint }}</p>
         </div>
         <OInput class="search-input" round="4px" @input="onFilterInput" clearable @clear="onFilterInput()" :placeholder="placeholder">
           <template #prefix>

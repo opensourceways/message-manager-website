@@ -25,45 +25,45 @@ const filterParams = reactive({
 
 const params = computed({
   get() {
-    const params: Record<string, string> = {};
+    const data: Record<string, string> = {};
     if (sigBelong.value) {
-      params[sigBelong.value] = userInfoStore.giteeLoginName as string;
+      data[sigBelong.value] = userInfoStore.giteeLoginName as string;
     }
     if (filterParams.repoBelong) {
-      params[filterParams.repoBelong] = userInfoStore.giteeLoginName as string;
+      data[filterParams.repoBelong] = userInfoStore.giteeLoginName as string;
     }
     if (selectedSigs.value?.length) {
-      params.sig = selectedSigs.value.join();
+      data.sig = selectedSigs.value.join();
     }
     if (filterParams.selectedRepos?.length) {
-      params.repos = filterParams.selectedRepos.join();
+      data.repos = filterParams.selectedRepos.join();
     }
     if (filterParams.eventType) {
-      params.event_type = filterParams.eventType;
+      data.event_type = filterParams.eventType;
     }
     if (filterParams.isBot && filterParams.isBot !== 'all') {
-      params.is_bot = filterParams.isBot;
+      data.is_bot = filterParams.isBot;
     }
     if (filterParams.eventType === 'pr') {
       if (filterParams.eventState) {
-        params.pr_state = filterParams.eventState;
+        data.pr_state = filterParams.eventState;
       }
       if (filterParams.eventRelation) {
-        params[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+        data[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
       }
     }
     if (filterParams.eventType === 'issue') {
       if (filterParams.eventState) {
-        params.issue_state = filterParams.eventState;
+        data.issue_state = filterParams.eventState;
       }
       if (filterParams.eventRelation) {
-        params[`issue${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+        data[`issue${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
       }
     }
     if (filterParams.eventType === 'note' && filterParams.noteType) {
-      params.note_type = filterParams.noteType;
+      data.note_type = filterParams.noteType;
     }
-    return params;
+    return data;
   },
   set(val: Record<string, any>) {
     reset(false);
@@ -249,6 +249,7 @@ defineExpose({
         filterable
         clearable
         placeholder="请选择SIG组"
+        emptyHint="您暂未加入任何SIG"
         :values="sigList"
         inputWidth="100%"
         :options-wrapper="popupContainer"

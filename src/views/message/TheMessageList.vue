@@ -25,6 +25,7 @@ import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
 import IconLink from '@/components/IconLink.vue';
+import { AxiosError } from 'axios';
 
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
@@ -93,16 +94,23 @@ const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 const { checkAllVal, checkboxVal, indeterminate, clearCheckboxes } = useCheckbox(messages, (msg) => msg.id);
 provide('checkboxVal', checkboxVal);
 
+let abortController: AbortController | null;
+
 /** 快捷筛选 */
 const selectRule = async (val: { source: string; mode_name: string }) => {
   lastQueryParams = val;
   lastQueryType = 'quick';
-  clearTimeout(timeoutId);
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
     return;
   }
+  if (abortController) {
+    abortController.abort();
+  }
+  clearTimeout(timeoutId);
+  abortController = new AbortController();
+  let canceled = false;
   try {
     const res = await filterByRule(
       {
@@ -110,6 +118,7 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
         mode_name: val.mode_name,
         ...pageInfo,
       },
+      abortController
     );
     const { count, query_info } = res.data;
     total.value = count;
@@ -125,8 +134,12 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
   } catch (err) {
     total.value = 0;
     messages.value = [];
+    canceled = err instanceof AxiosError && err.code === 'ERR_CANCELED';
   }
-  timeoutId = setTimeout(() => selectRule(val), 10_000);
+  abortController = null;
+  if (!canceled) {
+    timeoutId = setTimeout(() => selectRule(val), 10_000);
+  }
 };
 
 // ------------------------切换已读未读消息------------------------
@@ -140,12 +153,17 @@ const readStatusOptions = ref([
 const getData = async (filterParams: Record<string, any> = {}) => {
   lastQueryParams = filterParams;
   lastQueryType = 'inner';
-  clearTimeout(timeoutId);
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
     return;
   }
+  if (abortController) {
+    abortController.abort();
+  }
+  clearTimeout(timeoutId);
+  abortController = new AbortController();
+  let canceled = false;
   try {
     const res = await getMessages(
       {
@@ -155,6 +173,7 @@ const getData = async (filterParams: Record<string, any> = {}) => {
         ...pageInfo,
         ...filterParams,
       },
+      abortController
     );
     const { count, query_info } = res.data;
     total.value = count;
@@ -170,8 +189,12 @@ const getData = async (filterParams: Record<string, any> = {}) => {
   } catch (err) {
     total.value = 0;
     messages.value = [];
+    canceled = err instanceof AxiosError && err.code === 'ERR_CANCELED';
   }
-  timeoutId = setTimeout(() => getData(filterParams), 10_000);
+  abortController = null;
+  if (!canceled) {
+    timeoutId = setTimeout(() => getData(filterParams), 10_000);
+  }
 };
 
 // ------------------------菜单事件------------------------
