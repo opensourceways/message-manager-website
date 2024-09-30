@@ -9,16 +9,7 @@ import { computed, inject, nextTick, onBeforeMount, reactive, ref, watch, type R
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-// const applyFilter = inject<() => void>('applyFilter', () => {});
-
-const emit = defineEmits<{
-  (event: 'applyFilter', val: Record<string, any>): void;
-}>();
-
-const applyFilter = () => {
-  console.log('!!!')
-  emit('applyFilter', { ...params.value })
-};
+const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
@@ -172,7 +163,9 @@ const repoList = computed(() => {
  */
 const onSelectVisibilityChange = (val: boolean) => {
   if (!val) {
-    applyFilter();
+    if (applyFilter) {
+      applyFilter();
+    }
   }
 };
 

@@ -31,7 +31,7 @@ const userInfo = useUserInfoStore();
 const emit = defineEmits<{
   (event: 'reset'): void;
   (event: 'applyQuickFilter', val: string): void;
-  // (event: 'applyFilter', val: Record<string, any>): void;
+  (event: 'applyFilter', val: Record<string, any>): void;
 }>();
 
 const compMap = {
@@ -43,6 +43,13 @@ const compMap = {
 const currentFilterComp = computed(() => compMap[source.value]);
 const currentCompRef = ref();
 const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
+
+provide('applyFilter', () => {
+  emit('applyFilter', {
+    source: source.value,
+    ...currentCompRef.value?.params,
+  });
+});
 
 // ----------------快捷筛选----------------
 /** 选中的快捷筛选的mode_name */
