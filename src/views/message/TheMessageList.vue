@@ -153,6 +153,7 @@ const readStatusOptions = ref([
 const getData = async (filterParams: Record<string, any> = {}) => {
   lastQueryParams = filterParams;
   lastQueryType = 'inner';
+  console.log('???')
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
@@ -441,7 +442,7 @@ const phoneFilterConfirm = (source: string) => {
                     '--layout-content-padding': '16px',
                   }"
                 >
-                  <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @apply-filter="getData" />
+                  <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
                 </ContentWrapper>
               </OPopup>
             </template>

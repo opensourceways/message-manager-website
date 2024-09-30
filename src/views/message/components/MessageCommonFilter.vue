@@ -31,7 +31,7 @@ const userInfo = useUserInfoStore();
 const emit = defineEmits<{
   (event: 'reset'): void;
   (event: 'applyQuickFilter', val: string): void;
-  (event: 'applyFilter', val: Record<string, any>): void;
+  // (event: 'applyFilter', val: Record<string, any>): void;
 }>();
 
 const compMap = {
@@ -43,13 +43,6 @@ const compMap = {
 const currentFilterComp = computed(() => compMap[source.value]);
 const currentCompRef = ref();
 const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
-
-provide('applyFilter', () => {
-  emit('applyFilter', {
-    source: source.value,
-    ...currentCompRef.value?.params,
-  });
-});
 
 // ----------------快捷筛选----------------
 /** 选中的快捷筛选的mode_name */
@@ -134,18 +127,22 @@ const onEmailChange = (val: string | number | boolean) => {
 
 // ----------------添加新规则----------------
 const togglesRef = ref();
-const isAddingNewRule = ref(false);
 
-const changeAddState = () => {
-  const radioGroupHeight = togglesRef.value.$el.getBoundingClientRect().height
-  const radioHeight = togglesRef.value.$el.querySelector('.o-toggle').getBoundingClientRect().height
-  if (radioGroupHeight >= radioHeight * 7 + 48) {
-    message.warning({
-      content: '快捷筛选项已达上限，请删除不常用选项'
-    });
+const addNewFilter = () => {
+  if (!togglesRef.value) {
     return;
   }
-  isAddingNewRule.value = true;
+  if (currentFilters.value?.length) {
+    const radioGroupHeight = togglesRef.value.$el.getBoundingClientRect().height
+    const radioHeight = togglesRef.value.$el.querySelector('.o-toggle').getBoundingClientRect().height
+    if (radioGroupHeight >= radioHeight * 7 + 48) {
+      message.warning({
+        content: '快捷筛选项已达上限，请删除不常用选项'
+      });
+      return;
+    }
+  }
+  togglesRef.value.addNew();
 }
 
 const disableSave = computed(() => {
@@ -204,26 +201,25 @@ defineExpose({ reset });
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <template v-if="isAddingNewRule || currentFilters?.length">
-      <p class="sec-title">快捷筛选</p>
-      <RadioToggle
-        ref="togglesRef"
-        v-model="selectedQuickFilter"
-        v-model:add-new="isAddingNewRule"
-        @confirm-add="confirmSave"
-        @change="applyQuickFilter"
-        :options="quickFilters"
-        :defaultOptions="defaultQuickFilters"
-        enable-rename-tags
-        enable-delete-tags
-        @remove="deleteFilter"
-        @rename="renameFilter"
-      />
-    </template>
+    <!-- <template v-if="isAddingNewRule || currentFilters?.length">
+    </template> -->
+    <p v-if="togglesRef?.isAddingNew || currentFilters?.length" class="sec-title">快捷筛选</p>
+    <RadioToggle
+      ref="togglesRef"
+      v-model="selectedQuickFilter"
+      @confirm-add="confirmSave"
+      @change="applyQuickFilter"
+      :options="quickFilters"
+      :defaultOptions="defaultQuickFilters"
+      enable-rename-tags
+      enable-delete-tags
+      @remove="deleteFilter"
+      @rename="renameFilter"
+    />
     <p class="sec-title">高级筛选</p>
     <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 
-    <IconLink :disabled="disableSave" @click="changeAddState" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
+    <IconLink :disabled="disableSave" @click="addNewFilter" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
       保存为快捷筛选项
       <template #prefix>
         <IconAdd />
@@ -254,11 +250,11 @@ defineExpose({ reset });
   .sec-title {
     @include text2;
 
-    &:first-child {
+    &:first-of-type {
       margin-bottom: 16px;
     }
 
-    &:not(:first-child) {
+    &:not(:first-of-type) {
       margin-top: 16px;
     }
   }

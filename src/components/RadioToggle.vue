@@ -14,7 +14,7 @@ const props = withDefaults(
     /** 选中标签值 */
     modelValue?: string | number;
     /** 新增标签的开关 */
-    addNew?: boolean;
+    // addNew?: boolean;
     /** 是否允许重命名标签 */
     enableRenameTags?: boolean;
     /** 是否允许删除标签 */
@@ -27,7 +27,7 @@ const props = withDefaults(
     options: (): any[] => [],
     defaultOptions: (): any[] => [],
     modelValue: '',
-    addNew: false,
+    // addNew: false,
   }
 );
 
@@ -37,7 +37,7 @@ const emit = defineEmits<{
   (event: 'remove', val: { label: string; value: string | number }): void;
   (event: 'rename', val: { label: string; value: string | number }, newName: string): void;
   (event: 'update:modelValue', val: any): void;
-  (event: 'update:addNew', val: any): void;
+  // (event: 'update:addNew', val: any): void;
 }>();
 
 const radioVal = useVModel(props, 'modelValue', emit);
@@ -81,25 +81,32 @@ const cancel = (value: string | number, ev?: MouseEvent) => {
 };
 
 // ----------------添加新标签----------------
-const isAddNew = useVModel(props, 'addNew', emit);
+const isAddingNew = ref(false);
 const newTagContent = ref('');
-watch(isAddNew, (val) => {
-  if (val) {
-    const nextCount = normalizedOptions.value.reduce((count, opt) => {
-      if (opt.label.startsWith('我创建的')) {
-        const num = Number.parseInt(opt.label.slice(4));
-        if (!Number.isNaN(num)) {
-          return Math.max(num, count) + 1;
+
+const addNew = () => (isAddingNew.value = true);
+
+watch(
+  isAddingNew,
+  (val) => {
+    if (val) {
+      const nextCount = normalizedOptions.value.reduce((count, opt) => {
+        if (opt.label.startsWith('我创建的')) {
+          const num = Number.parseInt(opt.label.slice(4));
+          if (!Number.isNaN(num)) {
+            return Math.max(num, count) + 1;
+          }
         }
-      }
-      return count;
-    }, 1);
-    newTagContent.value = `我创建的${nextCount}`;
-  }
-  if (!val) {
-    newTagContent.value = '';
-  }
-}, { immediate: true });
+        return count;
+      }, 1);
+      newTagContent.value = `我创建的${nextCount}`;
+    }
+    if (!val) {
+      newTagContent.value = '';
+    }
+  },
+  { immediate: true }
+);
 
 const vFocus = {
   mounted: (el: HTMLInputElement) => el.focus(),
@@ -110,7 +117,7 @@ const confirmAdd = () => {
     return;
   }
   emit('confirmAdd', newTagContent.value, () => {
-    isAddNew.value = false;
+    isAddingNew.value = false;
     newTagContent.value = '';
   });
 };
@@ -173,10 +180,7 @@ const setFilterTagClickOutside = (el: any, index: number) => {
     clickOutsideCancelFnMap.delete(index);
     return;
   }
-  clickOutsideCancelFnMap.set(
-    index,
-    onClickOutside(el, confirmRename) as () => void
-  );
+  clickOutsideCancelFnMap.set(index, onClickOutside(el, confirmRename) as () => void);
 };
 
 onBeforeUnmount(() => {
@@ -184,6 +188,11 @@ onBeforeUnmount(() => {
     fn();
   }
   clickOutsideCancelFnMap.clear();
+});
+
+defineExpose({
+  addNew,
+  isAddingNew,
 });
 </script>
 
@@ -224,7 +233,7 @@ onBeforeUnmount(() => {
         </div>
       </template>
     </ORadio>
-    <ORadio :ref="setAddNewTagClickOutside" v-if="isAddNew" :value="false">
+    <ORadio :ref="setAddNewTagClickOutside" v-if="isAddingNew" :value="false">
       <template #radio>
         <OTag style="--tag-bg-color: var(--o-color-fill1); --tag-bd-color: var(--o-color-fill1); --tag-height: var(--o-control_size-m)">
           <input v-focus v-model="newTagContent" class="input-text" type="text" @keydown.enter="confirmAdd" />
