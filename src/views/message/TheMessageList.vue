@@ -153,7 +153,6 @@ const readStatusOptions = ref([
 const getData = async (filterParams: Record<string, any> = {}) => {
   lastQueryParams = filterParams;
   lastQueryType = 'inner';
-  console.log('???')
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
