@@ -54,14 +54,14 @@ export function getMyRepos(loginName: string) {
 }
 
 /**
- * 保存过滤规则
+ * 保存快捷筛选
  */
 export function saveRule(rule: Record<string, any>) {
   return request.post('/message_center/config/subs_new', rule);
 }
 
 /**
- * 
+ * 快捷筛选查询消息
  */
 export function filterByRule(params: { source: string, mode_name: string, page: number, count_per_page: number }, abort?: AbortController) {
   return request.get<PagedResponseT<MessageT>>('/message_center/inner_quick', { params, signal: abort?.signal, ignoreDuplicates: true });

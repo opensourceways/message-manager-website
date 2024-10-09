@@ -1,5 +1,5 @@
 import { request } from '@/shared/axios';
-import type { FilterRuleT } from '@/@types/type-settings';
+import type { FilterRuleT } from '@/@types/type-filter';
 import type { PagedResponseT } from '@/@types/types-common';
 
 /**

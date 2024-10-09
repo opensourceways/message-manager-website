@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
-import type { FilterRuleT } from '@/@types/type-settings';
+import type { FilterRuleT } from '@/@types/type-filter';
 import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-quick-filters';
 import { saveRule } from '@/api/api-messages';
 
