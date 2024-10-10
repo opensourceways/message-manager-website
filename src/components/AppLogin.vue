@@ -68,7 +68,7 @@ const toMsgCenter = () => router.push('/');
 
 .header-user-menu {
   width: fit-content;
-  background-color: var(--o-color-white);
+  background-color: var(--o-color-fill2);
   box-shadow: var(--o-shadow-3);
 
   li {
@@ -83,7 +83,7 @@ const toMsgCenter = () => router.push('/');
 
     &:hover {
       background-color: rgb(var(--o-kleinblue-6));
-      color: rgb(var(--o-white));
+      color: var(--o-color-white);
     }
   }
 }
