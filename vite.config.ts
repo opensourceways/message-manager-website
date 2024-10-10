@@ -7,6 +7,9 @@ import vueJsx from '@vitejs/plugin-vue-jsx';
 import Icons from 'unplugin-icons/vite';
 import { FileSystemIconLoader } from 'unplugin-icons/loaders';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
   plugins: [
@@ -19,6 +22,12 @@ export default defineConfig({
       },
     }),
     basicSsl(),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+    }),
   ],
   resolve: {
     alias: {
@@ -39,5 +48,9 @@ export default defineConfig({
   server: {
     https: true,
     port: 8888,
+    proxy: {
+      // '/message_center': 'https://message-center.test.osinfra.cn'
+      '/message_center': 'https://d379-119-8-52-77.ngrok-free.app'
+    }
   },
 });

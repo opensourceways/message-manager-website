@@ -26,7 +26,16 @@ export const useLocale = () => {
 
   // 语言切换
   const changeLocale = (lang?: LocaleT) => {
+    if (locale.value === lang) {
+      return;
+    }
 
+    const language = isUndefined(lang) ? (isZh.value ? 'en' : 'zh') : lang;
+
+    if (isClient) {
+      localStorage.setItem('locale', language);
+      location.reload();
+    }
   };
 
   return {

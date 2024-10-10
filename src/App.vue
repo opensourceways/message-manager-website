@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { OScroller } from '@opensig/opendesign';
+import AppHeader from '@/components/AppHeader.vue';
+import AppFooter from './components/AppFooter.vue';
+import { useTheme } from './composables/useTheme';
 
-import { OScroller, OConfigProvider } from '@opensig/opendesign';
-import zhCN from '@opensig/opendesign/es/locale/lang/zh-cn';
-import enUS from '@opensig/opendesign/es/locale/lang/en-us';
-
-import { useLocale } from '@/composables/useLocale';
+useTheme();
 </script>
 
 <template>
-  <!-- <AppHeader class="ly-header" /> -->
+  <AppHeader />
   <OScroller show-type="hover">
     <main class="ly-main">
-      <RouterView />
+      <div class="inner-container">
+        <RouterView />
+      </div>
     </main>
-    <AppFooter class="ly-footer" />
+    <AppFooter />
   </OScroller>
 </template>
 
@@ -23,9 +23,12 @@ import { useLocale } from '@/composables/useLocale';
 #app {
   --color-primary: #027ef2;
 
-  min-width: 1200px;
+  @include respond-to('>phone') {
+    min-width: 1200px;
+  }
 
-  --layout-header-height: 64px;
+
+  --layout-header-height: 80px;
   --layout-header-zIndex: 101;
   --layout-header-max-width: 1440px;
   --layout-header-padding: 12px;
@@ -55,7 +58,7 @@ import { useLocale } from '@/composables/useLocale';
   }
 
   @include respond-to('phone') {
-    --layout-header-padding: 24px;
+    --layout-header-padding: 16px;
 
     --layout-content-padding: 24px;
 
@@ -65,6 +68,15 @@ import { useLocale } from '@/composables/useLocale';
 </style>
 
 <style lang="scss" scoped>
+.inner-container {
+  display: flex;
+  flex-direction: column;
+
+  @include respond-to('phone') {
+    width: 100%;
+  }
+}
+
 .ly-header {
   position: fixed;
   top: 0;
@@ -83,9 +95,16 @@ import { useLocale } from '@/composables/useLocale';
 }
 
 .ly-main {
+  display: flex;
+  justify-content: center;
   padding-top: var(--layout-header-height);
+  padding-bottom: 72px;
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
+
+  @include respond-to('phone') {
+    padding: 0;
+  }
 }
 
 .ly-footer {

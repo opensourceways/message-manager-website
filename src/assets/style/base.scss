@@ -3,6 +3,7 @@
  */
 html,
 body {
+  background-color: #F5F6F8;
   margin: 0;
   padding: 0;
   -webkit-text-size-adjust: none;
@@ -16,6 +17,7 @@ body {
   height: 100%;
   @include text1;
   @include scrollbar;
+  color: var(--o-color-info1);
 }
 
 *,
@@ -85,4 +87,14 @@ textarea {
   font-size: 100%;
   line-height: 1.15;
   margin: 0;
+}
+
+.o-popup-body {
+  height: 10px;
+
+  .o-select-options {
+    background-color: var(--o-color-fill2);
+    box-shadow: var(--o-shadow-2);
+    border-radius: var(--o-radius_control-m);
+  }
 }

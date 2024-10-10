@@ -1,15 +1,18 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
-
-import i18n from '@/i18n';
+import { doLogin, getCsrfToken, tryLogin } from '@/shared/login';
+import { useLoginStore, useUserInfoStore } from '@/stores/user';
+import { syncUserInfo } from '@/api/api-user';
+import { useUnreadMsgCountStore } from '@/stores/common';
+import { EventSources } from '@/data/event';
 
 const routes = [
   {
     path: '/',
     name: 'home',
     component: () => {
-      return import('@/views/home/TheHome.vue');
+      return import('@/views/message/TheMessageList.vue');
     },
   },
   // 默认路由
@@ -31,8 +34,47 @@ const router = createRouter({
   },
 });
 
-router.beforeEach(async (to) => {
+const addQuery = (to: RouteLocationNormalized) => {
+  if (!to.query.source) {
+    return {
+      ...to,
+      query: {
+        source: EventSources.EUR,
+      }
+    };
+  }
   return true;
+}
+
+router.beforeEach(async (to, from) => {
+  const loginStore = useLoginStore();
+  const unreadCountStore = useUnreadMsgCountStore();
+  if (loginStore.isLogined) {
+    if (to.name !== from.name) {
+      unreadCountStore.updateCount();
+    }
+    return addQuery(to);
+  }
+
+  if (!getCsrfToken()) {
+    doLogin();
+    return false;
+  }
+  try {
+    await tryLogin();
+  } catch {
+    return { name: 'notFound' };
+  }
+
+  if (loginStore.isLogined) {
+    const userInfoStore = useUserInfoStore();
+    const recipientId = await syncUserInfo(userInfoStore);
+    userInfoStore.recipientId = recipientId;
+    if (to.name !== from.name) {
+      unreadCountStore.updateCount();
+    }
+  }
+  return addQuery(to);
 });
 
 router.afterEach(() => {});

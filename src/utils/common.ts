@@ -2,6 +2,19 @@ import { isClient, useMessage } from '@opensig/opendesign';
 const message = useMessage();
 
 /**
+ * safe window open
+ */
+export const windowOpen = (url?: string | URL | undefined, target?: string | undefined, features?: string | undefined) => {
+  const opener = window.open(url, target, features);
+  opener && (opener.opener = null);
+};
+
+// 检查是否是同域名
+export const checkOriginLink = (path: string) => {
+  return path.includes('openeuler.org');
+};
+
+/**
  * 时间戳转 xxxx/xx/xx 格式时间
  * @param {number} timestamp 待转换时间戳
  * @returns {string} 返回格式化时间，如 2024/01/01
@@ -15,7 +28,6 @@ export const changeTimeStamp = (timestamp: number) => {
 
   return `${year}/${month}/${day}`;
 };
-
 
 /**
  * 判断 key 是否存在于目标对象上
@@ -74,4 +86,41 @@ export function getUrlParams(url: string) {
     }
     return list;
   }
+}
+
+/**
+ * 对比两个数组，输出区别及相同元素
+ * @param sourceArr 原数组
+ * @param targetArr 目标数组
+ */
+export function diff<T>(sourceArr: T[], targetArr: T[]) {
+  const oldListRemains = Array.from({ length: sourceArr.length });
+  const added: T[] = [];
+  const same: T[] = [];
+  for (const obj of targetArr) {
+    let found = false;
+    for (let i = 0; i < sourceArr.length; i++) {
+      if (!oldListRemains[i] && obj === sourceArr[i]) {
+        oldListRemains[i] = true;
+        same.push(obj);
+        found = true;
+        break;
+      }
+    }
+    if (!found) added.push(obj);
+  }
+  const removed = sourceArr.filter((_, i) => !oldListRemains[i]);
+  return {
+    added,
+    removed,
+    same,
+  };
+}
+
+export function uniqueBy<T>(arr: T[], uniqueKeyGetter: (val: T) => any) {
+  const map = new Map<any, T>();
+  arr.forEach(item => {
+    map.set(uniqueKeyGetter(item), item);
+  });
+  return [...map.values()];
 }
