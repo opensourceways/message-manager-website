@@ -17,6 +17,7 @@ body {
   height: 100%;
   @include text1;
   @include scrollbar;
+  color: var(--o-color-info1);
 }
 
 *,

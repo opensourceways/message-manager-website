@@ -2,11 +2,9 @@
 import { OScroller } from '@opensig/opendesign';
 import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
-import { useScreen } from './composables/useScreen';
-import { provide } from 'vue';
+import { useTheme } from './composables/useTheme';
 
-const { isPhone } = useScreen();
-provide('isPhone', isPhone)
+useTheme();
 </script>
 
 <template>
@@ -17,7 +15,7 @@ provide('isPhone', isPhone)
         <RouterView />
       </div>
     </main>
-    <AppFooter v-if="!isPhone" />
+    <AppFooter />
   </OScroller>
 </template>
 

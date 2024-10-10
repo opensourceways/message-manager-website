@@ -2,51 +2,28 @@
 import { OPENEULER } from '@/data/config';
 
 import openeulerLogo from '@/assets/svg-icons/logo.svg';
-import IconLeft from '~icons/app/icon-arrow-left.svg';
-import IconFilter from '~icons/app/icon-filter.svg';
-import IconMultiSel from '~icons/app/icon-multi-select.svg';
-import IconX from '~icons/app/icon-x.svg';
+import openeulerLogoDark from '@/assets/openeuler-logo-dark.svg';
 
 import AppLogin from './AppLogin.vue';
-import { OButton, OIcon } from '@opensig/opendesign';
-import { storeToRefs } from 'pinia';
-import { usePhoneStore } from '@/stores/phone';
-import { inject, type Ref } from 'vue';
+import HeaderTheme from './HeaderTheme.vue';
+import { useTheme } from '@/composables/useTheme';
 
-const isPhone = inject<Ref<boolean>>('isPhone');
-const { isManaging, checkedAll, checkedCount, isFiltering } = storeToRefs(usePhoneStore());
-
-const onSelectAll = () => checkedAll.value = !checkedAll.value;
+const { isDark } = useTheme();
 </script>
 
 <template>
   <div class="header-wrap">
     <div class="header-content">
       <div class="header-left">
-        <template v-if="!isPhone">
-          <div class="logo">
-            <a target="_blank" :href="`${OPENEULER}/zh/`" class="community-logo" rel="noopener noreferrer">
-              <img :src="openeulerLogo" />
-            </a>
-          </div>
-        </template>
-        <template v-else>
-          <OButton class="back-btn" variant="text" size="medium">
-            <template #icon>
-              <IconX @click="isManaging = false" v-if="isManaging" />
-              <IconLeft v-else />
-            </template>
-            <span v-if="isManaging">已选择{{ checkedCount ?? 0 }}项</span>
-            <span v-else>消息中心</span>
-          </OButton>
-        </template>
+        <div class="logo">
+          <a target="_blank" :href="`${OPENEULER}/zh/`" class="community-logo" rel="noopener noreferrer">
+            <img :src="isDark ? openeulerLogoDark : openeulerLogo" />
+          </a>
+        </div>
       </div>
       <div class="header-right">
-        <AppLogin v-if="!isPhone" />
-        <OIcon v-else-if="!isManaging" class="filter-icon" @click="isFiltering = true"><IconFilter /></OIcon>
-        <OIcon v-else :class="['select-icon', checkedAll ? 'active' : '']" @click="onSelectAll">
-          <IconMultiSel />
-        </OIcon>
+        <HeaderTheme />
+        <AppLogin />
       </div>
     </div>
   </div>
@@ -180,10 +157,10 @@ const onSelectAll = () => checkedAll.value = !checkedAll.value;
       border-radius: 50%;
       cursor: pointer;
       vertical-align: middle;
-      @media (max-width: 1100px) {
+      /* @media (max-width: 1100px) {
         width: 28px;
         height: 28px;
-      }
+      } */
     }
     .opt-name {
       color: var(--o-color-text2);
@@ -193,9 +170,9 @@ const onSelectAll = () => checkedAll.value = !checkedAll.value;
       overflow: hidden;
       width: 72px;
       line-height: var(--o-line-height-h8);
-      @media (max-width: 1100px) {
+      /* @media (max-width: 1100px) {
         display: none;
-      }
+      } */
     }
   }
   &:hover {
@@ -208,10 +185,10 @@ const onSelectAll = () => checkedAll.value = !checkedAll.value;
     position: absolute;
     top: 60px;
     left: 0;
-    @media (max-width: 1100px) {
+    /* @media (max-width: 1100px) {
       top: 48px;
       left: -60px;
-    }
+    } */
     background: var(--o-color-bg2);
     cursor: pointer;
     z-index: 999;

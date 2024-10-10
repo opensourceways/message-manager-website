@@ -31,3 +31,9 @@ export const useUnreadMsgCountStore = defineStore('unreadMsgCount', () => {
     totalCount,
   };
 });
+
+export const useAppearance = defineStore('appearance', {
+  state: () => ({
+    theme: 'dark',
+  }),
+});

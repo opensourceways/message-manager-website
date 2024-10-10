@@ -23,6 +23,7 @@ import ContentWrapper from '@/components/ContentWrapper.vue';
 import ExternalLink from '@/components/ExternalLink.vue';
 
 import LogoFooter from '@/assets/footer/footer-logo2.png';
+import LogoFooter1 from '@/assets/footer-logo1.png';
 import LogoAtom from '@/assets/footer/atom-logo.svg';
 import FooterBg from '@/assets/footer/footer-bg.png';
 import FooterBgMo from '@/assets/footer/footer-bg-mo.png';
@@ -121,6 +122,10 @@ const linksData2 = {
       URL: OPENEULER + '/zh/other/brand/',
     },
     {
+      NAME: '隐私政策',
+      URL: OPENEULER + '/zh/other/privacy/',
+    },
+    {
       NAME: '法律声明',
       URL: OPENEULER + '/zh/other/legal/',
     },
@@ -194,6 +199,7 @@ const onExternalDialog = (href: string) => {
         <div class="inner">
           <div class="footer-logo">
             <img class="show-pc" :src="LogoFooter" alt="" />
+            <img class="show-mo" :src="LogoFooter1" alt="" />
             <p>
               <a class="email" :href="`mailto:${OPENEULER_CONTACT}`" target="_blank" rel="noopener noreferrer"> {{ OPENEULER_CONTACT }} </a>
             </p>

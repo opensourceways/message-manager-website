@@ -19,8 +19,6 @@ import { useCheckbox } from '@/composables/useCheckbox';
 import { useUserInfoStore } from '@/stores/user';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import AppPagination from '@/components/AppPagination.vue';
-import { usePhoneStore } from '@/stores/phone';
-// import MessageListFilterDlg from './components/MessageListFilterDlg.vue';
 import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
@@ -321,63 +319,12 @@ const markReadMultiMessages = () => {
       }
     });
 };
-
-// ------------------------移动端------------------------
-const phoneStore = usePhoneStore();
-
-watch(checkboxVal, (val) => {
-  phoneStore.checkedCount = val.length;
-});
-
-watch(
-  () => phoneStore.isManaging,
-  (val) => {
-    if (!val) {
-      clearCheckboxes();
-    }
-  }
-);
-
-/* watch(
-  () => phoneStore.checkedAll,
-  (val) => {
-    if (val && !isCheckedAll.value) {
-      checkAll();
-      return;
-    }
-    if (!val && isCheckedAll.value) {
-      clearcheckboxVal();
-    }
-  }
-); */
-
-/* watch(isCheckedAll, (val) => {
-  if (val) {
-    phoneStore.checkedAll = true;
-  } else {
-    phoneStore.checkedAll = false;
-  }
-});
-
-const phoneFilterConfirm = (source: string) => {
-  if (!source) {
-    router.push({ path: '/' });
-    return;
-  }
-  router.push({ path: '/', query: { source } });
-}; */
 </script>
 
 <template>
   <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindUserInfo" confirm-text="前往绑定"></ConfirmDialog>
 
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
-
-  <!-- 移动端特有弹窗 -->
-  <!-- <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg> -->
-
-  <!-- 移动端特有弹窗 -->
-  <!-- <MessageListFilterDlg v-model:visible="phoneStore.isFiltering" @confirm="phoneFilterConfirm"></MessageListFilterDlg> -->
 
   <div class="messages-container">
     <aside>
@@ -445,7 +392,6 @@ const phoneFilterConfirm = (source: string) => {
                 </ContentWrapper>
               </OPopup>
             </template>
-            <!-- <OLink v-if="isPhone && !phoneStore.isManaging" color="primary" @click="phoneStore.isManaging = true"> 管理 </OLink> -->
           </div>
         </div>
         <template v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)">
@@ -468,22 +414,6 @@ const phoneFilterConfirm = (source: string) => {
             >
           </p>
         </div>
-
-        <!-- <template v-if="isPhone && phoneStore.isManaging">
-          <div style="height: 62px"></div>
-          <Teleport to="body">
-            <div class="phone-footer">
-              <div @click="markReadMultiMessages">
-                <OIcon class="icon"><IconRead /></OIcon>
-                <p>标为已读</p>
-              </div>
-              <div @click="delMultiMessages">
-                <OIcon class="icon"><IconDelete /></OIcon>
-                <p>删除</p>
-              </div>
-            </div>
-          </Teleport>
-        </template> -->
       </div>
     </div>
   </div>
