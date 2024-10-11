@@ -3,7 +3,7 @@ import { computed, onMounted, provide, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
-import { EventSourceTypes, EventSources } from '@/data/event';
+import { EventSources } from '@/data/event';
 import type { FilterRuleT } from '@/@types/type-filter';
 import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-quick-filters';
 import { saveRule } from '@/api/api-messages';

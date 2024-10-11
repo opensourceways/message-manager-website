@@ -3,7 +3,6 @@ import { getMyRepos } from '@/api/api-messages';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';
-import { EventSourceTypes, EventSources } from '@/data/event';
 import { useUserInfoStore } from '@/stores/user';
 import { OForm, OFormItem, OOption, OSelect } from '@opensig/opendesign';
 import { computed, inject, nextTick, onBeforeMount, reactive, ref, watch, type Ref } from 'vue';
@@ -34,7 +33,7 @@ const filterParams = reactive({
 
 const params = computed({
   get() {
-    const data: Record<string, string> = { event_type: EventSourceTypes[EventSources.GITEE] };
+    const data: Record<string, string> = {};
     if (sigBelong.value) {
       data[sigBelong.value] = userInfoStore.giteeLoginName as string;
     }
