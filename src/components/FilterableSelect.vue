@@ -118,7 +118,7 @@ const onFilterInput = useDebounceFn((search?: string) => {
   searchVal.value = search?.toUpperCase();
 }, props.filterDebounceTimeout);
 
-const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes } = useCheckbox(
+const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes, checkAll } = useCheckbox(
   () => rawValues.value,
   (item) => item.value
 );
@@ -168,6 +168,10 @@ const clearClick = (e: Event) => {
   clearCheckboxes();
   nextTick(() => emit('clear'));
 };
+
+defineExpose({
+  checkAll,
+});
 </script>
 
 <template>
@@ -190,12 +194,14 @@ const clearClick = (e: Event) => {
             <template #target>
               <div class="o-select-tag">{{ checkboxVal.length }}个选项被选中</div>
             </template>
-            <div class="o-select-tags">
-              <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
-                {{ checkedValueLabelMap.get(item as string) }}
-                <div class="o-select-tag-remove" @click.stop="onRemoveTag(item)"><OIconClose /></div>
+            <OScroller style="max-height: 200px;">
+              <div class="o-select-tags select-tags">
+                <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
+                  {{ checkedValueLabelMap.get(item as string) }}
+                  <div class="o-select-tag-remove" @click.stop="onRemoveTag(item)"><OIconClose /></div>
+                </div>
               </div>
-            </div>
+            </OScroller>
           </OPopover>
         </template>
       </div>
@@ -230,12 +236,19 @@ const clearClick = (e: Event) => {
         </OInput>
         <OScroller ref="scroller" class="scroller" showType="always">
           <div class="check-all-wrap">
-            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1">全选</OCheckbox>
+            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1" style="--checkbox-input-icon-color: var(--o-color-white)"
+              >全选</OCheckbox
+            >
           </div>
           <OCheckboxGroup v-model="checkboxVal" direction="v">
-            <OCheckbox v-for="item in displayValues" :key="item.value" :value="item.value" @change="(_, ev) => onCheckboxChange(item.value, item.label, ev)">{{
-              item.label
-            }}</OCheckbox>
+            <OCheckbox
+              v-for="item in displayValues"
+              :key="item.value"
+              :value="item.value"
+              @change="(_, ev) => onCheckboxChange(item.value, item.label, ev)"
+              style="--checkbox-input-icon-color: var(--o-color-white)"
+              >{{ item.label }}</OCheckbox
+            >
           </OCheckboxGroup>
         </OScroller>
       </div>

@@ -90,11 +90,30 @@ textarea {
 }
 
 .o-popup-body {
-  height: 10px;
-
+  &:not(.o-popup-body &) {
+    height: 10px;
+  }
   .o-select-options {
     background-color: var(--o-color-fill2);
     box-shadow: var(--o-shadow-2);
     border-radius: var(--o-radius_control-m);
   }
+}
+
+.input-text {
+  color: var(--o-color-info1);
+}
+
+.o-radio-group-h {
+  .o-radio:not(:last-child) {
+    margin-right: 8px;
+  }
+}
+
+.o-switch {
+  --switch-bg-color-disabled: var(--o-mixedgray-3);
+}
+
+.o-checkbox-input {
+  --checkbox-input-icon-color: var(--o-color-white);
 }

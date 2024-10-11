@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch, type Ref } from 'vue';
+import { computed, inject, nextTick, ref, watch, type Ref } from 'vue';
 import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
-import { EUR_BUILD_STATUS } from '@/data/event';
+import { EUR_BUILD_STATUS, EventSourceTypes, EventSources } from '@/data/event';
 import { useUserInfoStore } from '@/stores/user';
 import { reactive } from 'vue';
 
@@ -17,7 +17,7 @@ const filterParams = reactive({
 
 const params = computed({
   get() {
-    const data: Record<string, string> = { event_type: 'build' };
+    const data: Record<string, string> = { event_type: EventSourceTypes[EventSources.EUR] };
     if (userInfoStore.username) {
       if (filterParams.projRelation === 'myProj') {
         data.build_owner = userInfoStore.username;
@@ -26,27 +26,27 @@ const params = computed({
       }
     }
     if (filterParams.buildStatus?.length) {
-      data.build_status = filterParams.buildStatus.join()
+      data.build_status = filterParams.buildStatus.join();
     }
     return data;
   },
   set(val) {
     reset(false);
     if (val.build_owner) {
-      filterParams.projRelation = 'myProj'
+      filterParams.projRelation = 'myProj';
     }
     if (val.build_creator) {
-      filterParams.projRelation = 'myExec'
+      filterParams.projRelation = 'myExec';
     }
     if (val.build_status) {
       filterParams.buildStatus = val.build_status.split(',').map(Number);
     }
-  }
+  },
 });
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-watch(webFilter, val => {
+watch(webFilter, (val) => {
   if (val) {
     params.value = val;
   }
@@ -67,6 +67,8 @@ const reset = (shouldApply = true) => {
 
 const exceededLabel = (vals: SelectOptionT[]) => `${vals.length}个选项被选中`;
 
+const onSelectChange = () => nextTick(applyFilter);
+
 defineExpose({
   reset,
   params,
@@ -81,6 +83,7 @@ defineExpose({
     <OFormItem label="构建状态">
       <OSelect
         v-model="filterParams.buildStatus"
+        @change="onSelectChange"
         :fold-label="exceededLabel"
         show-fold-tags
         :max-tag-count="1"
@@ -89,7 +92,6 @@ defineExpose({
         option-position="bottom"
         style="width: 100%; --select-radius: 4px"
         :options-wrapper="popupContainer"
-        @options-visible-change="applyFilter"
       >
         <OOption v-for="item in EUR_BUILD_STATUS" :key="item.value" :value="item.value" :label="item.label">
           {{ item.label }}

@@ -41,8 +41,27 @@ const compMap = {
   [EventSources.MEETING]: MeetingFilter,
 };
 const currentFilterComp = computed(() => compMap[source.value]);
+
 const currentCompRef = ref();
 const setCurrenCompRef = (el: any) => (currentCompRef.value = el);
+
+const isFilterEmpty = computed(() => {
+  if (currentCompRef.value?.params) {
+    return Object.entries(currentCompRef.value.params as Record<string, any>).every(([prop, val]) => {
+      return (
+        (prop === 'event_type' && (source.value !== EventSources.GITEE || !val)) ||
+        val === undefined ||
+        val === null ||
+        Number.isNaN(val) ||
+        (Array.isArray(val) && val.length === 0) ||
+        !val
+      );
+    });
+  }
+  return true;
+});
+
+const isFiltering = computed(() => !isFilterEmpty.value || selectedQuickFilter.value);
 
 provide('applyFilter', () => {
   emit('applyFilter', {
@@ -103,6 +122,11 @@ const deleteFilter = (item: { label: string; value: string | number }) => {
   const { source, mode_name, event_type } = currentFilters.value?.[index] as FilterRuleT;
   deleteFilterRule(source, mode_name, event_type)
     .then(() => {
+      if (item.value === selectedQuickFilter.value) {
+        selectedQuickFilter.value = '';
+        emailSwitch.value = false;
+        reset();
+      }
       const filters = quickFilterMap.value.get(source);
       if (filters) {
         filters.splice(index, 1);
@@ -112,22 +136,28 @@ const deleteFilter = (item: { label: string; value: string | number }) => {
 };
 
 // ----------------重命名筛选----------------
-const renameFilter = (oldVal: { label: string; value: string | number }, newName: string) => {
-  const filter = currentFilters.value?.find((fil) => fil.mode_name === oldVal.label);
+const renameFilter = (oldName: string, newName: string) => {
+  const filter = currentFilters.value?.find((fil) => fil.mode_name === oldName);
   if (filter) {
-    filter.mode_name = newName;
     putFilterRule({
       source: source.value,
       new_name: newName,
-      old_name: filter.mode_name,
-    }).catch(() => message.danger({ content: '重命名失败' }));
+      old_name: filter.mode_name as string,
+    })
+      .then(() => {
+        selectedQuickFilter.value = newName;
+        applyQuickFilter(newName);
+        queryFilterRules();
+      })
+      .catch(() => message.danger({ content: '重命名失败' }));
+    filter.mode_name = newName;
   }
 };
 
 // ----------------重置----------------
 const reset = () => {
   selectedQuickFilter.value = '';
-  currentCompRef.value?.reset();
+  currentCompRef.value?.reset(!isFilterEmpty.value);
   webFilter.value = null;
 };
 
@@ -164,17 +194,7 @@ const addNewFilter = () => {
   togglesRef.value.addNew();
 };
 
-const disableSave = computed(() => {
-  if (currentCompRef.value?.params) {
-    return Object.entries(currentCompRef.value.params as Record<string, any>).every(([prop, val]) => {
-      if (prop === 'event_type') {
-        return true;
-      }
-      return val === undefined || val === null || Number.isNaN(val) || (Array.isArray(val) && val.length === 0) || !val;
-    });
-  }
-  return true;
-});
+const disableSave = computed(() => togglesRef.value?.isAddingNew || isFilterEmpty.value);
 
 /** 新增 */
 const confirmSave = (mode_name: string, callback: () => void) => {
@@ -215,24 +235,26 @@ const applyQuickFilter = (mode_name: string) => {
   emailSwitch.value = !!filter?.need_mail;
 };
 
-defineExpose({ reset });
+defineExpose({ reset, isFiltering });
 </script>
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <p v-if="togglesRef?.isAddingNew || currentFilters?.length" class="sec-title">快捷筛选</p>
-    <RadioToggle
-      ref="togglesRef"
-      v-model="selectedQuickFilter"
-      @confirm-add="confirmSave"
-      @change="applyQuickFilter"
-      :options="quickFilters"
-      :defaultOptions="defaultQuickFilters"
-      enable-rename-tags
-      enable-delete-tags
-      @remove="deleteFilter"
-      @rename="renameFilter"
-    />
+    <template v-if="togglesRef?.isAddingNew || currentFilters?.length">
+      <p class="sec-title">快捷筛选</p>
+      <RadioToggle
+        ref="togglesRef"
+        v-model="selectedQuickFilter"
+        @confirm-add="confirmSave"
+        @change="applyQuickFilter"
+        :options="quickFilters"
+        :defaultOptions="defaultQuickFilters"
+        enable-rename-tags
+        enable-delete-tags
+        @remove="deleteFilter"
+        @rename="renameFilter"
+      />
+    </template>
     <p class="sec-title">高级筛选</p>
     <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
 
@@ -250,13 +272,12 @@ defineExpose({ reset });
         v-model="emailSwitch"
         @change="onEmailChange"
         :disabled="!selectedQuickFilter"
-        style="--switch-bg-color-disabled: var(--o-color-control1-light)"
       ></OSwitch>
       <p style="color: var(--o-color-control1)">微信通知</p>
-      <OSwitch v-model="weChatSwitch" disabled style="--switch-bg-color-disabled: var(--o-color-control1-light)"></OSwitch>
+      <OSwitch v-model="weChatSwitch" disabled></OSwitch>
     </div>
 
-    <IconLink @click="reset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: -6px">
+    <IconLink @click="reset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: 0">
       重置
       <template #prefix>
         <IconClear />

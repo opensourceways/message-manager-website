@@ -6,6 +6,7 @@ import FilterableSelect from '@/components/FilterableSelect.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';
 import DatePicker from '@/components/DatePicker.vue';
+import { EventSourceTypes, EventSources } from '@/data/event';
 
 const { sigBelong, sigBelongOptions, sigList, selectedSigs } = useSigFilter();
 
@@ -16,7 +17,7 @@ const date = ref<Date>();
 
 const params = computed({
   get() {
-    const data: Record<string, any> = { event_type: 'meeting' };
+    const data: Record<string, any> = { event_type: EventSourceTypes[EventSources.MEETING] };
     if (selectedSigs.value?.length) {
       data.meeting_sig = selectedSigs.value.join();
     }

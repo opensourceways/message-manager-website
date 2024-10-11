@@ -13,10 +13,10 @@ export const EventSourceNames: Record<string, string> = {
 };
 
 export const EventSourceTypes = {
-  [EventSources.EUR]: ['build'],
-  [EventSources.GITEE]: ['issue', 'pr', 'push', 'note'],
-  [EventSources.MEETING]: [],
-  [EventSources.CVE]: ['issue'],
+  [EventSources.EUR]: 'build',
+  [EventSources.GITEE]: 'pr,issue,note',
+  [EventSources.MEETING]: 'meeting',
+  [EventSources.CVE]: 'issue',
 };
 
 export const EventTypeNames: Record<string, Record<string, string>> = {
@@ -50,6 +50,6 @@ export const REPO_PROJ_NAME_PATTERN = /^\*$|^.+\/(?:\*{1}|.+)/;
 export const EmptyTip = {
   [EventSources.EUR]: '您创建的项目或您发起的构建项目的状态更新会显示在这里',
   [EventSources.GITEE]: '您关注的Gitee仓库中Issue、PR和评论时间更新会显示在这里',
-  [EventSources.MEETING]: '没有匹配的消息',
+  [EventSources.MEETING]: '您管理的SIG组会议的通知会显示在这里',
   [EventSources.CVE]: '您关注的Gitee仓库中漏洞信息的更新会显示在这里',
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, readonly, ref, watch } from 'vue';
 import { onClickOutside, useVModel } from '@vueuse/core';
 import { ODivider, OIcon, ORadio, ORadioGroup, OTag, OToggle } from '@opensig/opendesign';
 
@@ -31,7 +31,7 @@ const emit = defineEmits<{
   (event: 'change', val: any): void;
   (event: 'confirmAdd', val: string, callback: () => void): void;
   (event: 'remove', val: { label: string; value: string | number }): void;
-  (event: 'rename', val: { label: string; value: string | number }, newName: string): void;
+  (event: 'rename', oldName: string, newName: string): void;
   (event: 'update:modelValue', val: any): void;
 }>();
 
@@ -59,8 +59,6 @@ const changeRadioVal = (val: string | number | boolean) => {
   emit('change', val);
 };
 
-const clickOutsideCancelFnMap = new Map<string | number, () => void>();
-
 /**
  * 取消当前选中
  * @param value 点击标签的值
@@ -78,8 +76,20 @@ const cancel = (value: string | number, ev?: MouseEvent) => {
 // ----------------添加新标签----------------
 const isAddingNew = ref(false);
 const newTagContent = ref('');
+const addNewTagRef = ref();
 
-const addNew = () => (isAddingNew.value = true);
+const addNew = () => {
+  isAddingNew.value = true;
+  nextTick(() => {
+    const stop = onClickOutside(addNewTagRef.value.$el, (e: MouseEvent) => {
+      e.stopPropagation();
+      if (stop) {
+        stop();
+      }
+      confirmAdd();
+    });
+  });
+};
 
 watch(
   isAddingNew,
@@ -117,15 +127,6 @@ const confirmAdd = () => {
   });
 };
 
-const setAddNewTagClickOutside = (el: any) => {
-  if (!el) {
-    clickOutsideCancelFnMap.get('_')?.();
-    clickOutsideCancelFnMap.delete('_');
-    return;
-  }
-  clickOutsideCancelFnMap.set('_', onClickOutside(el, confirmAdd) as () => void);
-};
-
 // ----------------重命名标签----------------
 const renameContent = ref('');
 const currentlyRenameTagIndex = ref<number | null>();
@@ -136,20 +137,24 @@ const onClickLabel = (
     value: any;
   },
   index: number,
-  ev?: MouseEvent
+  ev: MouseEvent
 ) => {
-  if (!props.enableRenameTags) {
+  if (!props.enableRenameTags || val.value !== radioVal.value) {
     cancel(val.value, ev);
     return;
   }
-  if (val.value !== radioVal.value) {
-    cancel(val.value, ev);
-    return;
+  ev.stopPropagation();
+  ev.preventDefault();
+  if (currentlyRenameTagIndex.value !== index) {
+    const stop = onClickOutside(ev.currentTarget as HTMLElement, () => {
+      if (stop) {
+        stop();
+      }
+      confirmRename();
+    });
+    currentlyRenameTagIndex.value = index;
+    renameContent.value = val.label;
   }
-  ev?.stopPropagation();
-  ev?.preventDefault();
-  currentlyRenameTagIndex.value = index;
-  renameContent.value = val.label;
 };
 
 const confirmRename = () => {
@@ -157,7 +162,7 @@ const confirmRename = () => {
     return;
   }
   if (typeof currentlyRenameTagIndex.value === 'number') {
-    emit('rename', { ...normalizedOptions.value[currentlyRenameTagIndex.value as number] }, renameContent.value);
+    emit('rename', normalizedOptions.value[currentlyRenameTagIndex.value].label, renameContent.value);
   }
   currentlyRenameTagIndex.value = null;
 };
@@ -166,33 +171,14 @@ const removeTag = (val: { label: string; value: string | number }) => {
   emit('remove', val);
 };
 
-const setFilterTagClickOutside = (el: any, index: number) => {
-  if (!props.enableRenameTags) {
-    return;
-  }
-  if (!el) {
-    clickOutsideCancelFnMap.get(index)?.();
-    clickOutsideCancelFnMap.delete(index);
-    return;
-  }
-  clickOutsideCancelFnMap.set(index, onClickOutside(el, confirmRename) as () => void);
-};
-
-onBeforeUnmount(() => {
-  for (const fn of clickOutsideCancelFnMap.values()) {
-    fn();
-  }
-  clickOutsideCancelFnMap.clear();
-});
-
 defineExpose({
   addNew,
-  isAddingNew,
+  isAddingNew: readonly(isAddingNew),
 });
 </script>
 
 <template>
-  <ORadioGroup v-model="radioVal" @change="changeRadioVal" style="--radio-group-gap: 8px; row-gap: 8px">
+  <ORadioGroup v-model="radioVal" @change="changeRadioVal" style="--radio-group-gap: 0; row-gap: 8px">
     <template v-if="defaultOptions.length">
       <ORadio v-for="item in normalizedDefaultOptions" :key="item.value" :value="item.value">
         <template #radio="{ checked }">
@@ -205,13 +191,7 @@ defineExpose({
       </ORadio>
     </template>
     <ODivider v-if="normalizedDefaultOptions.length && normalizedOptions.length" direction="v" style="height: var(--toggle-size)" />
-    <ORadio
-      v-for="(item, index) in normalizedOptions"
-      @click.left="onClickLabel(item, index, $event)"
-      :ref="(el) => setFilterTagClickOutside(el, index)"
-      :key="item.value"
-      :value="item.value"
-    >
+    <ORadio v-for="(item, index) in normalizedOptions" @click.left="onClickLabel(item, index, $event)" :key="item.value" :value="item.value">
       <template #radio="{ checked }">
         <div class="toggle-item-wrapper" style="position: relative">
           <div v-if="enableDeleteTags" class="close-icon" @click.stop.prevent="removeTag({ ...item })">
@@ -228,7 +208,7 @@ defineExpose({
         </div>
       </template>
     </ORadio>
-    <ORadio :ref="setAddNewTagClickOutside" v-if="isAddingNew" :value="false">
+    <ORadio ref="addNewTagRef" @click.stop.prevent="" v-if="isAddingNew" :value="false">
       <template #radio>
         <OTag style="--tag-bg-color: var(--o-color-fill1); --tag-bd-color: var(--o-color-fill1); --tag-height: var(--o-control_size-m)">
           <input v-focus v-model="newTagContent" class="input-text" type="text" @keydown.enter="confirmAdd" />

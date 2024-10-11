@@ -13,6 +13,14 @@ const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
+const sigSelectorRef = ref();
+
+watch(sigBelong, (val) => {
+  if (val === 'my_sig') {
+    nextTick(() => sigSelectorRef.value?.checkAll());
+  }
+});
+
 const filterParams = reactive({
   repoBelong: '',
   selectedRepos: [] as string[],
@@ -40,28 +48,28 @@ const params = computed({
     }
     if (filterParams.eventType) {
       data.event_type = filterParams.eventType;
+      if (filterParams.eventType === 'pr') {
+        if (filterParams.eventState) {
+          data.pr_state = filterParams.eventState;
+        }
+        if (filterParams.eventRelation) {
+          data[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+        }
+      }
+      if (filterParams.eventType === 'issue') {
+        if (filterParams.eventState) {
+          data.issue_state = filterParams.eventState;
+        }
+        if (filterParams.eventRelation) {
+          data[`issue${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
+        }
+      }
+      if (filterParams.eventType === 'note' && filterParams.noteType) {
+        data.note_type = filterParams.noteType;
+      }
     }
     if (filterParams.isBot && filterParams.isBot !== 'all') {
       data.is_bot = filterParams.isBot;
-    }
-    if (filterParams.eventType === 'pr') {
-      if (filterParams.eventState) {
-        data.pr_state = filterParams.eventState;
-      }
-      if (filterParams.eventRelation) {
-        data[`pr${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
-      }
-    }
-    if (filterParams.eventType === 'issue') {
-      if (filterParams.eventState) {
-        data.issue_state = filterParams.eventState;
-      }
-      if (filterParams.eventRelation) {
-        data[`issue${filterParams.eventRelation}`] = userInfoStore.giteeLoginName as string;
-      }
-    }
-    if (filterParams.eventType === 'note' && filterParams.noteType) {
-      data.note_type = filterParams.noteType;
     }
     return data;
   },
@@ -106,12 +114,12 @@ const params = computed({
         filterParams.noteType = val.note_type;
       }
     });
-  }
+  },
 });
 
 const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
 
-watch(webFilter, val => {
+watch(webFilter, (val) => {
   if (val) {
     params.value = val;
   }
@@ -245,6 +253,7 @@ defineExpose({
     </OFormItem>
     <OFormItem label="SIG名称">
       <FilterableSelect
+        ref="sigSelectorRef"
         v-model="selectedSigs"
         filterable
         clearable
