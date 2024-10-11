@@ -42,7 +42,6 @@ const Title = (props: { msg: MessageT }) => {
           onClick: () => emit('readMessage', { ...props.msg }),
           href: props.msg.source_url,
           target: '_blank',
-          style: 'color: #002EA7',
         },
         ' ' + item
       );

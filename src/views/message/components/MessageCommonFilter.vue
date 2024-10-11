@@ -73,8 +73,19 @@ onMounted(() => queryFilterRules());
 const queryFilterRules = () => {
   getFilterRules().then((data) => {
     quickFilterMap.value.clear();
-    const aa = uniqueBy(data, item => item.source + item.mode_name);
-    aa.forEach((item) => {
+    const filters = uniqueBy(
+      data,
+      (item) => item.source + item.mode_name,
+      (item, duplicate) => {
+        if (item.ids) {
+          item.ids.push(duplicate.id);
+        } else {
+          item.ids = [item.id, duplicate.id];
+        }
+        return item;
+      }
+    );
+    filters.forEach((item) => {
       const key = item.source;
       const filters = quickFilterMap.value.get(key);
       if (filters) {
@@ -124,11 +135,12 @@ const emailSwitch = ref(false);
 const weChatSwitch = ref(false);
 
 const onEmailChange = (val: string | number | boolean) => {
-  const filterId = currentFilters.value?.find((item) => item.mode_name === selectedQuickFilter.value)?.id as number;
+  const filter = currentFilters.value?.find((item) => item.mode_name === selectedQuickFilter.value) as FilterRuleT;
+  const filterIds = filter?.ids?.map((item) => item.toString()) ?? [filter.id.toString()];
   if (val) {
-    updateMailStatus(filterId.toString(), userInfo.recipientId?.toString() as string);
+    updateMailStatus(filterIds, userInfo.recipientId?.toString() as string);
   } else {
-    updateMailStatus(filterId.toString(), userInfo.recipientId?.toString() as string, false);
+    updateMailStatus(filterIds, userInfo.recipientId?.toString() as string, false);
   }
 };
 
@@ -140,17 +152,17 @@ const addNewFilter = () => {
     return;
   }
   if (currentFilters.value?.length) {
-    const radioGroupHeight = togglesRef.value.$el.getBoundingClientRect().height
-    const radioHeight = togglesRef.value.$el.querySelector('.o-toggle').getBoundingClientRect().height
+    const radioGroupHeight = togglesRef.value.$el.getBoundingClientRect().height;
+    const radioHeight = togglesRef.value.$el.querySelector('.o-toggle').getBoundingClientRect().height;
     if (radioGroupHeight >= radioHeight * 7 + 48) {
       message.warning({
-        content: '快捷筛选项已达上限，请删除不常用选项'
+        content: '快捷筛选项已达上限，请删除不常用选项',
       });
       return;
     }
   }
   togglesRef.value.addNew();
-}
+};
 
 const disableSave = computed(() => {
   if (currentCompRef.value?.params) {
@@ -208,8 +220,6 @@ defineExpose({ reset });
 
 <template>
   <div ref="popupContainer" class="pop-container">
-    <!-- <template v-if="isAddingNewRule || currentFilters?.length">
-    </template> -->
     <p v-if="togglesRef?.isAddingNew || currentFilters?.length" class="sec-title">快捷筛选</p>
     <RadioToggle
       ref="togglesRef"
@@ -236,7 +246,12 @@ defineExpose({ reset });
     <p>同步用以下方式通知我</p>
     <div class="switches">
       <p>邮箱通知</p>
-      <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter" style="--switch-bg-color-disabled: var(--o-color-control1-light)"></OSwitch>
+      <OSwitch
+        v-model="emailSwitch"
+        @change="onEmailChange"
+        :disabled="!selectedQuickFilter"
+        style="--switch-bg-color-disabled: var(--o-color-control1-light)"
+      ></OSwitch>
       <p style="color: var(--o-color-control1)">微信通知</p>
       <OSwitch v-model="weChatSwitch" disabled style="--switch-bg-color-disabled: var(--o-color-control1-light)"></OSwitch>
     </div>

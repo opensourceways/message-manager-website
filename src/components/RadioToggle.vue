@@ -13,21 +13,17 @@ const props = withDefaults(
     options?: (string | { label: string; value: string | number })[];
     /** 选中标签值 */
     modelValue?: string | number;
-    /** 新增标签的开关 */
-    // addNew?: boolean;
     /** 是否允许重命名标签 */
     enableRenameTags?: boolean;
     /** 是否允许删除标签 */
     enableDeleteTags?: boolean;
     /** 是否允许取消选中 */
     enableCancelSelect?: boolean;
-    asdasd?: boolean;
   }>(),
   {
     options: (): any[] => [],
     defaultOptions: (): any[] => [],
     modelValue: '',
-    // addNew: false,
   }
 );
 
@@ -37,7 +33,6 @@ const emit = defineEmits<{
   (event: 'remove', val: { label: string; value: string | number }): void;
   (event: 'rename', val: { label: string; value: string | number }, newName: string): void;
   (event: 'update:modelValue', val: any): void;
-  // (event: 'update:addNew', val: any): void;
 }>();
 
 const radioVal = useVModel(props, 'modelValue', emit);

@@ -217,7 +217,7 @@ const clearClick = (e: Event) => {
       @change="onVisibleChange"
       :style="{ '--popup-shadow': 'var(--o-shadow-1)', minWidth: popupWidth }"
     >
-      <div style="box-shadow: var(--o-shadow-2); border-radius: var(--o-radius_control-m); background-color: var(--o-color-fill2); padding: 12px; border-radius: 4px; overflow: hidden">
+      <div class="popup-content">
         <div class="mask" v-if="!values.length">
           <p class="info">{{ emptyHint }}</p>
         </div>
@@ -244,21 +244,30 @@ const clearClick = (e: Event) => {
 </template>
 
 <style lang="scss" scoped>
-.mask {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  width: 100%;
-  height: 100%;
+.popup-content {
+  position: relative;
+  box-shadow: var(--o-shadow-2);
+  border-radius: var(--o-radius_control-m);
   background-color: var(--o-color-fill2);
-  z-index: 2;
-  left: 0;
-  top: 0;
+  padding: 12px;
+  border-radius: 4px;
+  overflow: hidden;
 
-  .info {
-    @include tip1;
-    color: var(--o-color-info1);
+  .mask {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--o-color-fill2);
+    z-index: 2;
+    left: 0;
+    top: 0;
+
+    .info {
+      @include tip1;
+    }
   }
 }
 
