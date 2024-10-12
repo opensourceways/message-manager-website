@@ -1,6 +1,9 @@
 import { getUnreadCount } from '@/api/api-messages';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useUserInfoStore } from './user';
+import { useRoute } from 'vue-router';
+import { EventSources } from '@/data/event';
 
 export const useUnreadMsgCountStore = defineStore('unreadMsgCount', () => {
   const sourceCountMap = ref(new Map<string, number>());
@@ -12,13 +15,19 @@ export const useUnreadMsgCountStore = defineStore('unreadMsgCount', () => {
   });
 
   const updateCount = () => {
+    const userStore = useUserInfoStore();
     getUnreadCount()
       .then((res) => {
         sourceCountMap.value.clear();
         if (!res) {
           return;
         }
-        res.forEach((item) => sourceCountMap.value.set(item.source, item.count));
+        res.forEach((item) => {
+          if (item.source === EventSources.GITEE && !userStore.giteeLoginName) {
+            return;
+          }
+          sourceCountMap.value.set(item.source, item.count);
+        });
       })
       .catch(() => {
         sourceCountMap.value.clear();
