@@ -26,7 +26,7 @@ const toMsgCenter = () => router.push('/');
       <OBadge color="danger" v-if="unreadCountStore.totalCount > 0" :value="unreadCountStore.totalCount">
         <img :src="userInfoStore.photo" />
       </OBadge>
-      <img v-else :src="userInfoStore.photo" />
+      <img v-else-if="userInfoStore.photo" :src="userInfoStore.photo" />
       <p class="user-name">{{ userInfoStore.username }}</p>
     </div>
     <OPopup position="bottom" :target="userInfo">
