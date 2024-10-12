@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, h, inject, type Ref } from 'vue';
-import { OBadge, OCheckbox } from '@opensig/opendesign';
+import { OBadge, OCheckbox, OIcon } from '@opensig/opendesign';
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
 
 import type { MessageT } from '@/@types/type-messages';
 import WordAvatar from '@/components/WordAvatar.vue';
-import IconLink from '@/components/IconLink.vue';
 import { EventSources } from '@/data/event';
-import { usePhoneStore } from '@/stores/phone';
 
 const emit = defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
@@ -17,8 +15,6 @@ const emit = defineEmits<{
 const props = defineProps<{
   msg: MessageT;
 }>();
-
-const isPhone = inject<Ref<boolean>>('isPhone');
 
 const checkboxVal = inject<Ref<(string | number)[]>>('checkboxVal');
 
@@ -42,7 +38,6 @@ const Title = (props: { msg: MessageT }) => {
           onClick: () => emit('readMessage', { ...props.msg }),
           href: props.msg.source_url,
           target: '_blank',
-          style: 'color: #002EA7',
         },
         ' ' + item
       );
@@ -70,30 +65,10 @@ const sourceGroupTitle = computed(() => {
       return '仓库';
   }
 });
-
-// ------------------------移动端------------------------
-const phoneStore = usePhoneStore();
 </script>
 
 <template>
-  <!-- 移动端 -->
-  <div v-if="isPhone" class="phone-message-list-item">
-    <OBadge :dot="true" v-if="!msg.is_read" color="danger">
-      <WordAvatar :name="msg.user" size="small" />
-    </OBadge>
-    <WordAvatar v-else :name="msg.user" size="small" />
-    <div class="msg-detail">
-      <div>
-        <p>{{ msg.user }}</p>
-        <Title :msg="msg" />
-        <p class="source-group">{{ sourceGroupTitle + msg.source_group }}</p>
-      </div>
-      <p class="time">{{ msg.formattedTime }}</p>
-    </div>
-    <OCheckbox v-if="phoneStore.isManaging" class="checkbox" :value="msg.id" v-model="checkboxVal" />
-  </div>
-
-  <div v-else class="message-list-item">
+  <div class="message-list-item">
     <div class="list-item-left">
       <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
       <div>
@@ -111,12 +86,12 @@ const phoneStore = usePhoneStore();
       <p>{{ sourceGroupTitle + msg.source_group }}</p>
       <p>{{ msg.formattedTime }}</p>
       <div class="list-item-right-hover">
-        <IconLink @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
-          <template #suffix><ReadIcon /></template>
-        </IconLink>
-        <IconLink @click="$emit('deleteMessage', { ...msg })" hover-color="var(--o-color-danger1)" title="删除">
-          <template #suffix><DeleteIcon /></template>
-        </IconLink>
+        <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
+          <ReadIcon />
+        </OIcon>
+        <OIcon class="del-icon" @click="$emit('deleteMessage', { ...msg })" hover-color="var(--o-color-danger1)" title="删除">
+          <DeleteIcon />
+        </OIcon>
       </div>
     </div>
   </div>
@@ -181,14 +156,15 @@ const phoneStore = usePhoneStore();
     flex: 1;
     margin-right: 124px;
     display: flex;
-    gap: 6px;
     @include tip1;
 
     .checkbox {
       transform: translateY(-14px);
+      --checkbox-label-gap: 0;
     }
 
     & > div {
+      margin-left: 28px;
       display: flex;
       width: 0;
       flex: 1;
@@ -226,18 +202,30 @@ const phoneStore = usePhoneStore();
     padding-right: 22px;
     background-color: rgb(var(--o-kleinblue-1));
 
-    .icon {
+    @mixin icon {
       font-size: 24px;
       cursor: pointer;
+    }
 
+    .read-icon {
+      @include icon;
       @include hover {
-        color: rgb(var(--o-kleinblue-6));
+        color: var(--o-color-primary1);
       }
     }
 
     .disabled {
-      font-size: 24px;
       cursor: not-allowed;
+      @include hover {
+        color: var(--icon-btn-color-disabled);
+      }
+    }
+
+    .del-icon {
+      @include icon;
+      @include hover {
+        color: var(--o-color-danger1);
+      }
     }
   }
 

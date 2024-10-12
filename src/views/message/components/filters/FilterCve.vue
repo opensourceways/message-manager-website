@@ -5,6 +5,7 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
 import useSigFilter from '@/composables/useSigFilter';
 import { useUserInfoStore } from '@/stores/user';
+import { EventSourceTypes, EventSources } from '@/data/event';
 
 const userInfoStore = useUserInfoStore();
 const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
@@ -20,7 +21,7 @@ const filterParams = reactive({
 
 const params = computed({
   get() {
-    const data: Record<string, any> = { event_type: 'issue' };
+    const data: Record<string, any> = { event_type: EventSourceTypes[EventSources.CVE] };
     if (sigBelong.value) {
       data[sigBelong.value] = userInfoStore.giteeLoginName as string;
     }

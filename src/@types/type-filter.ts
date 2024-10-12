@@ -18,4 +18,6 @@ export interface FilterRuleT {
   web_filter: Record<string, any>;
   /** 是否需要发邮件 */
   need_mail: boolean;
+  /** gitee快捷筛选合并多个同名项后，记录各个的id */
+  ids?: number[];
 }

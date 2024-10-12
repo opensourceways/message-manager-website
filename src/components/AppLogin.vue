@@ -21,16 +21,13 @@ const toMsgCenter = () => router.push('/');
 </script>
 
 <template>
-  <template v-if="loginStore.isLogined">
+  <template v-if="true">
     <div class="user-info" ref="userInfo">
       <OBadge color="danger" v-if="unreadCountStore.totalCount > 0" :value="unreadCountStore.totalCount">
         <img :src="userInfoStore.photo" />
-        {{ userInfoStore.username }}
       </OBadge>
-      <template v-else>
-        <img :src="userInfoStore.photo" />
-        {{ userInfoStore.username }}
-      </template>
+      <img v-else :src="userInfoStore.photo" />
+      <p class="user-name">{{ 'asdasdadasdasd' }}</p>
     </div>
     <OPopup position="bottom" :target="userInfo">
       <ul class="header-user-menu">
@@ -54,10 +51,17 @@ const toMsgCenter = () => router.push('/');
 <style scoped lang="scss">
 .user-info {
   display: flex;
-  gap: 8px;
   align-items: center;
   cursor: pointer;
   height: calc(100% - 20px);
+
+  .user-name {
+    margin-left: 8px;
+    white-space: nowr ap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 72px;
+  }
 
   img {
     width: 24px;
@@ -69,12 +73,16 @@ const toMsgCenter = () => router.push('/');
 .header-user-menu {
   width: fit-content;
   background-color: var(--o-color-fill2);
-  box-shadow: var(--o-shadow-3);
+  box-shadow: var(--o-shadow-2);
 
   li {
     cursor: pointer;
-    padding: 8px 24px;
-    @include text1;
+    padding: 0 16px;
+    height: 48px;
+    @include tip1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-bottom: 1px solid var(--o-color-control1-light);
 
     &:last-child {

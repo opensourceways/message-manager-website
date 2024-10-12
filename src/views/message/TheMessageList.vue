@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, provide, reactive, ref, watch, type Ref } from 'vue';
+import { computed, onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
@@ -42,7 +42,6 @@ const pageInfo = reactive({
   count_per_page: 10,
 });
 
-const isPhone = inject<Ref<boolean>>('isPhone');
 let intervalId: ReturnType<typeof setInterval>;
 let timeoutId: ReturnType<typeof setTimeout>;
 
@@ -72,8 +71,16 @@ onUnmounted(() => clearInterval(intervalId));
 
 /** 当前事件源 */
 const source = computed(() => decodeURIComponent(route.query.source as string));
-
 const filterPopupWidth = computed(() => (source.value === EventSources.CVE ? '480px' : '450px'));
+const applyQuickFilter = (mode_name: string) => selectRule({ source: source.value, mode_name });
+const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
+const filterVisible = ref();
+const noMessageDesc = computed(() => {
+  if (filterRef.value?.isFiltering) {
+    return '没有匹配的消息';
+  }
+  return EmptyTip[source.value];
+})
 
 // ----------------时间范围----------------
 const current = dayjs();
@@ -83,10 +90,6 @@ const timeOptions = [
   { label: '近一周', value: current.subtract(7, 'day').valueOf() },
 ];
 const startTime = ref<number>();
-
-const applyQuickFilter = (mode_name: string) => selectRule({ source: source.value, mode_name });
-
-const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 
 // ------------------------多选框事件------------------------
 const { checkAllVal, checkboxVal, indeterminate, clearCheckboxes } = useCheckbox(messages, (msg) => msg.id);
@@ -199,7 +202,6 @@ const getData = async (filterParams: Record<string, any> = {}) => {
 const activeMenu = ref(EventSources.EUR);
 
 const onMenuChange = (source: string) => {
-  // 清空过滤
   if (source === 'all') {
     router.push({ path: '/' });
   } else {
@@ -345,79 +347,77 @@ const markReadMultiMessages = () => {
       </OMenu>
     </aside>
 
-    <div class="message-list-wrap">
-      <div class="message-list">
-        <div class="header">
-          <div class="left">
-            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1">
-              {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
-            </OCheckbox>
-            <template v-if="!checkboxVal.length">
-              <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-              <RadioToggle v-model="readStatus" @change="getData()" :options="readStatusOptions" />
-              <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-              <RadioToggle v-model="startTime" @change="getData()" :options="timeOptions" />
-            </template>
-          </div>
-          <div class="right">
-            <template v-if="checkboxVal.length">
-              <IconLink :label-class-names="['message-delete-read']" iconSize="20px" @click="markReadMultiMessages">
-                <template #prefix><IconRead /></template>
-                标记已读
-              </IconLink>
-              <IconLink :label-class-names="['message-delete-read']" hover-color="var(--o-color-danger1)" iconSize="20px" @click="delMultiMessages">
-                <template #prefix><IconDelete /></template>
-                删除
-              </IconLink>
-            </template>
-            <template v-else>
-              <OPopup trigger="click" position="br" :unmount-on-hide="false">
-                <template #target>
-                  <OLink style="--link-color-hover: var(--o-color-primary1)">
-                    筛选
-                    <template #icon><OIconFilter style="font-size: 24px" /></template>
-                  </OLink>
-                </template>
-                <ContentWrapper
-                  vertical-padding="24px"
-                  :style="{
-                    'border-radius': '4px',
-                    'box-shadow': 'var(--o-shadow-2)',
-                    width: filterPopupWidth,
-                    'background-color': 'var(--o-color-fill2)',
-                    '--layout-content-padding': '16px',
-                  }"
-                >
-                  <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
-                </ContentWrapper>
-              </OPopup>
-            </template>
+    <div class="message-list">
+      <div class="header">
+        <div class="left">
+          <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px;" :disabled="!messages.length" :value="1">
+            {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
+          </OCheckbox>
+          <template v-if="!checkboxVal.length">
+            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+            <RadioToggle v-model="readStatus" @change="getData()" :options="readStatusOptions" />
+            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+            <RadioToggle v-model="startTime" @change="getData()" :options="timeOptions" />
+          </template>
+        </div>
+        <div class="right">
+          <template v-if="checkboxVal.length">
+            <IconLink :label-class-names="['message-delete-read']" iconSize="24px" @click="markReadMultiMessages">
+              <template #prefix><IconRead /></template>
+              标记已读
+            </IconLink>
+            <IconLink :label-class-names="['message-delete-read']" hover-color="var(--o-color-danger1)" iconSize="24px" @click="delMultiMessages">
+              <template #prefix><IconDelete /></template>
+              删除
+            </IconLink>
+          </template>
+          <template v-else>
+            <OPopup v-model:visible="filterVisible" trigger="click" position="br" :unmount-on-hide="false">
+              <template #target>
+                <OLink style="--link-color-hover: var(--o-color-primary1)">
+                  筛选
+                  <template #icon><OIconFilter style="font-size: 24px" /></template>
+                </OLink>
+              </template>
+              <ContentWrapper
+                vertical-padding="24px"
+                :style="{
+                  'border-radius': '4px',
+                  'box-shadow': 'var(--o-shadow-2)',
+                  width: filterPopupWidth,
+                  'background-color': 'var(--o-color-fill2)',
+                  '--layout-content-padding': '16px',
+                }"
+              >
+                <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
+              </ContentWrapper>
+            </OPopup>
+          </template>
+        </div>
+      </div>
+      <template v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)">
+        <!-- 消息列表 -->
+        <div class="list">
+          <div v-for="(msg, index) in messages" :key="msg.id" class="item">
+            <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
+            <ODivider v-if="index < messages.length - 1" class="divider-line" />
           </div>
         </div>
-        <template v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)">
-          <!-- 消息列表 -->
-          <div class="list">
-            <div v-for="(msg, index) in messages" :key="msg.id" class="item">
-              <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
-              <ODivider v-if="index < messages.length - 1" class="divider-line" />
-            </div>
-          </div>
-        </template>
-        <div v-else class="no-messages">
-          <img src="@/assets/svg-icons/icon-no-messages.svg" />
-          <p>{{ EmptyTip[source] }}</p>
-          <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
-            接收Gitee消息，请<OLink
-              style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
-              @click="goBindUserInfo"
-              >绑定Gitee账号</OLink
-            >
-          </p>
-        </div>
+      </template>
+      <div v-else class="no-messages">
+        <img src="@/assets/svg-icons/icon-no-messages.svg" />
+        <p>{{ noMessageDesc }}</p>
+        <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
+          接收Gitee消息，请<OLink
+            style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
+            @click="goBindUserInfo"
+            >绑定Gitee账号</OLink
+          >
+        </p>
       </div>
     </div>
   </div>
-  <AppPagination v-if="!isPhone && total > 0" topMargin="40px" :total="total" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.count_per_page" />
+  <AppPagination v-if="total > 0" topMargin="40px" :total="total" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.count_per_page" />
 </template>
 
 <style scoped lang="scss">
@@ -426,7 +426,7 @@ const markReadMultiMessages = () => {
 }
 
 :deep(.message-delete-read) {
-  @include tip1;
+  @include text1;
 }
 
 .icon-search {
@@ -484,7 +484,6 @@ const markReadMultiMessages = () => {
 
   & > :last-child {
     margin-left: 32px;
-    height: 100%;
     flex-grow: 1;
 
     @include respond-to('phone') {
@@ -519,8 +518,7 @@ const markReadMultiMessages = () => {
 
 .message-list {
   background-color: var(--o-color-fill2);
-  padding: 16px;
-  padding-top: 28px;
+  padding: 28px 24px;
   gap: 10px;
 
   @include respond-to('phone') {
@@ -529,6 +527,7 @@ const markReadMultiMessages = () => {
   }
 
   .header {
+    height: var(--o-control_size-m);
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
@@ -568,7 +567,7 @@ const markReadMultiMessages = () => {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin-top: 24px;
+    min-height: 900px;
 
     .item {
       height: 70px;

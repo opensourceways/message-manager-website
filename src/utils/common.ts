@@ -117,10 +117,25 @@ export function diff<T>(sourceArr: T[], targetArr: T[]) {
   };
 }
 
-export function uniqueBy<T>(arr: T[], uniqueKeyGetter: (val: T) => any) {
+/**
+ * 根据某规则去重
+ * @param arr 数组
+ * @param uniqueRule 根据去重
+ * @param handleDuplicate 遇到重复时操作
+ * @returns 去重后数组
+ */
+export function uniqueBy<T>(arr: T[], uniqueRule: (val: T) => any, handleDuplicate?: (val: T, duplicate: T) => T) {
   const map = new Map<any, T>();
   arr.forEach(item => {
-    map.set(uniqueKeyGetter(item), item);
+    const key = uniqueRule(item);
+    const cached = map.get(key);
+    if (cached) {
+      if (handleDuplicate) {
+        map.set(key, handleDuplicate(cached, item));
+      }
+      return;
+    }
+    map.set(key, item);
   });
   return [...map.values()];
 }

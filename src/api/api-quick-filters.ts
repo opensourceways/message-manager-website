@@ -47,13 +47,13 @@ export function deleteFilterRule(source: string, mode_name: string, event_type: 
  * @param recipient_id 当前用户接收人id
  * @returns 调用结果
  */
-export function updateMailStatus(filterId: string, recipient_id: string, need_mail = true) {
+export function updateMailStatus(filterIds: string[], recipient_id: string, need_mail = true) {
   return request.put('/message_center/config/push', {
     need_message: false,
     need_phone: false,
     need_inner_message: true,
     need_mail,
     recipient_id,
-    subscribe_id: [filterId],
+    subscribe_id: filterIds,
   });
 }

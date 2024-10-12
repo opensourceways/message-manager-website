@@ -30,6 +30,7 @@ const { changeTheme, isLight, isDark } = useTheme();
 .theme-icon {
   color: var(--o-color-info1);
   width: 24px;
+  font-size: 24px;
   cursor: pointer;
 }
 </style>

@@ -118,7 +118,7 @@ const onFilterInput = useDebounceFn((search?: string) => {
   searchVal.value = search?.toUpperCase();
 }, props.filterDebounceTimeout);
 
-const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes } = useCheckbox(
+const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes, checkAll } = useCheckbox(
   () => rawValues.value,
   (item) => item.value
 );
@@ -168,6 +168,10 @@ const clearClick = (e: Event) => {
   clearCheckboxes();
   nextTick(() => emit('clear'));
 };
+
+defineExpose({
+  checkAll,
+});
 </script>
 
 <template>
@@ -190,12 +194,14 @@ const clearClick = (e: Event) => {
             <template #target>
               <div class="o-select-tag">{{ checkboxVal.length }}个选项被选中</div>
             </template>
-            <div class="o-select-tags">
-              <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
-                {{ checkedValueLabelMap.get(item as string) }}
-                <div class="o-select-tag-remove" @click.stop="onRemoveTag(item)"><OIconClose /></div>
+            <OScroller style="max-height: 200px;">
+              <div class="o-select-tags select-tags">
+                <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
+                  {{ checkedValueLabelMap.get(item as string) }}
+                  <div class="o-select-tag-remove" @click.stop="onRemoveTag(item)"><OIconClose /></div>
+                </div>
               </div>
-            </div>
+            </OScroller>
           </OPopover>
         </template>
       </div>
@@ -217,7 +223,7 @@ const clearClick = (e: Event) => {
       @change="onVisibleChange"
       :style="{ '--popup-shadow': 'var(--o-shadow-1)', minWidth: popupWidth }"
     >
-      <div style="box-shadow: var(--o-shadow-2); border-radius: var(--o-radius_control-m); background-color: var(--o-color-fill2); padding: 12px; border-radius: 4px; overflow: hidden">
+      <div class="popup-content">
         <div class="mask" v-if="!values.length">
           <p class="info">{{ emptyHint }}</p>
         </div>
@@ -230,12 +236,19 @@ const clearClick = (e: Event) => {
         </OInput>
         <OScroller ref="scroller" class="scroller" showType="always">
           <div class="check-all-wrap">
-            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1">全选</OCheckbox>
+            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" :value="1" style="--checkbox-input-icon-color: var(--o-color-white)"
+              >全选</OCheckbox
+            >
           </div>
           <OCheckboxGroup v-model="checkboxVal" direction="v">
-            <OCheckbox v-for="item in displayValues" :key="item.value" :value="item.value" @change="(_, ev) => onCheckboxChange(item.value, item.label, ev)">{{
-              item.label
-            }}</OCheckbox>
+            <OCheckbox
+              v-for="item in displayValues"
+              :key="item.value"
+              :value="item.value"
+              @change="(_, ev) => onCheckboxChange(item.value, item.label, ev)"
+              style="--checkbox-input-icon-color: var(--o-color-white)"
+              >{{ item.label }}</OCheckbox
+            >
           </OCheckboxGroup>
         </OScroller>
       </div>
@@ -244,21 +257,30 @@ const clearClick = (e: Event) => {
 </template>
 
 <style lang="scss" scoped>
-.mask {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  width: 100%;
-  height: 100%;
+.popup-content {
+  position: relative;
+  box-shadow: var(--o-shadow-2);
+  border-radius: var(--o-radius_control-m);
   background-color: var(--o-color-fill2);
-  z-index: 2;
-  left: 0;
-  top: 0;
+  padding: 12px;
+  border-radius: 4px;
+  overflow: hidden;
 
-  .info {
-    @include tip1;
-    color: var(--o-color-info1);
+  .mask {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--o-color-fill2);
+    z-index: 2;
+    left: 0;
+    top: 0;
+
+    .info {
+      @include tip1;
+    }
   }
 }
 

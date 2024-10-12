@@ -66,8 +66,8 @@ const { isDark } = useTheme();
     display: flex;
     align-items: center;
     height: 100%;
-    max-width: var(--layout-content-max-width);
-    padding: 0 var(--layout-header-padding);
+    max-width: 1504px;
+    padding: 0 44px;
     justify-content: space-between;
     margin: 0 auto;
     .logo-text {
@@ -90,7 +90,8 @@ const { isDark } = useTheme();
   }
   .community-logo {
     img {
-      height: 28px;
+      height: 32px;
+      width: 139px;
     }
   }
 }
