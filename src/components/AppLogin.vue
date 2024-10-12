@@ -27,7 +27,7 @@ const toMsgCenter = () => router.push('/');
         <img :src="userInfoStore.photo" />
       </OBadge>
       <img v-else :src="userInfoStore.photo" />
-      <p class="user-name">{{ 'asdasdadasdasd' }}</p>
+      <p class="user-name">{{ userInfoStore.username }}</p>
     </div>
     <OPopup position="bottom" :target="userInfo">
       <ul class="header-user-menu">
