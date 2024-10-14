@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useLocale } from '@/composables/useLocale';
 import { checkOriginLink, windowOpen } from '@/utils/common';
 import {
@@ -19,7 +18,6 @@ import {
   OPENEULER_CONTACT,
 } from '@/data/config';
 
-import ContentWrapper from '@/components/ContentWrapper.vue';
 import ExternalLink from '@/components/ExternalLink.vue';
 
 import LogoFooter from '@/assets/footer/footer-logo2.png';
@@ -49,7 +47,6 @@ import CodeTitleGzh from '@/assets/footer/img-gzh.png';
 import CodeImgXzs from '@/assets/footer/code-xzs.png';
 import CodeImgZgz from '@/assets/footer/code-zgz.png';
 
-const router = useRouter();
 const { t, isZh } = useLocale();
 
 // 友情链接
@@ -129,6 +126,10 @@ const linksData2 = {
       NAME: '法律声明',
       URL: OPENEULER + '/zh/other/legal/',
     },
+    {
+      NAME: '关于cookies',
+      URL: OPENEULER + '/zh/other/cookies/',
+    },
   ],
   en: [
     {
@@ -136,8 +137,16 @@ const linksData2 = {
       URL: OPENEULER + '/en/other/brand/',
     },
     {
+      NAME: 'Privacy Policy',
+      URL: OPENEULER + '/en/other/privacy/',
+    },
+    {
       NAME: 'Legal Notice',
       URL: OPENEULER + '/en/other/legal/',
+    },
+    {
+      NAME: 'About Cookies',
+      URL: OPENEULER + '/en/other/cookies/',
     },
   ],
 };
@@ -160,14 +169,6 @@ const footerCodeList = [
   },
 ];
 
-const handleNavClick = (path: string) => {
-  if (path.startsWith('https:')) {
-    windowOpen(path, '_blank');
-  } else {
-    router.push(`/${'zh'}` + path);
-  }
-};
-
 // 背景
 const footBg = {
   pc: `url(${FooterBg})`,
@@ -188,53 +189,51 @@ const onExternalDialog = (href: string) => {
 
 <template>
   <div class="footer">
-    <div class="atom">
-      <p class="atom-text">{{ t('common.FOOTER.ATOM_TEXT') }}</p>
-      <a :href="OPENATOM" target="_blank" rel="noopener noreferrer">
-        <img :src="LogoAtom" class="atom-logo" alt="" />
-      </a>
-    </div>
-    <div class="footer-content">
-      <ContentWrapper>
-        <div class="inner">
-          <div class="footer-logo">
-            <img class="show-pc" :src="LogoFooter" alt="" />
-            <img class="show-mo" :src="LogoFooter1" alt="" />
-            <p>
-              <a class="email" :href="`mailto:${OPENEULER_CONTACT}`" target="_blank" rel="noopener noreferrer"> {{ OPENEULER_CONTACT }} </a>
-            </p>
+    <div class="footer-inner">
+      <div class="atom">
+        <p class="atom-text">{{ t('common.FOOTER.ATOM_TEXT') }}</p>
+        <a :href="OPENATOM" target="_blank" rel="noopener noreferrer">
+          <img :src="LogoAtom" class="atom-logo" alt="" />
+        </a>
+      </div>
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img class="show-pc" :src="LogoFooter" alt="" />
+          <img class="show-mo" :src="LogoFooter1" alt="" />
+          <p>
+            <a class="email" :href="`mailto:${OPENEULER_CONTACT}`" target="_blank" rel="noopener noreferrer"> {{ OPENEULER_CONTACT }} </a>
+          </p>
+        </div>
+        <div class="footer-option">
+          <div class="footer-option-item">
+            <a v-for="link in footLink" :key="link.URL" class="link" :href="link.URL" target="_blank">{{ link.NAME }}</a>
           </div>
-          <div class="footer-option">
-            <div class="footer-option-item">
-              <span v-for="link in footLink" :key="link.URL" class="link" @click="handleNavClick(link.URL)">{{ link.NAME }}</span>
-            </div>
-            <p class="copyright">{{ t('common.FOOTER.COPY_RIGHT') }}</p>
-            <p class="license">
-              <span>{{ t('common.FOOTER.LICENSED_1') }}</span>
-              {{ t('common.FOOTER.LICENSED_2') }}
-            </p>
+          <p class="copyright">{{ t('common.FOOTER.COPY_RIGHT') }}</p>
+          <p class="license">
+            <span>{{ t('common.FOOTER.LICENSED_1') }}</span>
+            {{ t('common.FOOTER.LICENSED_2') }}
+          </p>
+        </div>
+        <div class="footer-right">
+          <div v-if="isZh" class="code-box">
+            <span v-for="(item, index) in footerCodeList" :key="index" class="code-pop">
+              <img :src="item.img" class="code-img" alt="" />
+              <div class="code-layer">
+                <img :src="item.code" alt="" />
+                <p class="txt">{{ item.label }}</p>
+              </div>
+            </span>
           </div>
-          <div class="footer-right">
-            <div v-if="isZh" class="code-box">
-              <span v-for="(item, index) in footerCodeList" :key="index" class="code-pop">
-                <img :src="item.img" class="code-img" alt="" />
-                <div class="code-layer">
-                  <img :src="item.code" alt="" />
-                  <p class="txt">{{ item.label }}</p>
-                </div>
-              </span>
-            </div>
-            <div class="footer-links" :class="isZh ? 'zh' : ''">
-              <span v-for="item in linkList" :key="item.id" @click="onExternalDialog(item.href)" class="links-logo">
-                <img :src="item.logo" alt="" />
-              </span>
-            </div>
+          <div class="footer-links" :class="isZh ? 'zh' : ''">
+            <span v-for="item in linkList" :key="item.id" @click="onExternalDialog(item.href)" class="links-logo">
+              <img :src="item.logo" alt="" />
+            </span>
           </div>
         </div>
-      </ContentWrapper>
+      </div>
+      <!-- 跳转外部链接提示 -->
+      <ExternalLink v-if="showExternalDlg" :href="externalLink" @change="showExternalDlg = false" />
     </div>
-    <!-- 跳转外部链接提示 -->
-    <ExternalLink v-if="showExternalDlg" :href="externalLink" @change="showExternalDlg = false" />
   </div>
 </template>
 
@@ -247,6 +246,11 @@ $color: #fff;
     @media (max-width: 1100px) {
       margin-left: 0;
     }
+  }
+  .footer-inner {
+    width: var(--layout-content-max-width);
+    padding: 0 var(--layout-content-padding);
+    margin: 0 auto;
   }
   :deep(.app-content) {
     padding-bottom: 0;
@@ -321,24 +325,22 @@ $color: #fff;
     }
   }
 
-  &-content {
+  .footer-content {
     background: v-bind('footBg.pc') no-repeat bottom center;
     @media (max-width: 767px) {
       background: v-bind('footBg.mo') no-repeat bottom center;
     }
-    .inner {
-      display: flex;
-      align-items: end;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    padding: 18px 0 32px;
+    position: relative;
+    min-height: 118px;
+    @media (max-width: 1436px) {
+      padding: 24px 0;
+      flex-direction: column;
       justify-content: space-between;
-      padding: 18px 0 32px;
-      position: relative;
-      min-height: 118px;
-      @media (max-width: 1436px) {
-        padding: 24px 0;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-      }
+      align-items: center;
     }
   }
   &-logo {
@@ -394,6 +396,7 @@ $color: #fff;
       padding: 0 12px;
       border-right: 1px solid $color;
       cursor: pointer;
+      line-height: 18px;
       &:last-child {
         border-right: 0;
       }
@@ -490,11 +493,14 @@ $color: #fff;
       align-items: center;
 
       .links-logo + .links-logo {
-        margin-left: 16px;
+        margin-left: 10px;
       }
       .links-logo {
-        height: 16px;
+        height: 14px;
         cursor: pointer;
+        &:first-child {
+          height: 18px;
+        }
         img {
           height: 100%;
           object-fit: cover;
