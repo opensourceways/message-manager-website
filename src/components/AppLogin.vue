@@ -15,7 +15,7 @@ const unreadCountStore = useUnreadMsgCountStore();
 const userInfo = ref();
 const loginStore = useLoginStore();
 
-const toUserCenter = () => (window.location.href = import.meta.env.VITE_LOGIN_URL);
+const toUserCenter = () => window.open(import.meta.env.VITE_LOGIN_URL);
 
 const toMsgCenter = () => router.push('/');
 </script>
