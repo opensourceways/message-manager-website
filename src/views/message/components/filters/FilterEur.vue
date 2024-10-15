@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, ref, watch, type Ref } from 'vue';
+import { computed, nextTick, watch } from 'vue';
 import { OForm, OFormItem, OOption, OSelect, type SelectOptionT } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import { EUR_BUILD_STATUS, EventSourceTypes, EventSources } from '@/data/event';
 import { useUserInfoStore } from '@/stores/user';
 import { reactive } from 'vue';
+import { filterProps, type FilterEmits } from './typs';
 
+const props = defineProps(filterProps);
+const emit = defineEmits<FilterEmits>();
 const userInfoStore = useUserInfoStore();
-const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const filterParams = reactive({
   projRelation: '',
@@ -44,13 +45,16 @@ const params = computed({
   },
 });
 
-const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
+const applyFilter = () => emit('applyFilter', params.value);
 
-watch(webFilter, (val) => {
-  if (val) {
-    params.value = val;
+watch(
+  () => props.quickFilterDetail,
+  (val) => {
+    if (val) {
+      params.value = val;
+    }
   }
-});
+);
 
 const projRelations = [
   { label: '我的项目', value: 'myProj' },

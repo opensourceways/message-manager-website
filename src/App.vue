@@ -11,9 +11,7 @@ useTheme();
   <AppHeader />
   <OScroller show-type="hover">
     <main class="ly-main">
-      <div class="inner-container">
-        <RouterView />
-      </div>
+      <RouterView />
     </main>
     <AppFooter />
   </OScroller>
@@ -68,15 +66,6 @@ useTheme();
 </style>
 
 <style lang="scss" scoped>
-.inner-container {
-  display: flex;
-  flex-direction: column;
-
-  @include respond-to('phone') {
-    width: 100%;
-  }
-}
-
 .ly-header {
   position: fixed;
   top: 0;
@@ -87,7 +76,6 @@ useTheme();
 
 .o-scroller {
   height: 100vh;
-  background-color: var(--o-color-fill1);
   --scrollbar-height: calc(100vh - var(--layout-header-height) * 2 - 10px);
   :deep(.o-scroller-container) {
     scroll-padding-top: var(--layout-header-height);
@@ -96,7 +84,8 @@ useTheme();
 
 .ly-main {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding-top: var(--layout-header-height);
   padding-bottom: 72px;
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
