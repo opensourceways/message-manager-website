@@ -6,7 +6,6 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
 import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OPopup, OBadge, OIconFilter } from '@opensig/opendesign';
-import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import IconDelete from '~icons/app/icon-delete.svg';
 import IconRead from '~icons/app/icon-read.svg';
@@ -24,6 +23,7 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
 import IconLink from '@/components/IconLink.vue';
 import { AxiosError } from 'axios';
+import MessageList from './components/MessageList.vue';
 
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
@@ -80,7 +80,7 @@ const noMessageDesc = computed(() => {
     return '没有匹配的消息';
   }
   return EmptyTip[source.value];
-})
+});
 
 // ----------------时间范围----------------
 const current = dayjs();
@@ -123,13 +123,6 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
     );
     const { count, query_info } = res.data;
     total.value = count;
-    if (query_info) {
-      for (const msg of query_info) {
-        msg.id = msg.source + msg.event_id;
-        const date = dayjs(msg.time);
-        msg.formattedTime = date.fromNow();
-      }
-    }
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
   } catch (err) {
@@ -178,13 +171,6 @@ const getData = async (filterParams: Record<string, any> = {}) => {
     );
     const { count, query_info } = res.data;
     total.value = count;
-    if (query_info) {
-      for (const msg of query_info) {
-        msg.id = msg.source + msg.event_id;
-        const date = dayjs(msg.time);
-        msg.formattedTime = date.fromNow();
-      }
-    }
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
   } catch (err) {
@@ -350,7 +336,7 @@ const markReadMultiMessages = () => {
     <div class="message-list">
       <div class="header">
         <div class="left">
-          <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px;" :disabled="!messages.length" :value="1">
+          <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
             {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
           </OCheckbox>
           <template v-if="!checkboxVal.length">
@@ -395,15 +381,13 @@ const markReadMultiMessages = () => {
           </template>
         </div>
       </div>
-      <template v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)">
-        <!-- 消息列表 -->
-        <div class="list">
-          <div v-for="(msg, index) in messages" :key="msg.id" class="item">
-            <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
-            <ODivider v-if="index < messages.length - 1" class="divider-line" />
-          </div>
-        </div>
-      </template>
+      <!-- 消息列表 -->
+      <MessageList
+        v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)"
+        :messages="messages"
+        @delete-message="delMessage"
+        @read-message="markReadMessage"
+      />
       <div v-else class="no-messages">
         <img src="@/assets/svg-icons/icon-no-messages.svg" />
         <p>{{ noMessageDesc }}</p>
@@ -562,39 +546,6 @@ const markReadMultiMessages = () => {
       gap: 16px;
     }
   }
-
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 900px;
-
-    .item {
-      height: 70px;
-      position: relative;
-      display: flex;
-      border-radius: 4px;
-      padding-left: 12px;
-
-      @include respond-to('phone') {
-        height: auto;
-        padding: 16px 0;
-      }
-
-      .divider-line {
-        position: absolute;
-        bottom: 0;
-        transform: translateY(2px);
-        --o-divider-gap: 0;
-        width: calc(100% - 56px);
-        left: 56px;
-      }
-
-      @include hover {
-        background-color: rgb(var(--o-kleinblue-1));
-      }
-    }
-  }
 }
 
 .no-messages {
@@ -602,7 +553,7 @@ const markReadMultiMessages = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 900px;
+  height: 736px;
   font-size: 16px;
   color: var(--o-color-info3);
 
