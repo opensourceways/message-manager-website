@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { OBadge, OIcon, OIconLoading, OPopup } from '@opensig/opendesign';
 
 import LoginIcon from '~icons/app/icon-login.svg';
@@ -9,15 +8,12 @@ import { doLogin, logout } from '@/shared/login';
 import { useUnreadMsgCountStore } from '@/stores/common';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
 
-const router = useRouter();
 const userInfoStore = useUserInfoStore();
 const unreadCountStore = useUnreadMsgCountStore();
 const userInfo = ref();
 const loginStore = useLoginStore();
 
 const toUserCenter = () => window.open(import.meta.env.VITE_LOGIN_URL);
-
-const toMsgCenter = () => router.push('/');
 </script>
 
 <template>
@@ -32,10 +28,6 @@ const toMsgCenter = () => router.push('/');
     <OPopup position="bottom" :target="userInfo">
       <ul class="header-user-menu">
         <li @click="toUserCenter">个人中心</li>
-        <li @click="toMsgCenter">
-          <OBadge color="danger" v-if="unreadCountStore.totalCount > 0" :value="unreadCountStore.totalCount"> 消息中心 </OBadge>
-          <span v-else>消息中心</span>
-        </li>
         <li @click="logout">退出登录</li>
       </ul>
     </OPopup>

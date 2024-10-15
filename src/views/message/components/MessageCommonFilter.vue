@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, provide, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
-import type { FilterRuleT } from '@/@types/type-filter';
 import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-quick-filters';
 import { saveRule } from '@/api/api-messages';
 
@@ -18,10 +17,10 @@ import GiteeFilter from './filters/FilterGitee.vue';
 import CveFilter from './filters/FilterCve.vue';
 import MeetingFilter from './filters/FilterMeeting.vue';
 import { useUserInfoStore } from '@/stores/user';
+import type { FilterRuleT } from '@/@types/type-filter';
 import { uniqueBy } from '@/utils/common';
 
 const popupContainer = ref();
-provide('popupContainer', popupContainer);
 
 const message = useMessage();
 const route = useRoute();
@@ -63,13 +62,6 @@ const isFilterEmpty = computed(() => {
 
 const isFiltering = computed(() => !isFilterEmpty.value || selectedQuickFilter.value);
 
-provide('applyFilter', () => {
-  emit('applyFilter', {
-    source: source.value,
-    ...currentCompRef.value?.params,
-  });
-});
-
 // ----------------快捷筛选----------------
 /** 选中的快捷筛选的mode_name */
 const selectedQuickFilter = ref('');
@@ -86,6 +78,9 @@ const defaultQuickFilters = computed(() => {
 const quickFilters = computed(() => {
   return currentFilters.value?.filter((filter) => !filter.is_default).map((filter) => filter.mode_name as string);
 });
+
+/** 选中的快捷筛选的detail，用来给高级筛选里回显 */
+const webFilter = ref<Record<string, any> | null | undefined>();
 
 onMounted(() => queryFilterRules());
 
@@ -224,10 +219,6 @@ const confirmSave = (mode_name: string, callback: () => void) => {
   }
 };
 
-/** 选中的快捷筛选的detail，用来给高级筛选里回显 */
-const webFilter = ref<Record<string, any> | null | undefined>();
-provide('webFilter', webFilter);
-
 const applyQuickFilter = (mode_name: string) => {
   emit('applyQuickFilter', mode_name);
   const filter = currentFilters.value?.find((filter) => filter.mode_name === mode_name);
@@ -256,7 +247,13 @@ defineExpose({ reset, isFiltering });
       />
     </template>
     <p class="sec-title">高级筛选</p>
-    <component :is="currentFilterComp" :ref="setCurrenCompRef"></component>
+    <component
+      :is="currentFilterComp"
+      :ref="setCurrenCompRef"
+      @applyFilter="$emit('applyFilter', $event as Record<string, any>)"
+      :quickFilterDetail="webFilter"
+      :popupContainer="popupContainer"
+    ></component>
 
     <IconLink :disabled="disableSave" @click="addNewFilter" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
       保存为快捷筛选项
@@ -268,11 +265,7 @@ defineExpose({ reset, isFiltering });
     <p>同步用以下方式通知我</p>
     <div class="switches">
       <p>邮箱通知</p>
-      <OSwitch
-        v-model="emailSwitch"
-        @change="onEmailChange"
-        :disabled="!selectedQuickFilter"
-      ></OSwitch>
+      <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter"></OSwitch>
       <p style="color: var(--o-color-control1)">微信通知</p>
       <OSwitch v-model="weChatSwitch" disabled></OSwitch>
     </div>

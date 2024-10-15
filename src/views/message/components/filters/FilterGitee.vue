@@ -5,11 +5,12 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';
 import { useUserInfoStore } from '@/stores/user';
 import { OForm, OFormItem, OOption, OSelect } from '@opensig/opendesign';
-import { computed, inject, nextTick, onBeforeMount, reactive, ref, watch, type Ref } from 'vue';
+import { computed, nextTick, onBeforeMount, reactive, ref, watch } from 'vue';
+import { filterProps, type FilterEmits } from './typs';
 
+const props = defineProps(filterProps);
+const emit = defineEmits<FilterEmits>();
 const userInfoStore = useUserInfoStore();
-const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
@@ -117,13 +118,16 @@ const params = computed({
   },
 });
 
-const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
+const applyFilter = () => emit('applyFilter', params.value);
 
-watch(webFilter, (val) => {
-  if (val) {
-    params.value = val;
+watch(
+  () => props.quickFilterDetail,
+  (val) => {
+    if (val) {
+      params.value = val;
+    }
   }
-});
+);
 
 // ----------------repo归属----------------
 const repoBelongOptions = [
@@ -171,9 +175,7 @@ const repoList = computed(() => {
  */
 const onSelectVisibilityChange = (val: boolean) => {
   if (!val) {
-    if (applyFilter) {
-      applyFilter();
-    }
+    applyFilter();
   }
 };
 
@@ -259,7 +261,7 @@ defineExpose({
         clearable
         placeholder="请选择SIG组"
         emptyHint="您暂未加入任何SIG"
-        :values="sigList"
+        :options="sigList"
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
@@ -276,7 +278,7 @@ defineExpose({
         filterable
         clearable
         placeholder="请输入仓库名"
-        :values="repoList"
+        :options="repoList"
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
