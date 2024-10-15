@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useConfirmDialog } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
+import { AxiosError } from 'axios';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
 import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OPopup, OBadge, OIconFilter } from '@opensig/opendesign';
-import MessageListItem from './components/MessageListItem.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import IconDelete from '~icons/app/icon-delete.svg';
-import IconRead from '~icons/app/icon-read.svg';
-
-import { EmptyTip, EventSourceNames, EventSources } from '@/data/event';
-import type { MessageT } from '@/@types/type-messages';
-import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/api-messages';
-import { useConfirmDialog } from '@vueuse/core';
-import { useCheckbox } from '@/composables/useCheckbox';
-import { useUserInfoStore } from '@/stores/user';
-import { useUnreadMsgCountStore } from '@/stores/common';
 import AppPagination from '@/components/AppPagination.vue';
 import ContentWrapper from '@/components/ContentWrapper.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
 import MessageCommonFilter from './components/MessageCommonFilter.vue';
+import MessageList from './components/MessageList.vue';
 import IconLink from '@/components/IconLink.vue';
-import { AxiosError } from 'axios';
+
+import IconDelete from '~icons/app/icon-delete.svg';
+import IconRead from '~icons/app/icon-read.svg';
+
+import { useUserInfoStore } from '@/stores/user';
+import { useUnreadMsgCountStore } from '@/stores/common';
+import { EmptyTip, EventSourceNames, EventSources } from '@/data/event';
+import type { MessageT } from '@/@types/type-messages';
+import { deleteMessages, getMessages, readMessages, filterByRule } from '@/api/api-messages';
 
 const userInfoStore = useUserInfoStore();
 const message = useMessage();
@@ -42,7 +42,6 @@ const pageInfo = reactive({
   count_per_page: 10,
 });
 
-let intervalId: ReturnType<typeof setInterval>;
 let timeoutId: ReturnType<typeof setTimeout>;
 
 const showNoEmail = ref(false);
@@ -51,14 +50,15 @@ const goBindUserInfo = () => (window.location.href = import.meta.env.VITE_LOGIN_
 
 let lastQueryType: 'inner' | 'quick' = 'inner';
 let lastQueryParams: { source: string; mode_name: string } | Record<string, any>;
+let lastFilterName: string;
 
-watch([() => pageInfo.page, () => pageInfo.count_per_page], () => {
+const onPageChange = () => {
   if (lastQueryType === 'quick') {
-    selectRule(lastQueryParams as { source: string; mode_name: string });
+    applyQuickFilter(lastFilterName);
   } else {
     getData(lastQueryParams);
   }
-});
+};
 
 onMounted(() => {
   if (!userInfoStore.email) {
@@ -67,12 +67,9 @@ onMounted(() => {
   }
 });
 
-onUnmounted(() => clearInterval(intervalId));
-
 /** 当前事件源 */
 const source = computed(() => decodeURIComponent(route.query.source as string));
 const filterPopupWidth = computed(() => (source.value === EventSources.CVE ? '480px' : '450px'));
-const applyQuickFilter = (mode_name: string) => selectRule({ source: source.value, mode_name });
 const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
 const filterVisible = ref();
 const noMessageDesc = computed(() => {
@@ -80,7 +77,7 @@ const noMessageDesc = computed(() => {
     return '没有匹配的消息';
   }
   return EmptyTip[source.value];
-})
+});
 
 // ----------------时间范围----------------
 const current = dayjs();
@@ -92,15 +89,39 @@ const timeOptions = [
 const startTime = ref<number>();
 
 // ------------------------多选框事件------------------------
-const { checkAllVal, checkboxVal, indeterminate, clearCheckboxes } = useCheckbox(messages, (msg) => msg.id);
-provide('checkboxVal', checkboxVal);
+const messageListRef = ref<InstanceType<typeof MessageList>>();
+const checkboxVal = ref<(string | number)[]>([]);
+
+const indeterminate = computed(() => {
+  const length = checkboxVal.value.length;
+  if (!messages.value.length || !length) {
+    return false;
+  }
+  return length > 0 && length < messages.value.length;
+});
+
+const checkAllVal = computed({
+  get() {
+    if (!messages.value.length) {
+      return [];
+    }
+    return messages.value.length === checkboxVal.value.length ? [1] : [];
+  },
+  set(val: (string | number)[]) {
+    if (val.length) {
+      messageListRef.value?.checkAll();
+    } else {
+      messageListRef.value?.clearCheckboxes();
+    }
+  },
+});
 
 let abortController: AbortController | null;
 
 /** 快捷筛选 */
-const selectRule = async (val: { source: string; mode_name: string }) => {
-  lastQueryParams = val;
+const applyQuickFilter = async (mode_name: string) => {
   lastQueryType = 'quick';
+  lastFilterName = mode_name;
   if (source.value === EventSources.GITEE && !userInfoStore.giteeLoginName) {
     total.value = 0;
     messages.value = [];
@@ -115,21 +136,15 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
   try {
     const res = await filterByRule(
       {
-        source: val.source,
-        mode_name: val.mode_name,
-        ...pageInfo,
+        source: source.value,
+        mode_name,
+        page: pageInfo.page,
+        count_per_page: pageInfo.count_per_page,
       },
       abortController
     );
     const { count, query_info } = res.data;
     total.value = count;
-    if (query_info) {
-      for (const msg of query_info) {
-        msg.id = msg.source + msg.event_id;
-        const date = dayjs(msg.time);
-        msg.formattedTime = date.fromNow();
-      }
-    }
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
   } catch (err) {
@@ -139,7 +154,7 @@ const selectRule = async (val: { source: string; mode_name: string }) => {
   }
   abortController = null;
   if (!canceled) {
-    timeoutId = setTimeout(() => selectRule(val), 10_000);
+    timeoutId = setTimeout(() => applyQuickFilter(mode_name), 10000);
   }
 };
 
@@ -171,20 +186,14 @@ const getData = async (filterParams: Record<string, any> = {}) => {
         source: source.value,
         is_read: readStatus.value,
         start_time: startTime.value?.toString(),
-        ...pageInfo,
+        page: pageInfo.page,
+        count_per_page: pageInfo.count_per_page,
         ...filterParams,
       },
       abortController
     );
     const { count, query_info } = res.data;
     total.value = count;
-    if (query_info) {
-      for (const msg of query_info) {
-        msg.id = msg.source + msg.event_id;
-        const date = dayjs(msg.time);
-        msg.formattedTime = date.fromNow();
-      }
-    }
     messages.value = query_info ?? [];
     unreadCountStore.updateCount();
   } catch (err) {
@@ -202,21 +211,18 @@ const getData = async (filterParams: Record<string, any> = {}) => {
 const activeMenu = ref(EventSources.EUR);
 
 const onMenuChange = (source: string) => {
-  if (source === 'all') {
-    router.push({ path: '/' });
-  } else {
-    router.push({
-      path: '/',
-      query: { source: encodeURIComponent(source) },
-    });
-  }
+  pageInfo.page = 1;
+  router.push({
+    path: '/',
+    query: { source: encodeURIComponent(source) },
+  });
 };
 
 // ------------------------监听路由改变------------------------
 watch(
   source,
   (val) => {
-    clearCheckboxes();
+    messageListRef.value?.clearCheckboxes();
     if (val && val !== activeMenu.value) {
       activeMenu.value = val;
     }
@@ -240,7 +246,7 @@ const delMessage = async (msg: MessageT) => {
       .then(() => {
         message.success({ content: '删除成功' });
         getData();
-        clearCheckboxes();
+        messageListRef.value?.clearCheckboxes();
       })
       .catch((error) => {
         if (error?.response?.data?.message) {
@@ -273,7 +279,7 @@ const delMultiMessages = async () => {
         } else {
           message.success({ content: '删除成功' });
         }
-        clearCheckboxes();
+        messageListRef.value?.clearCheckboxes();
         getData();
       })
       .catch((error) => {
@@ -313,7 +319,7 @@ const markReadMultiMessages = () => {
     .then(() => {
       getData();
       unreadCountStore.updateCount();
-      clearCheckboxes();
+      messageListRef.value?.clearCheckboxes();
     })
     .catch((error) => {
       if (error?.response?.data?.message) {
@@ -350,7 +356,7 @@ const markReadMultiMessages = () => {
     <div class="message-list">
       <div class="header">
         <div class="left">
-          <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px;" :disabled="!messages.length" :value="1">
+          <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
             {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
           </OCheckbox>
           <template v-if="!checkboxVal.length">
@@ -395,15 +401,15 @@ const markReadMultiMessages = () => {
           </template>
         </div>
       </div>
-      <template v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)">
-        <!-- 消息列表 -->
-        <div class="list">
-          <div v-for="(msg, index) in messages" :key="msg.id" class="item">
-            <MessageListItem :msg="msg" @deleteMessage="delMessage" @readMessage="markReadMessage" />
-            <ODivider v-if="index < messages.length - 1" class="divider-line" />
-          </div>
-        </div>
-      </template>
+      <!-- 消息列表 -->
+      <MessageList
+        v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)"
+        ref="messageListRef"
+        :messages="messages"
+        @delete-message="delMessage"
+        @read-message="markReadMessage"
+        v-model:checkboxes="checkboxVal"
+      />
       <div v-else class="no-messages">
         <img src="@/assets/svg-icons/icon-no-messages.svg" />
         <p>{{ noMessageDesc }}</p>
@@ -417,7 +423,14 @@ const markReadMultiMessages = () => {
       </div>
     </div>
   </div>
-  <AppPagination v-if="total > 0" topMargin="40px" :total="total" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.count_per_page" />
+  <AppPagination
+    v-if="total > 0"
+    topMargin="40px"
+    :total="total"
+    @change="onPageChange"
+    v-model:page="pageInfo.page"
+    v-model:pageSize="pageInfo.count_per_page"
+  />
 </template>
 
 <style scoped lang="scss">
@@ -478,7 +491,7 @@ const markReadMultiMessages = () => {
 
 .messages-container {
   display: flex;
-  max-width: 1418px;
+  width: 1416px;
   min-height: 60vh;
   margin-top: 64px;
 
@@ -490,20 +503,6 @@ const markReadMultiMessages = () => {
       margin-top: var(--layout-header-height);
       margin-left: 0;
     }
-  }
-
-  @include respond-to('>laptop') {
-    width: 1416px;
-  }
-
-  @include respond-to('pad-laptop') {
-    width: 80vw;
-    min-width: 960px;
-  }
-
-  @include respond-to('phone') {
-    margin-top: 0;
-    width: 100%;
   }
 
   aside {
@@ -562,39 +561,6 @@ const markReadMultiMessages = () => {
       gap: 16px;
     }
   }
-
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 900px;
-
-    .item {
-      height: 70px;
-      position: relative;
-      display: flex;
-      border-radius: 4px;
-      padding-left: 12px;
-
-      @include respond-to('phone') {
-        height: auto;
-        padding: 16px 0;
-      }
-
-      .divider-line {
-        position: absolute;
-        bottom: 0;
-        transform: translateY(2px);
-        --o-divider-gap: 0;
-        width: calc(100% - 56px);
-        left: 56px;
-      }
-
-      @include hover {
-        background-color: rgb(var(--o-kleinblue-1));
-      }
-    }
-  }
 }
 
 .no-messages {
@@ -602,9 +568,9 @@ const markReadMultiMessages = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 900px;
-  font-size: 16px;
+  height: 500px;
   color: var(--o-color-info3);
+  @include text1;
 
   @include respond-to('phone') {
     height: 100vh;

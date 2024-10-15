@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, reactive, ref, watch, type Ref } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { OForm, OFormItem } from '@opensig/opendesign';
 import RadioToggle from '@/components/RadioToggle.vue';
 import FilterableSelect from '@/components/FilterableSelect.vue';
@@ -7,9 +7,11 @@ import useSigFilter from '@/composables/useSigFilter';
 import { useUserInfoStore } from '@/stores/user';
 import { EventSourceTypes, EventSources } from '@/data/event';
 
+import { filterProps, type FilterEmits } from './typs';
+
+const props = defineProps(filterProps);
+const emit = defineEmits<FilterEmits>();
 const userInfoStore = useUserInfoStore();
-const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const { sigBelong, sigBelongOptions, allSigReposMap, sigList, selectedSigs } = useSigFilter();
 
@@ -64,16 +66,20 @@ const params = computed({
     if (val.cve_state) {
       filterParams.cveState = val.cve_state;
     }
-  }
-})
-
-const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
-
-watch(webFilter, val => {
-  if (val) {
-    params.value = val;
-  }
+  },
 });
+
+const applyFilter = () => emit('applyFilter', params.value);
+
+watch(
+  () => props.quickFilterDetail,
+  (val) => {
+    if (val) {
+      params.value = val;
+    }
+  },
+  { immediate: true }
+);
 
 const versions = [
   'openeuler-20.03_LTS_SP1',
@@ -133,7 +139,7 @@ defineExpose({
 </script>
 
 <template>
-  <OForm style="margin-top: 16px; --form-item-gap: 16px" label-width="100px"  >
+  <OForm style="margin-top: 16px; --form-item-gap: 16px" label-width="100px">
     <OFormItem label="SIG归属">
       <RadioToggle v-model="sigBelong" enable-cancel-select :options="sigBelongOptions" />
     </OFormItem>
@@ -143,7 +149,7 @@ defineExpose({
         filterable
         clearable
         placeholder="请选择SIG组"
-        :values="sigList"
+        :options="sigList"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
         @clear="applyFilter"
@@ -156,7 +162,7 @@ defineExpose({
         filterable
         clearable
         placeholder="请选择仓库"
-        :values="repoList"
+        :options="repoList"
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
@@ -173,7 +179,7 @@ defineExpose({
         filterable
         clearable
         placeholder="请选择仓库"
-        :values="versions"
+        :options="versions"
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
