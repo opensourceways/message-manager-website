@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch, type Ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { OForm, OFormItem } from '@opensig/opendesign';
 
 import FilterableSelect from '@/components/FilterableSelect.vue';
@@ -7,11 +7,12 @@ import RadioToggle from '@/components/RadioToggle.vue';
 import useSigFilter from '@/composables/useSigFilter';
 import DatePicker from '@/components/DatePicker.vue';
 import { EventSourceTypes, EventSources } from '@/data/event';
+import { filterProps, type FilterEmits } from './typs';
+
+const props = defineProps(filterProps);
+const emit = defineEmits<FilterEmits>();
 
 const { sigBelong, sigBelongOptions, sigList, selectedSigs } = useSigFilter();
-
-const popupContainer = inject<Ref<HTMLElement>>('popupContainer');
-const applyFilter = inject<() => void>('applyFilter', () => {});
 
 const date = ref<Date>();
 
@@ -34,16 +35,19 @@ const params = computed({
     if (val.meeting_start_time) {
       date.value = new Date(Number(val.meeting_start_time));
     }
-  }
-})
-
-const webFilter = inject<Ref<Record<string, any> | undefined>>('webFilter', ref());
-
-watch(webFilter, val => {
-  if (val) {
-    params.value = val;
-  }
+  },
 });
+
+const applyFilter = () => emit('applyFilter', params.value);
+
+watch(
+  () => props.quickFilterDetail,
+  (val) => {
+    if (val) {
+      params.value = val;
+    }
+  }
+);
 
 /**
  * 下拉选择可见性改变
@@ -58,7 +62,7 @@ const onDateChange = (val?: Date) => {
   if (val) {
     applyFilter();
   }
-}
+};
 
 const reset = (shouldApply = true) => {
   if (date.value) {
@@ -87,7 +91,7 @@ defineExpose({
         filterable
         clearable
         placeholder="请选择SIG组"
-        :values="sigList"
+        :options="sigList"
         inputWidth="100%"
         :options-wrapper="popupContainer"
         @visibility-change="onSelectVisibilityChange"
