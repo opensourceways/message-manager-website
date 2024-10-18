@@ -21,10 +21,7 @@ useTheme();
 #app {
   --color-primary: #027ef2;
 
-  @include respond-to('>phone') {
-    min-width: 1200px;
-  }
-
+  min-width: 1200px;
 
   --layout-header-height: 80px;
   --layout-header-zIndex: 101;

@@ -330,7 +330,7 @@ const markReadMultiMessages = () => {
 </script>
 
 <template>
-  <ContentWrapper class="msg-content-wrap">
+  <ContentWrapper class="msg-list">
     <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindUserInfo" confirm-text="前往绑定"></ConfirmDialog>
     <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
     <div class="messages-part">
@@ -351,7 +351,7 @@ const markReadMultiMessages = () => {
           </OMenuItem>
         </OMenu>
       </aside>
-    
+
       <div class="message-list">
         <div class="header">
           <div class="left">
@@ -422,13 +422,7 @@ const markReadMultiMessages = () => {
         </div>
       </div>
     </div>
-    <AppPagination
-      v-if="total > 0"
-      :total="total"
-      @change="onPageChange"
-      v-model:page="pageInfo.page"
-      v-model:pageSize="pageInfo.count_per_page"
-    />
+    <AppPagination v-if="total > 0" :total="total" @change="onPageChange" v-model:page="pageInfo.page" v-model:pageSize="pageInfo.count_per_page" />
   </ContentWrapper>
 </template>
 
@@ -488,7 +482,7 @@ const markReadMultiMessages = () => {
   @include text1;
 }
 
-.msg-content-wrap {
+.msg-list {
   min-height: var(--layout-content-min-height);
   margin-top: 64px;
   margin-bottom: 72px;
@@ -496,6 +490,7 @@ const markReadMultiMessages = () => {
 
 .messages-part {
   display: flex;
+  min-height: var(--layout-content-min-height);
 
   & > :last-child {
     margin-left: 32px;
