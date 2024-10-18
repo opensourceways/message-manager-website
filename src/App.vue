@@ -80,9 +80,6 @@ useTheme();
 }
 
 .ly-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   padding-top: var(--layout-header-height);
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
