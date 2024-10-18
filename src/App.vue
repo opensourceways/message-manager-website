@@ -34,7 +34,7 @@ useTheme();
   --layout-content-max-width: 1440px;
   --layout-content-padding: 12px;
 
-  --layout-footer-height: 80px;
+  --layout-footer-height: 300px;
 
   --layout-content-min-height: calc(100vh - var(--layout-header-height) - var(--layout-footer-height));
 
@@ -87,7 +87,6 @@ useTheme();
   flex-direction: column;
   align-items: center;
   padding-top: var(--layout-header-height);
-  padding-bottom: 72px;
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
 

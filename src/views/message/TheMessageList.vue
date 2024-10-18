@@ -492,8 +492,9 @@ const markReadMultiMessages = () => {
 .messages-container {
   display: flex;
   width: 1416px;
-  min-height: 60vh;
+  min-height: var(--layout-content-min-height);
   margin-top: 64px;
+  margin-bottom: 72px;
 
   & > :last-child {
     margin-left: 32px;
