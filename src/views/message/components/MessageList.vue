@@ -79,7 +79,7 @@ defineExpose({
             <WordAvatar v-else :name="msg.user" size="small" />
             <span :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.user }}</span>
           </p>
-          <OLink @click="jumpToLink(msg)" class="link" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{
+          <OLink class="link" @click="jumpToLink(msg)" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{
             msg.summary
           }}</OLink>
         </div>
@@ -103,8 +103,6 @@ defineExpose({
 
 <style lang="scss" scoped>
 .the-list {
-  min-height: 736px;
-
   :deep(.o-badge-dot) {
     --badge-dot-size: 6px;
   }
@@ -125,6 +123,7 @@ defineExpose({
     }
 
     .link {
+      display: block;
       font-size: 14px;
       line-height: 22px;
       overflow: hidden;

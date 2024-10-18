@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, nextTick } from 'vue';
 import { OPagination } from '@opensig/opendesign';
 
 const props = withDefaults(
@@ -23,6 +23,7 @@ const props = withDefaults(
 const emits = defineEmits<{
   (event: 'update:page', id: number): void;
   (event: 'update:pageSize', id: number): void;
+  (event: 'change'): void;
 }>();
 
 const wrapStyle = computed(() => ({
@@ -33,6 +34,7 @@ const wrapStyle = computed(() => ({
 const onChange = (val: { page: number; pageSize: number }) => {
   emits('update:page', val.page);
   emits('update:pageSize', val.pageSize);
+  nextTick(() => emits('change'));
 };
 </script>
 
