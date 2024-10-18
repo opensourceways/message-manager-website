@@ -330,107 +330,106 @@ const markReadMultiMessages = () => {
 </script>
 
 <template>
-  <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindUserInfo" confirm-text="前往绑定"></ConfirmDialog>
-
-  <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
-
-  <div class="messages-container">
-    <aside>
-      <div class="title">消息中心</div>
-      <OMenu v-model="activeMenu" @change="onMenuChange">
-        <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
-          <p style="display: flex; justify-content: space-between">
-            {{ EventSourceNames[url] }}
-            <OBadge
-              style="display: flex; align-items: center"
-              color="danger"
-              v-if="unreadCountStore.sourceCountMap.get(url) && (source !== 'GITEE' || userInfoStore.giteeLoginName)"
-              :value="unreadCountStore.sourceCountMap.get(url)"
-            >
-            </OBadge>
-          </p>
-        </OMenuItem>
-      </OMenu>
-    </aside>
-
-    <div class="message-list">
-      <div class="header">
-        <div class="left">
-          <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
-            {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
-          </OCheckbox>
-          <template v-if="!checkboxVal.length">
-            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-            <RadioToggle v-model="readStatus" @change="getData()" :options="readStatusOptions" />
-            <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-            <RadioToggle v-model="startTime" @change="getData()" :options="timeOptions" />
-          </template>
-        </div>
-        <div class="right">
-          <template v-if="checkboxVal.length">
-            <IconLink :label-class-names="['message-delete-read']" iconSize="24px" @click="markReadMultiMessages">
-              <template #prefix><IconRead /></template>
-              标记已读
-            </IconLink>
-            <IconLink :label-class-names="['message-delete-read']" hover-color="var(--o-color-danger1)" iconSize="24px" @click="delMultiMessages">
-              <template #prefix><IconDelete /></template>
-              删除
-            </IconLink>
-          </template>
-          <template v-else>
-            <OPopup v-model:visible="filterVisible" trigger="click" position="br" :unmount-on-hide="false">
-              <template #target>
-                <OLink style="--link-color-hover: var(--o-color-primary1)">
-                  筛选
-                  <template #icon><OIconFilter style="font-size: 24px" /></template>
-                </OLink>
-              </template>
-              <ContentWrapper
-                vertical-padding="24px"
-                :style="{
-                  'border-radius': '4px',
-                  'box-shadow': 'var(--o-shadow-2)',
-                  width: filterPopupWidth,
-                  'background-color': 'var(--o-color-fill2)',
-                  '--layout-content-padding': '16px',
-                }"
+  <ContentWrapper class="msg-content-wrap">
+    <ConfirmDialog title="未绑定邮箱" content="请绑定邮箱" v-model:show="showNoEmail" @confirm="goBindUserInfo" confirm-text="前往绑定"></ConfirmDialog>
+    <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
+    <div class="messages-part">
+      <aside>
+        <div class="title">消息中心</div>
+        <OMenu v-model="activeMenu" @change="onMenuChange">
+          <OMenuItem v-for="(url, source) in EventSources" :key="source" class="menu-item" :value="url">
+            <p style="display: flex; justify-content: space-between">
+              {{ EventSourceNames[url] }}
+              <OBadge
+                style="display: flex; align-items: center"
+                color="danger"
+                v-if="unreadCountStore.sourceCountMap.get(url) && (source !== 'GITEE' || userInfoStore.giteeLoginName)"
+                :value="unreadCountStore.sourceCountMap.get(url)"
               >
-                <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
-              </ContentWrapper>
-            </OPopup>
-          </template>
+              </OBadge>
+            </p>
+          </OMenuItem>
+        </OMenu>
+      </aside>
+    
+      <div class="message-list">
+        <div class="header">
+          <div class="left">
+            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
+              {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
+            </OCheckbox>
+            <template v-if="!checkboxVal.length">
+              <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+              <RadioToggle v-model="readStatus" @change="getData()" :options="readStatusOptions" />
+              <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
+              <RadioToggle v-model="startTime" @change="getData()" :options="timeOptions" />
+            </template>
+          </div>
+          <div class="right">
+            <template v-if="checkboxVal.length">
+              <IconLink :label-class-names="['message-delete-read']" iconSize="24px" @click="markReadMultiMessages">
+                <template #prefix><IconRead /></template>
+                标记已读
+              </IconLink>
+              <IconLink :label-class-names="['message-delete-read']" hover-color="var(--o-color-danger1)" iconSize="24px" @click="delMultiMessages">
+                <template #prefix><IconDelete /></template>
+                删除
+              </IconLink>
+            </template>
+            <template v-else>
+              <OPopup v-model:visible="filterVisible" trigger="click" position="br" :unmount-on-hide="false">
+                <template #target>
+                  <OLink style="--link-color-hover: var(--o-color-primary1)">
+                    筛选
+                    <template #icon><OIconFilter style="font-size: 24px" /></template>
+                  </OLink>
+                </template>
+                <ContentWrapper
+                  vertical-padding="24px"
+                  :style="{
+                    'border-radius': '4px',
+                    'box-shadow': 'var(--o-shadow-2)',
+                    width: filterPopupWidth,
+                    'background-color': 'var(--o-color-fill2)',
+                    '--layout-content-padding': '16px',
+                  }"
+                >
+                  <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
+                </ContentWrapper>
+              </OPopup>
+            </template>
+          </div>
         </div>
-      </div>
-      <!-- 消息列表 -->
-      <MessageList
-        v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)"
-        ref="messageListRef"
-        :messages="messages"
-        @delete-message="delMessage"
-        @read-message="markReadMessage"
-        v-model:checkboxes="checkboxVal"
-      />
-      <div v-else class="no-messages">
-        <img src="@/assets/svg-icons/icon-no-messages.svg" />
-        <p>{{ noMessageDesc }}</p>
-        <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
-          接收Gitee消息，请<OLink
-            style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
-            @click="goBindUserInfo"
-            >绑定Gitee账号</OLink
-          >
-        </p>
+        <!-- 消息列表 -->
+        <MessageList
+          v-if="total > 0 && (source !== EventSources.GITEE || userInfoStore.giteeLoginName)"
+          ref="messageListRef"
+          :messages="messages"
+          @delete-message="delMessage"
+          @read-message="markReadMessage"
+          v-model:checkboxes="checkboxVal"
+        />
+        <div v-else class="no-messages">
+          <img src="@/assets/svg-icons/icon-no-messages.svg" />
+          <p>{{ noMessageDesc }}</p>
+          <p v-if="source === EventSources.GITEE && !userInfoStore.giteeLoginName">
+            接收Gitee消息，请<OLink
+              style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
+              @click="goBindUserInfo"
+              >绑定Gitee账号</OLink
+            >
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-  <AppPagination
-    v-if="total > 0"
-    topMargin="40px"
-    :total="total"
-    @change="onPageChange"
-    v-model:page="pageInfo.page"
-    v-model:pageSize="pageInfo.count_per_page"
-  />
+    <AppPagination
+      v-if="total > 0"
+      :total="total"
+      @change="onPageChange"
+      v-model:page="pageInfo.page"
+      v-model:pageSize="pageInfo.count_per_page"
+    />
+  </ContentWrapper>
 </template>
 
 <style scoped lang="scss">
@@ -489,21 +488,18 @@ const markReadMultiMessages = () => {
   @include text1;
 }
 
-.messages-container {
-  display: flex;
-  width: 1416px;
+.msg-content-wrap {
   min-height: var(--layout-content-min-height);
   margin-top: 64px;
   margin-bottom: 72px;
+}
+
+.messages-part {
+  display: flex;
 
   & > :last-child {
     margin-left: 32px;
     flex-grow: 1;
-
-    @include respond-to('phone') {
-      margin-top: var(--layout-header-height);
-      margin-left: 0;
-    }
   }
 
   aside {
