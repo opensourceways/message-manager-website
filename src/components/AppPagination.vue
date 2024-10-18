@@ -48,7 +48,7 @@ const onChange = (val: { page: number; pageSize: number }) => {
 }
 
 .pagination-wrap {
-  width: 100%;
+  width: 1416px;
 
   :deep(.o-select) {
     --select-radius: 4px;

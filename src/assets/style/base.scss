@@ -90,7 +90,7 @@ textarea {
 }
 
 .o-popup-body {
-  &:not(.o-popup-body &) {
+  &:not(.o-popover &) {
     height: 10px;
   }
   .o-select-options {

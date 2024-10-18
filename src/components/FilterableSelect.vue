@@ -6,7 +6,7 @@ import { useCheckbox } from '@/composables/useCheckbox';
 import type { PropType } from 'vue';
 import useScrollBottomListener from '@/composables/useScrollBottomListener';
 
-type ValueT = string | { label: string; value: string };
+type OptionT = string | { label: string; value: string };
 
 const props = defineProps({
   modelValue: {
@@ -23,8 +23,8 @@ const props = defineProps({
     default: true,
   },
   /** 多选值 */
-  values: {
-    type: Array as PropType<ValueT[]>,
+  options: {
+    type: Array as PropType<OptionT[]>,
     default: () => [],
   },
   filterDebounceTimeout: {
@@ -69,7 +69,7 @@ const vUpdated = {
 const selectRef = ref();
 
 const rawValues = computed(() => {
-  return props.values.map((val) => {
+  return props.options.map((val) => {
     if (typeof val === 'string') {
       return { label: val, value: val, upperCaseLabel: val.toUpperCase() };
     }
@@ -118,15 +118,15 @@ const onFilterInput = useDebounceFn((search?: string) => {
   searchVal.value = search?.toUpperCase();
 }, props.filterDebounceTimeout);
 
-const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes, checkAll } = useCheckbox(
-  () => rawValues.value,
-  (item) => item.value
-);
+const { checkboxVal, checkAllVal, indeterminate, clearCheckboxes, checkAll } = useCheckbox(rawValues, (item) => item.value);
 const isClearable = computed(() => props.clearable && checkboxVal.value.length > 0);
 
-watch(() => props.values, clearCheckboxes);
+watch(() => props.options, clearCheckboxes);
 
-watch(checkboxVal, (vals) => emit('update:modelValue', vals));
+watch(checkboxVal, (vals) => {
+  emit('update:modelValue', vals);
+  nextTick(() => emit('change', vals));
+});
 
 watch(
   () => props.modelValue,
@@ -148,7 +148,7 @@ const onVisibleChange = (val: boolean) => {
   emit('visibilityChange', val);
 };
 
-const onCheckboxChange = (value: string, label: string, e: Event) => {
+const onCheckboxChange = (value: string, _: string, e: Event) => {
   const { checked } = e.target as HTMLInputElement;
   if (!checked) {
     onRemoveTag(value);
@@ -163,7 +163,7 @@ const onRemoveTag = (val: string | number) => {
   }
 };
 
-const clearClick = (e: Event) => {
+const onClear = (e: Event) => {
   e.stopPropagation();
   clearCheckboxes();
   nextTick(() => emit('clear'));
@@ -190,25 +190,31 @@ defineExpose({
               <div class="o-select-tag-remove" @click.stop="onRemoveTag(checkboxVal[0])"><OIconClose /></div>
             </div>
           </template>
-          <OPopover v-else :wrapper="optionsWrapper" trigger="hover" class="o-select-tag-popover" position="bottom" style="--popup-shadow: var(--o-shadow-1)">
-            <template #target>
-              <div class="o-select-tag">{{ checkboxVal.length }}个选项被选中</div>
-            </template>
-            <OScroller style="max-height: 200px;">
-              <div class="o-select-tags select-tags">
-                <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
-                  {{ checkedValueLabelMap.get(item as string) }}
-                  <div class="o-select-tag-remove" @click.stop="onRemoveTag(item)"><OIconClose /></div>
+          <template v-else>
+            <div class="o-select-tag">{{ checkboxVal.length }}个选项被选中</div>
+            <OPopover
+              :wrapper="optionsWrapper"
+              trigger="hover"
+              :target="selectRef"
+              class="o-select-tag-popover"
+              position="top"
+            >
+              <OScroller style="max-height: 200px">
+                <div class="o-select-tags select-tags">
+                  <div v-for="item in checkboxVal" :key="item" class="o-select-tag">
+                    {{ checkedValueLabelMap.get(item as string) }}
+                    <div class="o-select-tag-remove" @click.stop="onRemoveTag(item)"><OIconClose /></div>
+                  </div>
                 </div>
-              </div>
-            </OScroller>
-          </OPopover>
+              </OScroller>
+            </OPopover>
+          </template>
         </template>
       </div>
     </OScroller>
     <div class="o-select-suffix">
       <div class="o-select-suffix-icon">
-        <div v-if="isClearable" class="o-select-clear" @click.stop="clearClick"><OIconClose class="o-select-clear-icon" /></div>
+        <div v-if="isClearable" class="o-select-clear" @click.stop="onClear"><OIconClose class="o-select-clear-icon" /></div>
         <div class="o-select-arrow" :class="{ active: isSelecting }">
           <OIconChevronDown />
         </div>
@@ -224,7 +230,7 @@ defineExpose({
       :style="{ '--popup-shadow': 'var(--o-shadow-1)', minWidth: popupWidth }"
     >
       <div class="popup-content">
-        <div class="mask" v-if="!values.length">
+        <div class="mask" v-if="!options.length">
           <p class="info">{{ emptyHint }}</p>
         </div>
         <OInput class="search-input" round="4px" @input="onFilterInput" clearable @clear="onFilterInput()" :placeholder="placeholder">

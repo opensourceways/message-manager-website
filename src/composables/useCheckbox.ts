@@ -1,78 +1,35 @@
-import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
+import { computed, ref, toValue, type MaybeRefOrGetter } from 'vue';
 
-export const useCheckbox = <T>(datasource: MaybeRefOrGetter<T[]>, cbValueExtractor: (item: T) => string | number) => {
+export const useCheckbox = <T>(listData: MaybeRefOrGetter<T[]>, checkboxValMapper: (item: T) => string | number, defaultCheckAllValue: string | number = 1) => {
   const checkboxVal = ref<(string | number)[]>([]);
-  const indeterminate = ref<boolean>(false);
-  const checkAllVal = ref<(string | number)[]>([]);
-  const isCheckedAll = computed(() => checkAllVal.value.length > 0);
-  const ONE = [1];
+  const ONE = [defaultCheckAllValue];
   const EMPTY: any[] = [];
 
-  const checkAll = () => {
-    indeterminate.value = false;
-    checkAllVal.value = ONE;
-  };
-
-  const clearCheckboxes = () => {
-    indeterminate.value = false;
-    checkAllVal.value = EMPTY;
-    checkboxVal.value = EMPTY;
-  };
-
-  watch(
-    () => toValue(datasource),
-    (val) => {
-      if (val.length === 0) {
-        clearCheckboxes();
+  const checkAllVal = computed({
+    get() {
+      if (!toValue(listData).length) {
+        return EMPTY;
       }
+      return toValue(listData).length === checkboxVal.value.length ? ONE : EMPTY;
+    },
+    set(val) {
+      val.length ? checkAll() : clearCheckboxes();
+    },
+  });
+
+  const isCheckedAll = computed(() => checkAllVal.value.length > 0);
+
+  const indeterminate = computed(() => {
+    if (!toValue(listData).length) {
+      return false;
     }
-  );
+    const length = checkboxVal.value.length;
+    return length > 0 && length < toValue(listData).length;
+  });
 
-  watch(
-    () => checkAllVal.value.length,
-    (length) => {
-      const ds = toValue(datasource);
-      if (ds.length === 0) {
-        return;
-      }
-      if (length) {
-        if (checkboxVal.value.length < ds.length) {
-          checkboxVal.value = ds.map(cbValueExtractor);
-        }
-      } else {
-        if (!indeterminate.value && checkboxVal.value.length > 0) {
-          checkboxVal.value = EMPTY;
-        }
-      }
-    }
-  );
+  const clearCheckboxes = () => (checkboxVal.value = EMPTY);
 
-  watch(
-    () => checkboxVal.value.length,
-    (length) => {
-      const ds = toValue(datasource);
-      if (ds.length === 0) {
-        return;
-      }
-      const isCheckedAll = checkAllVal.value.length > 0;
-      if (length === ds.length) {
-        if (!isCheckedAll) {
-          checkAllVal.value = ONE;
-        }
-        indeterminate.value = false;
-      } else if (length === 0) {
-        if (isCheckedAll) {
-          checkAllVal.value = EMPTY;
-        }
-        indeterminate.value = false;
-      } else {
-        if (isCheckedAll) {
-          checkAllVal.value = EMPTY;
-        }
-        indeterminate.value = true;
-      }
-    }
-  );
+  const checkAll = () => (checkboxVal.value = toValue(listData).map(checkboxValMapper));
 
   return {
     checkboxVal,
