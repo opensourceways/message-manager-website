@@ -44,7 +44,7 @@ const actualMessages = computed(() => {
     return {
       ...msg,
       id: msg.source + msg.event_id,
-      source_group: (sourceGroupTitleMap[msg.source] || '仓库') + msg.source_group,
+      source_group: sourceGroupTitleMap[msg.source] ? sourceGroupTitleMap[msg.source] + msg.source_group : '',
       time: dayjs(msg.time).fromNow(),
       summary: div.textContent as string,
     };
@@ -79,9 +79,7 @@ defineExpose({
             <WordAvatar v-else :name="msg.user" size="small" />
             <span :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.user }}</span>
           </p>
-          <OLink class="link" @click="jumpToLink(msg)" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{
-            msg.summary
-          }}</OLink>
+          <OLink class="link" @click="jumpToLink(msg)" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.summary }}</OLink>
         </div>
       </div>
       <div class="list-item-right">
