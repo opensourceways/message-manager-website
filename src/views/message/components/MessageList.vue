@@ -33,6 +33,8 @@ const emit = defineEmits<{
 const LINE_BR = /[\r\n]/g;
 const div = document.createElement('div');
 const sourceGroupTitleMap = {
+  [EventSources.MEETING]: 'SIG组',
+  [EventSources.GITEE]: '仓库',
   [EventSources.EUR]: '项目',
   [EventSources.CVE]: 'SIG组',
 };
@@ -78,9 +80,7 @@ defineExpose({
             <WordAvatar v-else :name="msg.user" size="small" />
             <span :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.user }}</span>
           </p>
-          <OLink class="link" @click="jumpToLink(msg)" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{
-            msg.summary
-          }}</OLink>
+          <OLink class="link" @click="jumpToLink(msg)" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.summary }}</OLink>
         </div>
       </div>
       <div class="list-item-right">

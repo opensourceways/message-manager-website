@@ -3,6 +3,7 @@ export const EventSources = {
   MEETING: 'https://www.openEuler.org/meeting',
   GITEE: 'https://gitee.com',
   CVE: 'cve',
+  FORUM: 'forum',
 };
 
 export const EventSourceNames: Record<string, string> = {
@@ -10,6 +11,7 @@ export const EventSourceNames: Record<string, string> = {
   [EventSources.GITEE]: 'Gitee消息',
   [EventSources.MEETING]: '会议通知',
   [EventSources.CVE]: '漏洞消息',
+  [EventSources.FORUM]: '论坛消息',
 };
 
 export const EventSourceTypes = {

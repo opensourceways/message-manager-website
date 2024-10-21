@@ -76,7 +76,7 @@ const selectedQuickFilter = ref('');
 
 /** key: 事件源 */
 const quickFilterMap = ref(new Map<string, Partial<FilterRuleT>[]>());
-const currentFilters = computed(() => quickFilterMap.value.get(source.value));
+const currentFilters = computed(() => quickFilterMap.value.get(source.value) || []);
 
 /** 默认快捷筛选 */
 const defaultQuickFilters = computed(() => {
