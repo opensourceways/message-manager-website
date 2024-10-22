@@ -33,6 +33,8 @@ const emit = defineEmits<{
 const LINE_BR = /[\r\n]/g;
 const div = document.createElement('div');
 const sourceGroupTitleMap = {
+  [EventSources.MEETING]: 'SIG组',
+  [EventSources.GITEE]: '仓库',
   [EventSources.EUR]: '项目',
   [EventSources.CVE]: 'SIG组',
 };
@@ -44,7 +46,7 @@ const actualMessages = computed(() => {
     return {
       ...msg,
       id: msg.source + msg.event_id,
-      source_group: (sourceGroupTitleMap[msg.source] || '仓库') + msg.source_group,
+      source_group: (sourceGroupTitleMap[msg.source] || '') + msg.source_group,
       time: dayjs(msg.time).fromNow(),
       summary: div.textContent as string,
     };
