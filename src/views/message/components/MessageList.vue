@@ -44,7 +44,7 @@ const actualMessages = computed(() => {
     return {
       ...msg,
       id: msg.source + msg.event_id,
-      source_group: sourceGroupTitleMap[msg.source] ? sourceGroupTitleMap[msg.source] + msg.source_group : '',
+      source_group: (sourceGroupTitleMap[msg.source] || '仓库') + msg.source_group,
       time: dayjs(msg.time).fromNow(),
       summary: div.textContent as string,
     };
