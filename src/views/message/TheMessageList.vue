@@ -315,7 +315,7 @@ const markReadMultiMessages = () => {
     return;
   }
   const set = new Set(checkboxVal.value);
-  readMessages(...messages.value.filter((item) => set.has(item.id)))
+  readMessages(...messages.value.filter((item) => set.has(item.event_id)))
     .then(() => {
       getData();
       unreadCountStore.updateCount();

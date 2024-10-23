@@ -20,6 +20,7 @@ useTheme();
 <style lang="scss">
 #app {
   --color-primary: #027ef2;
+  background-color: var(--o-color-fill1);
 
   min-width: 1200px;
 
