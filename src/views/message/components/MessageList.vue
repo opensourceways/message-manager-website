@@ -52,7 +52,7 @@ const actualMessages = computed(() => {
 
 const checkboxVal = useVModel(props, 'checkboxes', emit);
 const clearCheckboxes = () => (checkboxVal.value = []);
-const checkAll = () => (checkboxVal.value = actualMessages.value.map((item) => item.id));
+const checkAll = () => (checkboxVal.value = actualMessages.value.map((item) => item.event_id));
 
 const jumpToLink = (msg: MessageT) => {
   emit('readMessage', msg);
