@@ -43,7 +43,6 @@ const actualMessages = computed(() => {
     div.innerHTML = msg.summary;
     return {
       ...msg,
-      id: msg.source + msg.event_id,
       source_group: (sourceGroupTitleMap[msg.source] || '仓库') + msg.source_group,
       time: dayjs(msg.time).fromNow(),
       summary: div.textContent as string,
@@ -70,7 +69,7 @@ defineExpose({
   <div class="the-list">
     <div v-for="(msg, index) in actualMessages" :key="msg.id" class="message-list-item">
       <div class="list-item-left">
-        <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
+        <OCheckbox class="checkbox" :value="msg.event_id" v-model="checkboxVal" />
         <div>
           <p class="user-info">
             <OBadge :dot="true" v-if="!msg.is_read" color="danger">
