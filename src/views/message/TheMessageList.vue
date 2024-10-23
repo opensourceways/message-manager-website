@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OPopup, OBadge, OIconFilter } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, useMessage, OLink, ODivider, OBadge } from '@opensig/opendesign';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import AppPagination from '@/components/AppPagination.vue';
 import ContentWrapper from '@/components/ContentWrapper.vue';
@@ -69,9 +69,7 @@ onMounted(() => {
 
 /** 当前事件源 */
 const source = computed(() => decodeURIComponent(route.query.source as string));
-const filterPopupWidth = computed(() => (source.value === EventSources.CVE ? '480px' : '450px'));
 const filterRef = ref<InstanceType<typeof MessageCommonFilter>>();
-const filterVisible = ref();
 const noMessageDesc = computed(() => {
   if (filterRef.value?.isFiltering) {
     return '没有匹配的消息';
@@ -376,28 +374,7 @@ const markReadMultiMessages = () => {
                 删除
               </IconLink>
             </template>
-            <template v-else>
-              <OPopup v-model:visible="filterVisible" trigger="click" position="br" :unmount-on-hide="false">
-                <template #target>
-                  <OLink style="--link-color-hover: var(--o-color-primary1)">
-                    筛选
-                    <template #icon><OIconFilter style="font-size: 24px" /></template>
-                  </OLink>
-                </template>
-                <ContentWrapper
-                  vertical-padding="24px"
-                  :style="{
-                    'border-radius': '4px',
-                    'box-shadow': 'var(--o-shadow-2)',
-                    width: filterPopupWidth,
-                    'background-color': 'var(--o-color-fill2)',
-                    '--layout-content-padding': '16px',
-                  }"
-                >
-                  <MessageCommonFilter ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
-                </ContentWrapper>
-              </OPopup>
-            </template>
+            <MessageCommonFilter v-else ref="filterRef" @apply-quick-filter="applyQuickFilter" @applyFilter="getData" />
           </div>
         </div>
         <!-- 消息列表 -->

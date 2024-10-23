@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, readonly, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { onClickOutside, useVModel } from '@vueuse/core';
 import { ODivider, OIcon, ORadio, ORadioGroup, OTag, OToggle } from '@opensig/opendesign';
 
@@ -19,6 +19,7 @@ const props = withDefaults(
     enableDeleteTags?: boolean;
     /** 是否允许取消选中 */
     enableCancelSelect?: boolean;
+    isAddingTag?: boolean;
   }>(),
   {
     options: (): any[] => [],
@@ -33,6 +34,7 @@ const emit = defineEmits<{
   (event: 'remove', val: { label: string; value: string | number }): void;
   (event: 'rename', oldName: string, newName: string): void;
   (event: 'update:modelValue', val: any): void;
+  (event: 'update:isAddingTag', val: boolean): void;
 }>();
 
 const radioVal = useVModel(props, 'modelValue', emit);
@@ -74,25 +76,19 @@ const cancel = (value: string | number, ev?: MouseEvent) => {
 };
 
 // ----------------添加新标签----------------
-const isAddingNew = ref(false);
+const isAddingTagVModel = useVModel(props, 'isAddingTag', emit);
 const newTagContent = ref('');
 const addNewTagRef = ref();
-
-const addNew = () => {
-  isAddingNew.value = true;
-  nextTick(() => {
-    const stop = onClickOutside(addNewTagRef.value.$el, (e: MouseEvent) => {
-      e.stopPropagation();
-      if (stop) {
-        stop();
-      }
-      confirmAdd();
-    });
-  });
+let clickOutsideStopFn: (() => void) | undefined;
+let stopClickOutsideDetect = () => {
+  if (clickOutsideStopFn) {
+    clickOutsideStopFn();
+    clickOutsideStopFn = undefined;
+  }
 };
 
 watch(
-  isAddingNew,
+  isAddingTagVModel,
   (val) => {
     if (val) {
       const nextCount = normalizedOptions.value.reduce((count, opt) => {
@@ -105,9 +101,16 @@ watch(
         return count;
       }, 1);
       newTagContent.value = `我创建的${nextCount}`;
+      nextTick(() => {
+        clickOutsideStopFn = onClickOutside(addNewTagRef.value.$el, (e: MouseEvent) => {
+          e.stopPropagation();
+          confirmAdd();
+        });
+      });
     }
     if (!val) {
       newTagContent.value = '';
+      stopClickOutsideDetect();
     }
   },
   { immediate: true }
@@ -122,14 +125,21 @@ const confirmAdd = () => {
     return;
   }
   emit('confirmAdd', newTagContent.value, () => {
-    isAddingNew.value = false;
+    isAddingTagVModel.value = false;
     newTagContent.value = '';
+    stopClickOutsideDetect();
   });
 };
 
 // ----------------重命名标签----------------
 const renameContent = ref('');
 const currentlyRenameTagIndex = ref<number | null>();
+
+watch(currentlyRenameTagIndex, (val) => {
+  if (val === null || val === undefined) {
+    stopClickOutsideDetect();
+  }
+});
 
 const onClickLabel = (
   val: {
@@ -146,10 +156,8 @@ const onClickLabel = (
   ev.stopPropagation();
   ev.preventDefault();
   if (currentlyRenameTagIndex.value !== index) {
-    const stop = onClickOutside(ev.currentTarget as HTMLElement, () => {
-      if (stop) {
-        stop();
-      }
+    clickOutsideStopFn = onClickOutside(ev.currentTarget as HTMLElement, (e: MouseEvent) => {
+      e.stopPropagation();
       confirmRename();
     });
     currentlyRenameTagIndex.value = index;
@@ -158,7 +166,7 @@ const onClickLabel = (
 };
 
 const confirmRename = () => {
-  if (!props.enableRenameTags) {
+  if (!props.enableRenameTags || !renameContent.value) {
     return;
   }
   if (typeof currentlyRenameTagIndex.value === 'number') {
@@ -171,9 +179,13 @@ const removeTag = (val: { label: string; value: string | number }) => {
   emit('remove', val);
 };
 
+const clearAddRenameState = () => {
+  isAddingTagVModel.value = false;
+  currentlyRenameTagIndex.value = null;
+};
+
 defineExpose({
-  addNew,
-  isAddingNew: readonly(isAddingNew),
+  clearAddRenameState,
 });
 </script>
 
@@ -208,10 +220,10 @@ defineExpose({
         </div>
       </template>
     </ORadio>
-    <ORadio ref="addNewTagRef" @click.stop.prevent="" v-if="isAddingNew" :value="false">
+    <ORadio ref="addNewTagRef" @click.stop.prevent="" v-if="isAddingTagVModel" :value="false">
       <template #radio>
-        <OTag style="--tag-bg-color: var(--o-color-fill1); --tag-bd-color: var(--o-color-fill1); --tag-height: var(--o-control_size-m)">
-          <input v-focus v-model="newTagContent" class="input-text" type="text" @keydown.enter="confirmAdd" />
+        <OTag style="--tag-bg-color: var(--o-color-fill2); --tag-bd-color: var(--o-color-primary1); --tag-height: var(--o-control_size-m)">
+          <input v-focus v-model="newTagContent" class="input-text" type="text" @keydown.enter="confirmAdd()" />
         </OTag>
       </template>
     </ORadio>
@@ -229,10 +241,13 @@ defineExpose({
 }
 
 .input-text {
+  color: var(--o-color-primary1);
   border: none;
   outline: none;
   background-color: transparent;
   width: 90px;
+
+  @include text1;
 }
 
 .toggle-item-wrapper {

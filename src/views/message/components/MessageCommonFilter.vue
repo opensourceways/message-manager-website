@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { ODivider, OSwitch, useMessage } from '@opensig/opendesign';
+import { ODivider, OIconFilter, OLink, OPopup, OSwitch, useMessage } from '@opensig/opendesign';
 
 import { EventSources } from '@/data/event';
 import { deleteFilterRule, getFilterRules, putFilterRule, updateMailStatus } from '@/api/api-quick-filters';
@@ -21,11 +21,19 @@ import type { FilterRuleT } from '@/@types/type-filter';
 import { uniqueBy } from '@/utils/common';
 
 const popupContainer = ref();
-
 const message = useMessage();
 const route = useRoute();
 const source = computed<string>(() => decodeURIComponent(route.query.source as string));
 const userInfo = useUserInfoStore();
+const togglesRef = ref();
+const filterPopupWidth = computed(() => (source.value === EventSources.CVE ? '480px' : '450px'));
+const filterVisible = ref();
+
+watch(filterVisible, (val) => {
+  if (!val) {
+    togglesRef.value?.clearAddRenameState();
+  }
+});
 
 const emit = defineEmits<{
   (event: 'reset'): void;
@@ -170,13 +178,10 @@ const onEmailChange = (val: string | number | boolean) => {
 };
 
 // ----------------添加新规则----------------
-const togglesRef = ref();
+const isAddingTag = ref(false);
 
 const addNewFilter = () => {
-  if (!togglesRef.value) {
-    return;
-  }
-  if (currentFilters.value?.length) {
+  if (togglesRef.value) {
     const radioGroupHeight = togglesRef.value.$el.getBoundingClientRect().height;
     const radioHeight = togglesRef.value.$el.querySelector('.o-toggle').getBoundingClientRect().height;
     if (radioGroupHeight >= radioHeight * 7 + 48) {
@@ -186,10 +191,10 @@ const addNewFilter = () => {
       return;
     }
   }
-  togglesRef.value.addNew();
+  isAddingTag.value = true;
 };
 
-const disableSave = computed(() => togglesRef.value?.isAddingNew || isFilterEmpty.value);
+const disableSave = computed(() => isAddingTag.value || isFilterEmpty.value);
 
 /** 新增 */
 const confirmSave = (mode_name: string, callback: () => void) => {
@@ -230,58 +235,71 @@ defineExpose({ reset, isFiltering });
 </script>
 
 <template>
-  <div ref="popupContainer" class="pop-container">
-    <template v-if="togglesRef?.isAddingNew || currentFilters?.length">
-      <p class="sec-title">快捷筛选</p>
-      <RadioToggle
-        ref="togglesRef"
-        v-model="selectedQuickFilter"
-        @confirm-add="confirmSave"
-        @change="applyQuickFilter"
-        :options="quickFilters"
-        :defaultOptions="defaultQuickFilters"
-        enable-rename-tags
-        enable-delete-tags
-        @remove="deleteFilter"
-        @rename="renameFilter"
-      />
+  <OPopup v-model:visible="filterVisible" trigger="click" position="br" :unmount-on-hide="false">
+    <template #target>
+      <OLink style="--link-color-hover: var(--o-color-primary1)">
+        筛选
+        <template #icon><OIconFilter style="font-size: 24px" /></template>
+      </OLink>
     </template>
-    <p class="sec-title">高级筛选</p>
-    <component
-      :is="currentFilterComp"
-      :ref="setCurrenCompRef"
-      @applyFilter="$emit('applyFilter', $event as Record<string, any>)"
-      :quickFilterDetail="webFilter"
-      :popupContainer="popupContainer"
-    ></component>
-
-    <IconLink :disabled="disableSave" @click="addNewFilter" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
-      保存为快捷筛选项
-      <template #prefix>
-        <IconAdd />
+    <div ref="popupContainer" class="pop-container" :style="{ width: filterPopupWidth }">
+      <template v-if="isAddingTag || currentFilters?.length">
+        <p class="sec-title">快捷筛选</p>
+        <RadioToggle
+          ref="togglesRef"
+          v-model="selectedQuickFilter"
+          v-model:is-adding-tag="isAddingTag"
+          @confirm-add="confirmSave"
+          @change="applyQuickFilter"
+          :options="quickFilters"
+          :defaultOptions="defaultQuickFilters"
+          enable-rename-tags
+          enable-delete-tags
+          @remove="deleteFilter"
+          @rename="renameFilter"
+        />
       </template>
-    </IconLink>
-    <ODivider direction="h"></ODivider>
-    <p>同步用以下方式通知我</p>
-    <div class="switches">
-      <p>邮箱通知</p>
-      <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter"></OSwitch>
-      <p style="color: var(--o-color-control1)">微信通知</p>
-      <OSwitch v-model="weChatSwitch" disabled></OSwitch>
+      <p class="sec-title">高级筛选</p>
+      <component
+        :is="currentFilterComp"
+        :ref="setCurrenCompRef"
+        @applyFilter="$emit('applyFilter', $event as Record<string, any>)"
+        :quickFilterDetail="webFilter"
+        :popupContainer="popupContainer"
+      ></component>
+
+      <IconLink :disabled="disableSave" @click="addNewFilter" color="rgb(var(--o-kleinblue-6))" style="margin-top: 16px">
+        保存为快捷筛选项
+        <template #prefix>
+          <IconAdd />
+        </template>
+      </IconLink>
+      <ODivider direction="h"></ODivider>
+      <p>同步用以下方式通知我</p>
+      <div class="switches">
+        <p>邮箱通知</p>
+        <OSwitch v-model="emailSwitch" @change="onEmailChange" :disabled="!selectedQuickFilter"></OSwitch>
+        <p style="color: var(--o-color-control1)">微信通知</p>
+        <OSwitch v-model="weChatSwitch" disabled></OSwitch>
+      </div>
+
+      <IconLink @click="reset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 16px; top: 24px">
+        重置
+        <template #prefix>
+          <IconClear />
+        </template>
+      </IconLink>
     </div>
-
-    <IconLink @click="reset" iconWidth="18px" icon-size="18px" style="position: absolute; right: 0; top: 0">
-      重置
-      <template #prefix>
-        <IconClear />
-      </template>
-    </IconLink>
-  </div>
+  </OPopup>
 </template>
 
 <style lang="scss" scoped>
 .pop-container {
   position: relative;
+  padding: 24px 16px;
+  border-radius: 4px;
+  box-shadow: var(--o-shadow-2);
+  background-color: var(--o-color-fill2);
 
   .sec-title {
     @include text2;
