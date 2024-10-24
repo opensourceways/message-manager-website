@@ -3,8 +3,19 @@ import { OScroller } from '@opensig/opendesign';
 import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 import { useTheme } from './composables/useTheme';
+import { BAIDU_HM } from './data/config';
 
 useTheme();
+
+// -------------------- 埋点 --------------------
+const initSensor = () => {
+  // 百度统计
+  const hm = document.createElement('script');
+  hm.src = BAIDU_HM;
+  const s = document.getElementsByTagName('HEAD')[0];
+  s.appendChild(hm);
+};
+initSensor();
 </script>
 
 <template>
