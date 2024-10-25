@@ -270,7 +270,7 @@ const delMultiMessages = async () => {
   }
   const { isCanceled } = await reveal();
   if (!isCanceled) {
-    deleteMessages(...messages.value.filter((item) => set.has(item.id)))
+    deleteMessages(...messages.value.filter((item) => set.has(item.event_id)))
       .then(() => {
         if (set.size > 1) {
           message.success({ content: '批量删除成功' });
