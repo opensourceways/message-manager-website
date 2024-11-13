@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { isNumber } from '@opensig/opendesign';
 import { computed, type PropType } from 'vue';
 
 const props = defineProps({
   name: {
-    type: String,
+    type: [String, Number],
     default: '',
     required: true,
   },
@@ -25,7 +26,7 @@ const props = defineProps({
 
 const bgColorArr = ['#058EF0', '#FA7305', '#03B5A5'];
 
-const avatarText = computed(() => props.name?.charAt(0).toUpperCase());
+const avatarText = computed(() => (typeof props.name === 'string' ? props.name?.charAt(0).toUpperCase() : props.name));
 const getAvatarStyle = computed(() => {
   const avatarStyle = {
     'background-color': '',
@@ -33,7 +34,7 @@ const getAvatarStyle = computed(() => {
     height: '40px',
     'font-size': '20px',
   };
-  avatarStyle['background-color'] = props.name ? bgColorArr[props.name?.length % bgColorArr.length] : 'transparent';
+  avatarStyle['background-color'] = props.name ? bgColorArr[(isNumber(props.name) ? props.name : props.name?.length) % bgColorArr.length] : 'transparent';
   let sizeNum = 0;
   if (props.customSize) {
     sizeNum = Number(props.customSize);
@@ -55,7 +56,10 @@ const getAvatarStyle = computed(() => {
 
 <template>
   <div class="word-avatar" :class="variant" :style="getAvatarStyle">
-    {{ avatarText }}
+    <slot v-if="$slots.icon" name="icon"></slot>
+    <template v-else>
+      {{ avatarText }}
+    </template>
   </div>
 </template>
 

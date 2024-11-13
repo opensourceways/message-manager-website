@@ -1,11 +1,10 @@
-import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 import { scrollToTop } from '@/utils/common';
 import { doLogin, getCsrfToken, tryLogin } from '@/shared/login';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
 import { syncUserInfo } from '@/api/api-user';
 import { useUnreadMsgCountStore } from '@/stores/common';
-import { EventSources } from '@/data/event';
 
 const routes = [
   {
@@ -34,18 +33,6 @@ const router = createRouter({
   },
 });
 
-const addQuery = (to: RouteLocationNormalized) => {
-  if (!to.query.source) {
-    return {
-      ...to,
-      query: {
-        source: EventSources.EUR,
-      }
-    };
-  }
-  return true;
-}
-
 router.beforeEach(async (to, from) => {
   const loginStore = useLoginStore();
   const unreadCountStore = useUnreadMsgCountStore();
@@ -53,7 +40,7 @@ router.beforeEach(async (to, from) => {
     if (to.name !== from.name) {
       unreadCountStore.updateCount();
     }
-    return addQuery(to);
+    return true;
   }
 
   if (!getCsrfToken()) {
@@ -70,11 +57,8 @@ router.beforeEach(async (to, from) => {
     const userInfoStore = useUserInfoStore();
     const recipientId = await syncUserInfo(userInfoStore);
     userInfoStore.recipientId = recipientId;
-    if (to.name !== from.name) {
-      unreadCountStore.updateCount();
-    }
   }
-  return addQuery(to);
+  return true;
 });
 
 router.afterEach(() => {});
