@@ -15,9 +15,9 @@ const toUserCenter = () => window.open(import.meta.env.VITE_LOGIN_URL);
 </script>
 
 <template>
-  <template v-if="true">
+  <template v-if="loginStore.isLogined">
     <div class="user-info" ref="userInfo">
-      <img :src="userInfoStore.photo" />
+      <img v-if="userInfoStore.photo" :src="userInfoStore.photo" />
       <p class="user-name">{{ userInfoStore.username }}</p>
     </div>
     <OPopup position="bottom" :target="userInfo">
@@ -30,9 +30,7 @@ const toUserCenter = () => window.open(import.meta.env.VITE_LOGIN_URL);
   <div v-else-if="loginStore.isLoggingIn" class="o-rotating">
     <OIconLoading />
   </div>
-  <div v-else class="login-btn" @click="doLogin">
-    <OIcon><LoginIcon /></OIcon>
-  </div>
+  <OIcon v-else class="login-btn" @click="doLogin"><LoginIcon /></OIcon>
 </template>
 
 <style scoped lang="scss">
@@ -84,6 +82,7 @@ const toUserCenter = () => window.open(import.meta.env.VITE_LOGIN_URL);
 }
 
 .login-btn {
+  font-size: 24px;
   cursor: pointer;
 }
 </style>
