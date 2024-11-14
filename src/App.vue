@@ -4,6 +4,7 @@ import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
 import { useTheme } from './composables/useTheme';
 import { BAIDU_HM } from './data/config';
+import ContentWrapper from './components/ContentWrapper.vue';
 
 useTheme();
 
@@ -19,8 +20,8 @@ initSensor();
 </script>
 
 <template>
-  <AppHeader />
   <OScroller show-type="hover">
+    <AppHeader />
     <ContentWrapper class="msg-list">
       <RouterView />
     </ContentWrapper>
