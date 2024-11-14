@@ -1,17 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { PropType } from 'vue';
+import { ref, type PropType } from 'vue';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
+import { marked } from 'marked';
+import { buildVueDompurifyHTMLDirective } from 'vue-dompurify-html';
 import { OBadge, OCheckbox, ODivider, OIcon, OLink } from '@opensig/opendesign';
 import WordAvatar from '@/components/WordAvatar.vue';
 
 import type { MessageT } from '@/@types/type-messages';
 import { EventSources } from '@/data/event';
+import { windowOpen } from '@/utils/common';
+import { asyncComputed, useVModel } from '@vueuse/core';
+
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
-import { windowOpen } from '@/utils/common';
-import { useVModel } from '@vueuse/core';
+import IconAt from '~icons/app/icon-at.svg';
+import IconHeart from '~icons/app/icon-heart.svg';
+import IconCertificate from '~icons/app/icon-certificate.svg';
+import IconEnvelope from '~icons/app/icon-envelope.svg';
+import IconReply from '~icons/app/icon-reply.svg';
+import IconLinked from '~icons/app/icon-linked.svg';
+import IconPencil from '~icons/app/icon-pencil.svg';
+import IconEmojis from '~icons/app/icon-emojis.svg';
 
 const props = defineProps({
   messages: {
@@ -30,25 +40,50 @@ const emit = defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
 }>();
 
+const iconMap = new Map([
+  [1, IconAt],
+  [5, IconHeart],
+  [12, IconCertificate],
+  [6, IconEnvelope],
+  [2, IconReply],
+  [11, IconLinked],
+  [4, IconPencil],
+  [25, IconEmojis],
+]);
 const LINE_BR = /[\r\n]/g;
 const div = document.createElement('div');
 const sourceGroupTitleMap = {
   [EventSources.EUR]: '项目',
   [EventSources.CVE]: 'SIG组',
+  [EventSources.MEETING]: 'SIG组',
 };
 
-const actualMessages = computed(() => {
-  return props.messages.map((msg) => {
-    msg.summary = msg.summary.replace(LINE_BR, '');
-    div.innerHTML = msg.summary;
-    return {
-      ...msg,
-      source_group: (sourceGroupTitleMap[msg.source] || '仓库') + msg.source_group,
-      time: dayjs(msg.time).fromNow(),
-      summary: div.textContent as string,
-    };
-  });
+const vDompurifyHtml = buildVueDompurifyHTMLDirective({
+  default: {
+    FORBID_TAGS: ['img'],
+  },
 });
+
+const asyncComputedEvaluating = ref(false);
+
+const actualMessages = asyncComputed(
+  async () => {
+    return await Promise.all(
+      props.messages.map(async (msg) => {
+        div.innerHTML = msg.summary.replace(LINE_BR, '');
+        msg.summary = div.textContent!;
+        return {
+          ...msg,
+          source_group: (sourceGroupTitleMap[msg.source] || '') + msg.source_group,
+          time: dayjs(msg.time).fromNow(),
+          summary: await marked.parseInline(msg.summary),
+        };
+      })
+    );
+  },
+  [],
+  asyncComputedEvaluating
+);
 
 const checkboxVal = useVModel(props, 'checkboxes', emit);
 const clearCheckboxes = () => (checkboxVal.value = []);
@@ -67,36 +102,55 @@ defineExpose({
 
 <template>
   <div class="the-list">
-    <div v-for="(msg, index) in actualMessages" :key="msg.id" class="message-list-item">
-      <div class="list-item-left">
-        <OCheckbox class="checkbox" :value="msg.event_id" v-model="checkboxVal" />
-        <div>
-          <p class="user-info">
-            <OBadge :dot="true" v-if="!msg.is_read" color="danger">
-              <WordAvatar :name="msg.user" size="small" />
-            </OBadge>
-            <WordAvatar v-else :name="msg.user" size="small" />
-            <span :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.user }}</span>
-          </p>
-          <OLink class="link" @click="jumpToLink(msg)" color="primary" :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{
-            msg.summary
-          }}</OLink>
+    <template v-if="!asyncComputedEvaluating">
+      <div class="message-list-item" v-for="(msg, index) in actualMessages" :key="msg.id">
+        <div class="list-item-left">
+          <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
+          <div>
+            <p class="user-info">
+              <OBadge :dot="true" v-if="!msg.is_read" color="danger">
+                <WordAvatar :name="msg.user" size="small">
+                  <template v-if="iconMap.has(Number(msg.type))" #icon>
+                    <OIcon style="color: var(--o-color-fill2)">
+                      <component :is="iconMap.get(Number(msg.type))" />
+                    </OIcon>
+                  </template>
+                </WordAvatar>
+              </OBadge>
+              <WordAvatar v-else :name="msg.user" size="small">
+                <template v-if="iconMap.has(Number(msg.type))" #icon>
+                  <OIcon style="color: var(--o-color-fill2)">
+                    <component :is="iconMap.get(Number(msg.type))" />
+                  </OIcon>
+                </template>
+              </WordAvatar>
+              <span :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }">{{ msg.user }}</span>
+            </p>
+            <OLink
+              class="link"
+              @click="jumpToLink(msg)"
+              v-dompurify-html="msg.summary"
+              color="primary"
+              :style="{ fontWeight: msg.is_read ? 'normal' : 'bold' }"
+              >{{ msg.summary }}</OLink
+            >
+          </div>
         </div>
-      </div>
-      <div class="list-item-right">
-        <p>{{ msg.source_group }}</p>
-        <p>{{ msg.time }}</p>
-        <div class="list-item-right-hover">
-          <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
-            <ReadIcon />
-          </OIcon>
-          <OIcon class="del-icon" @click="$emit('deleteMessage', { ...msg })" hover-color="var(--o-color-danger1)" title="删除">
-            <DeleteIcon />
-          </OIcon>
+        <div class="list-item-right">
+          <p>{{ msg.source_group }}</p>
+          <p>{{ msg.time }}</p>
+          <div class="list-item-right-hover">
+            <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
+              <ReadIcon />
+            </OIcon>
+            <OIcon class="del-icon" @click="$emit('deleteMessage', { ...msg })" hover-color="var(--o-color-danger1)" title="删除">
+              <DeleteIcon />
+            </OIcon>
+          </div>
         </div>
+        <ODivider v-if="index < actualMessages.length - 1" class="divider-line" />
       </div>
-      <ODivider v-if="index < actualMessages.length - 1" class="divider-line" />
-    </div>
+    </template>
   </div>
 </template>
 

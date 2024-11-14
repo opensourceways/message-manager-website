@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { OBadge, OIcon, OIconLoading, OPopup } from '@opensig/opendesign';
+import { OIcon, OIconLoading, OPopup } from '@opensig/opendesign';
 
 import LoginIcon from '~icons/app/icon-login.svg';
 
 import { doLogin, logout } from '@/shared/login';
-import { useUnreadMsgCountStore } from '@/stores/common';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
 
 const userInfoStore = useUserInfoStore();
-const unreadCountStore = useUnreadMsgCountStore();
 const userInfo = ref();
 const loginStore = useLoginStore();
 
@@ -19,10 +17,7 @@ const toUserCenter = () => window.open(import.meta.env.VITE_LOGIN_URL);
 <template>
   <template v-if="true">
     <div class="user-info" ref="userInfo">
-      <OBadge color="danger" v-if="unreadCountStore.totalCount > 0" :value="unreadCountStore.totalCount">
-        <img :src="userInfoStore.photo" />
-      </OBadge>
-      <img v-else-if="userInfoStore.photo" :src="userInfoStore.photo" />
+      <img :src="userInfoStore.photo" />
       <p class="user-name">{{ userInfoStore.username }}</p>
     </div>
     <OPopup position="bottom" :target="userInfo">

@@ -52,6 +52,6 @@ export const useUserInfoStore = defineStore('userInfo', {
   getters: {
     giteeLoginName(state) {
       return state.identities.find((id) => id.identity === 'gitee')?.login_name;
-    }
-  }
+    },
+  },
 });

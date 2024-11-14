@@ -21,9 +21,9 @@ initSensor();
 <template>
   <AppHeader />
   <OScroller show-type="hover">
-    <main class="ly-main">
+    <ContentWrapper class="msg-list">
       <RouterView />
-    </main>
+    </ContentWrapper>
     <AppFooter />
   </OScroller>
 </template>
@@ -33,7 +33,7 @@ initSensor();
   --color-primary: #027ef2;
   background-color: var(--o-color-fill1);
 
-  min-width: 1200px;
+  min-width: 1440px;
 
   --layout-header-height: 80px;
   --layout-header-zIndex: 101;
@@ -45,7 +45,7 @@ initSensor();
 
   --layout-footer-height: 300px;
 
-  --layout-content-min-height: calc(100vh - var(--layout-header-height) - var(--layout-footer-height));
+  --layout-content-min-height: calc(100vh - var(--layout-header-height) - 64px);
 
   @include respond-to('<=laptop') {
     --layout-header-max-width: 100%;
@@ -75,6 +75,14 @@ initSensor();
 </style>
 
 <style lang="scss" scoped>
+.msg-list {
+  min-height: var(--layout-content-min-height);
+  margin-top: 48px;
+  margin-bottom: 48px;
+  display: flex;
+  flex-direction: column;
+}
+
 .ly-header {
   position: fixed;
   top: 0;
@@ -92,13 +100,8 @@ initSensor();
 }
 
 .ly-main {
-  padding-top: var(--layout-header-height);
   min-height: calc(var(--layout-content-min-height) + var(--layout-header-height));
   background-color: var(--o-color-fill1);
-
-  @include respond-to('phone') {
-    padding: 0;
-  }
 }
 
 .ly-footer {

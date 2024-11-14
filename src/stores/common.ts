@@ -1,36 +1,32 @@
-import { getUnreadCount } from '@/api/api-messages';
+import { getUnreadCountNew } from '@/api/api-messages';
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, reactive } from 'vue';
 import { useUserInfoStore } from './user';
-import { useRoute } from 'vue-router';
-import { EventSources } from '@/data/event';
 
 export const useUnreadMsgCountStore = defineStore('unreadMsgCount', () => {
-  const sourceCountMap = ref(new Map<string, number>());
+  const sourceCountMap = reactive(new Map<string, number>());
+  const userInfoStore = useUserInfoStore();
   const totalCount = computed(() => {
-    if (!sourceCountMap.value.size) {
+    if (!sourceCountMap.size) {
       return 0;
     }
-    return Array.from(sourceCountMap.value.values()).reduce((count, curr) => count += curr, 0);
+    return Array.from(sourceCountMap.values()).reduce((count, curr) => (count += curr), 0);
   });
 
   const updateCount = () => {
-    const userStore = useUserInfoStore();
-    getUnreadCount()
+    if (!userInfoStore.giteeLoginName) {
+      return;
+    }
+    getUnreadCountNew(userInfoStore.giteeLoginName)
       .then((res) => {
-        sourceCountMap.value.clear();
-        if (!res) {
+        sourceCountMap.clear();
+        if (!res?.count) {
           return;
         }
-        res.forEach((item) => {
-          if (item.source === EventSources.GITEE && !userStore.giteeLoginName) {
-            return;
-          }
-          sourceCountMap.value.set(item.source, item.count);
-        });
+        Object.entries(res.count).forEach(([prop, val]) => sourceCountMap.set(prop, val));
       })
       .catch(() => {
-        sourceCountMap.value.clear();
+        sourceCountMap.clear();
       });
   };
 
