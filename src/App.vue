@@ -46,7 +46,7 @@ initSensor();
 
   --layout-footer-height: 300px;
 
-  --layout-content-min-height: calc(100vh - var(--layout-header-height) - 64px);
+  --layout-content-min-height: calc(100vh - var(--layout-header-height) - var(--layout-footer-height));
 
   @include respond-to('<=laptop') {
     --layout-header-max-width: 100%;
@@ -61,16 +61,12 @@ initSensor();
     --layout-header-padding: 32px;
 
     --layout-content-padding: 32px;
-
-    --layout-footer-height: 64px;
   }
 
   @include respond-to('phone') {
     --layout-header-padding: 16px;
 
     --layout-content-padding: 24px;
-
-    --layout-footer-height: 48px;
   }
 }
 </style>

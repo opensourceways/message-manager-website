@@ -22,6 +22,8 @@ import IconReply from '~icons/app/icon-reply.svg';
 import IconLinked from '~icons/app/icon-linked.svg';
 import IconPencil from '~icons/app/icon-pencil.svg';
 import IconEmojis from '~icons/app/icon-emojis.svg';
+import { useAppearance } from '@/stores/common';
+import { storeToRefs } from 'pinia';
 
 const props = defineProps({
   messages: {
@@ -40,6 +42,7 @@ const emit = defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
 }>();
 
+const { theme } = storeToRefs(useAppearance());
 const iconMap = new Map([
   [1, IconAt],
   [5, IconHeart],
@@ -87,7 +90,7 @@ const actualMessages = asyncComputed(
 
 const checkboxVal = useVModel(props, 'checkboxes', emit);
 const clearCheckboxes = () => (checkboxVal.value = []);
-const checkAll = () => (checkboxVal.value = actualMessages.value.map((item) => item.event_id));
+const checkAll = () => (checkboxVal.value = actualMessages.value.map((item) => item.id));
 
 const jumpToLink = (msg: MessageT) => {
   emit('readMessage', msg);
@@ -103,7 +106,7 @@ defineExpose({
 <template>
   <div class="the-list">
     <template v-if="!asyncComputedEvaluating">
-      <div class="message-list-item" v-for="(msg, index) in actualMessages" :key="msg.id">
+      <div class="message-list-item" :data-is-dark="theme" v-for="(msg, index) in actualMessages" :key="msg.id">
         <div class="list-item-left">
           <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
           <div>
@@ -139,7 +142,7 @@ defineExpose({
         <div class="list-item-right">
           <p>{{ msg.source_group }}</p>
           <p>{{ msg.time }}</p>
-          <div class="list-item-right-hover">
+          <div class="list-item-right-hover" :data-is-dark="theme">
             <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
               <ReadIcon />
             </OIcon>
@@ -195,8 +198,16 @@ defineExpose({
       left: 56px;
     }
 
-    @include hover {
-      background-color: rgb(var(--o-kleinblue-1));
+    &[data-is-dark='dark'] {
+      @include hover {
+        background-color: var(--o-color-fill3);
+      }
+    }
+
+    &[data-is-dark='light'] {
+      @include hover {
+        background-color: rgb(var(--o-kleinblue-1));
+      }
     }
 
     .list-item-left {
@@ -248,7 +259,13 @@ defineExpose({
       width: 100%;
       gap: 32px;
       padding-right: 22px;
-      background-color: rgb(var(--o-kleinblue-1));
+
+      &[data-is-dark='light'] {
+        background-color: rgb(var(--o-kleinblue-1));
+      }
+      &[data-is-dark='dark'] {
+        background-color: var(--o-color-fill3);
+      }
 
       @mixin icon {
         font-size: 24px;

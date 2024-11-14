@@ -506,18 +506,9 @@ const markReadMultiMessages = () => {
               </IconLink>
             </template>
             <OSelect v-model="optionVal" @change="getData" v-else-if="currentOptions.length" style="--select-radius: 4px; width: 120px">
-              <OOption
-                v-for="item in currentOptions"
-                :key="item.val"
-                :label="item.label"
-                :value="item.val"
-                style="
-                  --option-bg-color-hover: var(--o-color-fill1);
-                  --option-bg-color-active: var(--o-color-fill1);
-                  --option-color-active: var(--o-color-info1);
-                "
-                >{{ item.label }}</OOption
-              >
+              <OOption style="justify-content: center" v-for="item in currentOptions" :key="item.val" :label="item.label" :value="item.val">{{
+                item.label
+              }}</OOption>
             </OSelect>
           </div>
         </div>
@@ -531,7 +522,8 @@ const markReadMultiMessages = () => {
           v-model:checkboxes="checkboxVal"
         />
         <div v-else class="no-messages">
-          <img src="@/assets/svg-icons/icon-no-messages.svg" />
+          <img v-if="isDark" src="@/assets/no-message-dark.png" />
+          <img v-else src="@/assets/svg-icons/icon-no-messages.svg" />
           <p>{{ noMessageDesc }}</p>
           <p v-if="currentMeneItem?.needGitee && !userInfoStore.giteeLoginName">
             接收Gitee消息，请<OLink
@@ -562,6 +554,14 @@ const markReadMultiMessages = () => {
   width: 100%;
 }
 
+.msg-filter-sel-option {
+  justify-content: center;
+}
+
+.msg-filter-sel-option-dark {
+  justify-content: center;
+}
+
 .title {
   @include h1;
   font-weight: 500;
@@ -587,7 +587,6 @@ const markReadMultiMessages = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-grow: 1;
 
   @mixin header-ops {
     display: flex;
@@ -611,7 +610,6 @@ const markReadMultiMessages = () => {
     margin-top: 24px;
     padding: 24px;
     padding-top: 0;
-    flex-grow: 1;
 
     aside {
       border-right: 1px solid var(--o-color-control4);
@@ -630,7 +628,7 @@ const markReadMultiMessages = () => {
 .menu-item-dark {
   --menu-item-radius: 4px;
   --menu-item-bg-color-selected: rgb(var(--o-mixedgray-6));
-  --menu-item-bg-color-hover: rgb(43, 43, 47);
+  --menu-item-bg-color-hover: var(--o-color-fill3);
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));
 }
 
@@ -638,7 +636,7 @@ const markReadMultiMessages = () => {
   background-color: var(--o-color-fill2);
   gap: 10px;
   width: 0;
-  min-height: 736px;
+  min-height: 784px;
   flex-grow: 1;
   margin-left: 12px;
 
