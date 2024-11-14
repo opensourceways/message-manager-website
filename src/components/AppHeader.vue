@@ -31,6 +31,8 @@ const { isDark } = useTheme();
 
 <style lang="scss" scoped>
 .header-wrap {
+  position: sticky;
+  top: 0;
   height: var(--layout-header-height);
   z-index: 101;
   background: var(--o-color-fill2);

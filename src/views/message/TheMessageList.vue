@@ -558,6 +558,10 @@ const markReadMultiMessages = () => {
   @include text1;
 }
 
+:deep(.o-tab-nav-anchor-line) {
+  width: 100%;
+}
+
 .title {
   @include h1;
   font-weight: 500;
