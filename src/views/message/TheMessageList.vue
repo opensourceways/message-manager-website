@@ -33,6 +33,7 @@ import {
   getAllTodo,
   getAllAbout,
   getAllWatch,
+  getCveTodo,
 } from '@/api/api-messages';
 
 import MessageSubsConfig from './components/MessageSubsConfig.vue';
@@ -123,7 +124,11 @@ watch(
   currentOptions,
   (options) => {
     if (options?.length) {
-      optionVal.value = options[0].val;
+      if (tabVal.value === 'meeting') {
+        optionVal.value = options[1].val;
+      } else {
+        optionVal.value = options[0].val;
+      }
       return;
     }
     optionVal.value = '';
@@ -163,28 +168,29 @@ const onTabChange = async () => {
 };
 
 // ------------------------菜单事件------------------------
+const defaultParams = () => ({
+  is_read: toggles.isRead.val ? false : undefined,
+  ...pageInfo,
+  start_time: toggles.time.val || undefined,
+});
 const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn: () => (...args: any[]) => Promise<PagedResponseT<MessageT>> }[]> = {
   todo: [
     {
       title: '全部',
       getFetchFn: () =>
         getAllTodo.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
+          ...defaultParams(),
           is_done: Boolean(optionVal.value),
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
     },
     {
       title: '待我处理的Issue',
       getFetchFn: () =>
         getIssueTodo.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
+          ...defaultParams(),
           is_done: Boolean(optionVal.value),
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
       needGitee: true,
     },
@@ -192,11 +198,19 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: '待我审查的PR',
       getFetchFn: () =>
         getPrTodo.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
+          ...defaultParams(),
           is_done: Boolean(optionVal.value),
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          gitee_user_name: userInfoStore.giteeLoginName!,
+        }),
+      needGitee: true,
+    },
+    {
+      title: '待我处理的漏洞',
+      getFetchFn: () =>
+        getCveTodo.bind(null, {
+          ...defaultParams(),
+          is_done: Boolean(optionVal.value),
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
       needGitee: true,
     },
@@ -206,10 +220,8 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: '全部',
       getFetchFn: () =>
         getMeetingTodo.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
           filter: optionVal.value,
         }),
     },
@@ -219,10 +231,8 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: '全部',
       getFetchFn: () =>
         getAllAbout.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
           is_bot: optionVal.value !== '' ? Boolean(optionVal.value) : undefined,
         }),
     },
@@ -230,10 +240,8 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: 'Gitee',
       getFetchFn: () =>
         getGiteeAbout.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
           is_bot: optionVal.value !== '' ? Boolean(optionVal.value) : undefined,
         }),
       needGitee: true,
@@ -242,9 +250,7 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: '论坛',
       getFetchFn: () =>
         getForumAbout.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
+          ...defaultParams(),
           is_bot: optionVal.value !== '' ? Boolean(optionVal.value) : undefined,
         }),
     },
@@ -254,30 +260,24 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: '全部',
       getFetchFn: () =>
         getAllWatch.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
     },
     {
       title: 'EUR系统',
       getFetchFn: () =>
         getEur.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
     },
     {
       title: 'Gitee消息',
       getFetchFn: () =>
         getGitee.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
       needGitee: true,
     },
@@ -285,20 +285,13 @@ const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn:
       title: '漏洞消息',
       getFetchFn: () =>
         getCve.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-          gitee_user_name: userInfoStore.giteeLoginName as string,
+          ...defaultParams(),
+          gitee_user_name: userInfoStore.giteeLoginName!,
         }),
     },
     {
       title: '论坛',
-      getFetchFn: () =>
-        getForumSystem.bind(null, {
-          is_read: toggles.isRead.val ? false : undefined,
-          ...pageInfo,
-          start_time: toggles.time.val || undefined,
-        }),
+      getFetchFn: () => getForumSystem.bind(null, defaultParams()),
     },
   ],
 };
