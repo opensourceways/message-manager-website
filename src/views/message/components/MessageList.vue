@@ -22,8 +22,6 @@ import IconReply from '~icons/app/icon-reply.svg';
 import IconLinked from '~icons/app/icon-linked.svg';
 import IconPencil from '~icons/app/icon-pencil.svg';
 import IconEmojis from '~icons/app/icon-emojis.svg';
-import { useAppearance } from '@/stores/common';
-import { storeToRefs } from 'pinia';
 
 const props = defineProps({
   messages: {
@@ -42,7 +40,6 @@ const emit = defineEmits<{
   (event: 'deleteMessage', msg: MessageT): void;
 }>();
 
-const { theme } = storeToRefs(useAppearance());
 const iconMap = new Map([
   [1, IconAt],
   [5, IconHeart],
@@ -106,7 +103,7 @@ defineExpose({
 <template>
   <div class="the-list">
     <template v-if="!asyncComputedEvaluating">
-      <div class="message-list-item" :data-is-dark="theme" v-for="(msg, index) in actualMessages" :key="msg.id">
+      <div class="message-list-item" v-for="(msg, index) in actualMessages" :key="msg.id">
         <div class="list-item-left">
           <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
           <div>
@@ -142,7 +139,7 @@ defineExpose({
         <div class="list-item-right">
           <p>{{ msg.source_group }}</p>
           <p>{{ msg.time }}</p>
-          <div class="list-item-right-hover" :data-is-dark="theme">
+          <div class="list-item-right-hover">
             <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
               <ReadIcon />
             </OIcon>
@@ -170,12 +167,16 @@ defineExpose({
     align-items: center;
     height: 70px;
     border-radius: 4px;
-    padding-left: 12px;
     margin-top: 4px;
 
-    @include respond-to('phone') {
-      height: auto;
-      padding: 16px 0;
+    @include hover {
+      background-color: rgb(var(--o-kleinblue-1));
+    }
+
+    html[data-o-theme='dark'] & {
+      @include hover {
+        background-color: var(--o-color-fill3);
+      }
     }
 
     .link {
@@ -196,18 +197,6 @@ defineExpose({
       --o-divider-gap: 0;
       width: calc(100% - 56px);
       left: 56px;
-    }
-
-    &[data-is-dark='dark'] {
-      @include hover {
-        background-color: var(--o-color-fill3);
-      }
-    }
-
-    &[data-is-dark='light'] {
-      @include hover {
-        background-color: rgb(var(--o-kleinblue-1));
-      }
     }
 
     .list-item-left {
@@ -259,11 +248,9 @@ defineExpose({
       width: 100%;
       gap: 32px;
       padding-right: 22px;
+      background-color: rgb(var(--o-kleinblue-1));
 
-      &[data-is-dark='light'] {
-        background-color: rgb(var(--o-kleinblue-1));
-      }
-      &[data-is-dark='dark'] {
+      html[data-o-theme='dark'] & {
         background-color: var(--o-color-fill3);
       }
 
