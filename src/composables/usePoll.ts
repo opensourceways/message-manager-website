@@ -1,8 +1,6 @@
-import type { Awaitable } from '@vueuse/core';
-
 export default (delay: number) => {
   let timeout: ReturnType<typeof setTimeout>;
-  let hasNext = true;
+  let hasNext = false;
   let currentPoll: AsyncGenerator;
   let abortController: AbortController;
 
@@ -26,22 +24,34 @@ export default (delay: number) => {
     }
   };
 
-  const start = <T>(api: (val: AbortController) => Promise<T>, onFailed?: (err: any) => Awaitable<void>) => {
+  const start = <T = any>(api: (val: AbortController) => Promise<T>) => {
+    if (hasNext) {
+      return currentPoll as AsyncGenerator<{
+        res: T;
+        err?: boolean;
+        reason?: any;
+      }>;
+    }
     hasNext = true;
     const generatorFn = async function* () {
       while (hasNext) {
         abortController = new AbortController();
+        const res = {} as {
+          res: T;
+          err?: boolean;
+          reason?: any;
+        };
         try {
-          yield await api(abortController);
+          res.res = await api(abortController);
         } catch (error) {
           if (abortController.signal.aborted) {
             hasNext = false;
             return;
           }
-          if (onFailed) {
-            await onFailed(error);
-          }
+          res.err = true;
+          res.reason = error;
         }
+        yield res;
         await wait();
       }
     };
