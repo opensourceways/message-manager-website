@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useConfirmDialog, useDocumentVisibility } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh';
 
-import { OCheckbox, OMenu, OMenuItem, useMessage, ODivider, OTab, OTabPane, OSelect, OOption, OLink } from '@opensig/opendesign';
+import { OCheckbox, OMenu, OMenuItem, useMessage, ODivider, OTab, OTabPane, OSelect, OOption, OLink, OIconLoading } from '@opensig/opendesign';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import AppPagination from '@/components/AppPagination.vue';
 import RadioToggle from '@/components/RadioToggle.vue';
@@ -41,6 +41,7 @@ import type { PagedResponseT } from '@/@types/types-common';
 import usePoll from '@/composables/usePoll';
 import { AxiosError } from 'axios';
 import { useTheme } from '@/composables/useTheme';
+// import MeetingMessages from './components/meeting/MeetingMessages.vue';
 
 const { isDark } = useTheme();
 const userInfoStore = useUserInfoStore();
@@ -51,6 +52,7 @@ const unreadCountStore = useUnreadMsgCountStore();
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
 const goBindUserInfo = () => (window.location.href = LOGIN_URL);
 const documentVisibility = useDocumentVisibility();
+const loading = ref(false);
 
 const dlgVisible = ref(false);
 
@@ -66,6 +68,7 @@ onMounted(() => {
   }
 });
 
+// ----------------翻页----------------
 const total = ref(0);
 const pageInfo = reactive({
   page_num: 1,
@@ -81,14 +84,24 @@ watch(documentVisibility, (state) => {
   }
 });
 const messages = ref<MessageT[]>([]);
-const getData = async () => {
+const getData = async (noLoading?: boolean) => {
+  messageListRef.value?.clearCheckboxes();
+  if (!noLoading) {
+    loading.value = true;
+  }
   await stop();
   const fetchFn = currentMeneItem.value!.getFetchFn();
-  for await (const res of start(fetchFn)) {
-    total.value = res.count;
-    const list = res.query_info ?? [];
-    list.forEach((item) => (item.id = item.source + item.event_id));
-    messages.value = list;
+  for await (const { res, err } of start(fetchFn)) {
+    if (!err) {
+      total.value = res.count;
+      const list = res.query_info ?? [];
+      list.forEach((item) => (item.id = item.source + item.event_id));
+      messages.value = list;
+    } else {
+      total.value = 0;
+      messages.value = [];
+    }
+    loading.value = false;
   }
 };
 
@@ -160,10 +173,11 @@ const resetToggleVals = () => {
   toggles.time.val = 0;
 };
 
+// ------------------------tab事件------------------------
 const onTabChange = async () => {
   resetToggleVals();
-  await nextTick();
   pageInfo.page_num = 1;
+  messages.value = [];
   getData();
 };
 
@@ -305,8 +319,8 @@ const currentMenuItems = computed(() => menuInfo[tabVal.value]);
 watch(currentMenuItems, (val) => (activeMenu.value = val[0].title), { immediate: true });
 const currentMeneItem = computed(() => currentMenuItems.value.find((item) => item.title === activeMenu.value));
 const onMenuChange = async () => {
-  await nextTick();
   pageInfo.page_num = 1;
+  messages.value = [];
   getData();
 };
 
@@ -320,6 +334,17 @@ const noMessageDesc = computed(() => {
 // ------------------------多选框事件------------------------
 const messageListRef = ref<InstanceType<typeof MessageList>>();
 const checkboxVal = ref<(string | number)[]>([]);
+
+watch(
+  () => checkboxVal.value.length,
+  (length) => {
+    if (length) {
+      stop();
+    } else {
+      getData(true);
+    }
+  }
+);
 
 const indeterminate = computed(() => {
   const length = checkboxVal.value.length;
@@ -368,7 +393,6 @@ const delMessage = async (msg: MessageT) => {
     try {
       await deleteMessages(msg);
       message.success({ content: '删除成功' });
-      messageListRef.value?.clearCheckboxes();
       getData();
       unreadCountStore.updateCount();
     } catch (error) {
@@ -394,7 +418,6 @@ const delMultiMessages = async () => {
     try {
       await deleteMessages(...selectedMessages.value);
       message.success({ content: isMulti ? '批量删除成功' : '删除成功' });
-      messageListRef.value?.clearCheckboxes();
       getData();
       unreadCountStore.updateCount();
     } catch (error) {
@@ -433,7 +456,6 @@ const markReadMultiMessages = () => {
     .then(() => {
       getData();
       unreadCountStore.updateCount();
-      messageListRef.value?.clearCheckboxes();
     })
     .catch((error) => {
       if (error?.response?.data?.message) {
@@ -448,8 +470,8 @@ const markReadMultiMessages = () => {
   <ConfirmDialog :title="confirmDialogOptions.title" :content="confirmDialogOptions.content" :show="isRevealed" @confirm="confirm" @cancel="cancel" />
   <MessageSubsConfig v-model:visible="dlgVisible" />
   <h1 class="title">消息中心</h1>
-  <div class="msg-list-content">
-    <div :class="[isDark ? 'msg-list-content-header-dark' : 'msg-list-content-header']">
+  <div class="the-msg-list">
+    <div class="msg-list-tabs">
       <OTab
         v-model="tabVal"
         :line="false"
@@ -458,18 +480,18 @@ const markReadMultiMessages = () => {
         variant="text"
       >
         <OTabPane v-for="(value, key) in tabList" :key="key" :label="key">
-          <template #nav>{{ value }}&#009;{{ unreadCountStore.sourceCountMap.get(`${key}_count`) || '' }}</template>
+          <template #nav>{{ value }}&#009;{{ unreadCountStore.sourceCountMap.get(`${key}_count`)?.displayCount || '' }}</template>
         </OTabPane>
       </OTab>
     </div>
-    <div class="msg-list-content-inner">
+    <div class="msg-list-content">
       <aside>
         <OMenu v-model="activeMenu" @change="onMenuChange" style="margin-right: 12px">
           <template v-for="(item, index) in currentMenuItems" :key="item.title">
-            <OMenuItem v-if="index === 0" :class="[isDark ? 'menu-item-dark' : 'menu-item']" :value="item.title">
+            <OMenuItem v-if="index === 0" class="menu-item" :value="item.title">
               {{ item.title }}
             </OMenuItem>
-            <OMenuItem v-else :class="[isDark ? 'menu-item-dark' : 'menu-item']" :value="item.title">
+            <OMenuItem v-else class="menu-item" :value="item.title">
               <p style="margin-left: 16px">
                 {{ item.title }}
               </p>
@@ -477,14 +499,14 @@ const markReadMultiMessages = () => {
           </template>
         </OMenu>
       </aside>
-      <div class="message-list">
+      <div class="msg-list-main">
         <div class="header">
           <div class="left">
             <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
               {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
             </OCheckbox>
             <template v-if="!checkboxVal.length">
-              <template v-if="tabVal !== 'todo' && tabVal !== 'meeting'">
+              <template v-if="tabVal !== 'todo' /*  && tabVal !== 'meeting' */">
                 <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
                 <RadioToggle v-model="toggles.isRead.val" @change="onFilterStateChange" :options="toggles.isRead.options" />
               </template>
@@ -510,29 +532,33 @@ const markReadMultiMessages = () => {
             </OSelect>
           </div>
         </div>
+        <div v-if="loading || !total" class="no-messages">
+          <OIconLoading v-if="loading" class="loading" />
+          <template v-else>
+            <img v-if="isDark" src="@/assets/no-message-dark.png" />
+            <img v-else src="@/assets/svg-icons/icon-no-messages.svg" />
+            <p>{{ noMessageDesc }}</p>
+            <p v-if="currentMeneItem?.needGitee && !userInfoStore.giteeLoginName">
+              接收Gitee消息，请<OLink
+                :href="LOGIN_URL"
+                target="_blank"
+                rel="noreferrer noopener"
+                style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
+                >绑定Gitee账号</OLink
+              >
+            </p>
+          </template>
+        </div>
+        <!-- <MeetingMessages v-else-if="tabVal === 'meeting'" :messages="messages" /> -->
         <!-- 消息列表 -->
         <MessageList
-          v-if="total > 0"
+          v-else
           ref="messageListRef"
           :messages="messages"
           @delete-message="delMessage"
           @read-message="markReadMessage"
           v-model:checkboxes="checkboxVal"
         />
-        <div v-else class="no-messages">
-          <img v-if="isDark" src="@/assets/no-message-dark.png" />
-          <img v-else src="@/assets/svg-icons/icon-no-messages.svg" />
-          <p>{{ noMessageDesc }}</p>
-          <p v-if="currentMeneItem?.needGitee && !userInfoStore.giteeLoginName">
-            接收Gitee消息，请<OLink
-              :href="LOGIN_URL"
-              target="_blank"
-              rel="noreferrer noopener"
-              style="--link-color: var(--o-color-primary1); font-weight: bold; --link-color-hover: rgb(var(--o-kleinblue-4))"
-              >绑定Gitee账号</OLink
-            >
-          </p>
-        </div>
       </div>
     </div>
   </div>
@@ -579,31 +605,26 @@ const markReadMultiMessages = () => {
   }
 }
 
-.msg-list-content {
+.the-msg-list {
   background-color: var(--o-color-fill2);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 
-  @mixin header-ops {
+  .msg-list-tabs {
     display: flex;
     background-size: cover;
     padding: 0 24px;
     position: relative;
-  }
-
-  .msg-list-content-header {
-    @include header-ops;
     background-image: url('../../assets/tab-background.png');
+
+    html[data-o-theme='dark'] & {
+      background-image: url('../../assets/tab-background-dark.png');
+    }
   }
 
-  .msg-list-content-header-dark {
-    @include header-ops;
-    background-image: url('../../assets/tab-background-dark.png');
-  }
-
-  .msg-list-content-inner {
+  .msg-list-content {
     display: flex;
     margin-top: 24px;
     padding: 24px;
@@ -612,6 +633,7 @@ const markReadMultiMessages = () => {
     aside {
       border-right: 1px solid var(--o-color-control4);
       padding-right: 12px;
+      margin-right: 24px;
     }
   }
 }
@@ -621,22 +643,21 @@ const markReadMultiMessages = () => {
   --menu-item-bg-color-selected: rgb(var(--o-kleinblue-2));
   --menu-item-bg-color-hover: rgb(var(--o-kleinblue-1));
   --menu-item-color-selected: rgb(var(--o-kleinblue-6));
+
+  html[data-o-theme='dark'] & {
+    --menu-item-bg-color-selected: rgb(var(--o-mixedgray-6));
+    --menu-item-bg-color-hover: var(--o-color-fill3);
+    --menu-item-color-selected: rgb(var(--o-kleinblue-6));
+  }
 }
 
-.menu-item-dark {
-  --menu-item-radius: 4px;
-  --menu-item-bg-color-selected: rgb(var(--o-mixedgray-6));
-  --menu-item-bg-color-hover: var(--o-color-fill3);
-  --menu-item-color-selected: rgb(var(--o-kleinblue-6));
-}
-
-.message-list {
+.msg-list-main {
   background-color: var(--o-color-fill2);
   gap: 10px;
   width: 0;
   min-height: 784px;
   flex-grow: 1;
-  margin-left: 12px;
+  position: relative;
 
   @include respond-to('phone') {
     width: 100%;
@@ -648,7 +669,6 @@ const markReadMultiMessages = () => {
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
-    padding-left: 12px;
 
     .left {
       display: flex;
@@ -670,6 +690,12 @@ const markReadMultiMessages = () => {
 }
 
 .no-messages {
+  z-index: 100;
+  background-color: var(--o-color-fill2);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -682,6 +708,19 @@ const markReadMultiMessages = () => {
     height: 162px;
     width: 276px;
     margin-bottom: 24px;
+  }
+
+  .loading {
+    font-size: 30px;
+    animation-duration: 1s;
+    animation-name: spin;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 }
 
