@@ -22,7 +22,7 @@ initSensor();
 <template>
   <OScroller show-type="hover">
     <AppHeader />
-    <ContentWrapper class="msg-list">
+    <ContentWrapper class="content-wrap">
       <RouterView />
     </ContentWrapper>
     <AppFooter />
@@ -72,7 +72,7 @@ initSensor();
 </style>
 
 <style lang="scss" scoped>
-.msg-list {
+.content-wrap {
   min-height: var(--layout-content-min-height);
   margin-top: 48px;
   margin-bottom: 48px;
