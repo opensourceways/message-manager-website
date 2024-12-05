@@ -693,6 +693,7 @@ const markReadMultiMessages = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  margin-top: 40px;
   height: 736px;
   color: var(--o-color-info3);
   @include text1;
