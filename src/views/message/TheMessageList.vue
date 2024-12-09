@@ -167,6 +167,11 @@ const onTabChange = async () => {
   getData();
 };
 
+const onFilterStateChange = () => {
+  pageInfo.page_num = 1;
+  getData();
+};
+
 // ------------------------菜单事件------------------------
 const defaultParams = () => ({
   is_read: toggles.isRead.val ? false : undefined,
@@ -340,6 +345,15 @@ const checkAllVal = computed({
   },
 });
 
+const selectedMessages = computed(() => {
+  try {
+    const set = new Set(checkboxVal.value);
+    return messages.value.filter((item) => set.has(item.id));
+  } catch {
+    return [];
+  }
+});
+
 // ------------------------删除消息------------------------
 const confirmDialogOptions = reactive({
   title: '',
@@ -372,22 +386,14 @@ const delMultiMessages = async () => {
   if (checkboxVal.value.length === 0) {
     return;
   }
-  const set = new Set(checkboxVal.value);
   confirmDialogOptions.title = '删除消息';
-  if (set.size > 1) {
-    confirmDialogOptions.content = `是否确定删除${set.size}条消息`;
-  } else {
-    confirmDialogOptions.content = `是否确定删除此消息`;
-  }
+  const isMulti = checkboxVal.value.length > 1;
+  confirmDialogOptions.content = isMulti ? `是否确定删除${checkboxVal.value.length}条消息` : '是否确定删除此消息';
   const { isCanceled } = await reveal();
   if (!isCanceled) {
     try {
-      await deleteMessages(...messages.value.filter((item) => set.has(item.id)));
-      if (set.size > 1) {
-        message.success({ content: '批量删除成功' });
-      } else {
-        message.success({ content: '删除成功' });
-      }
+      await deleteMessages(...selectedMessages.value);
+      message.success({ content: isMulti ? '批量删除成功' : '删除成功' });
       messageListRef.value?.clearCheckboxes();
       getData();
       unreadCountStore.updateCount();
@@ -423,8 +429,7 @@ const markReadMultiMessages = () => {
   if (checkboxVal.value.length === 0) {
     return;
   }
-  const set = new Set(checkboxVal.value);
-  readMessages(...messages.value.filter((item) => set.has(item.event_id)))
+  readMessages(...selectedMessages.value)
     .then(() => {
       getData();
       unreadCountStore.updateCount();
@@ -481,10 +486,10 @@ const markReadMultiMessages = () => {
             <template v-if="!checkboxVal.length">
               <template v-if="tabVal !== 'todo' && tabVal !== 'meeting'">
                 <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-                <RadioToggle v-model="toggles.isRead.val" @change="getData()" :options="toggles.isRead.options" />
+                <RadioToggle v-model="toggles.isRead.val" @change="onFilterStateChange" :options="toggles.isRead.options" />
               </template>
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-              <RadioToggle v-model="toggles.time.val" @change="getData()" :options="toggles.time.options" />
+              <RadioToggle v-model="toggles.time.val" @change="onFilterStateChange" :options="toggles.time.options" />
             </template>
           </div>
           <div class="right">
@@ -498,7 +503,7 @@ const markReadMultiMessages = () => {
                 删除
               </IconLink>
             </template>
-            <OSelect v-model="optionVal" @change="getData" v-else-if="currentOptions.length" style="--select-radius: 4px; width: 120px">
+            <OSelect v-model="optionVal" @change="onFilterStateChange" v-else-if="currentOptions.length" style="--select-radius: 4px; width: 120px">
               <OOption style="justify-content: center" v-for="item in currentOptions" :key="item.val" :label="item.label" :value="item.val">{{
                 item.label
               }}</OOption>
