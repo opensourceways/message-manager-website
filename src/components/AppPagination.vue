@@ -40,7 +40,7 @@ const onChange = (val: { page: number; pageSize: number }) => {
 
 <template>
   <div class="pagination-wrap" :style="wrapStyle">
-    <OPagination class="pagination" :total="total" :page="page" :pageSize="pageSize" :pageSizes="pageSizes" @change="onChange" show-total />
+    <OPagination class="pagination" :simple="true" :total="10000" :page="page" :pageSize="pageSize" :pageSizes="pageSizes" @change="onChange" show-total />
   </div>
 </template>
 
