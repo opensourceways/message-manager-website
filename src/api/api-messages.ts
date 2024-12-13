@@ -18,7 +18,7 @@ export function getMessages(params: Record<string, any>, abort?: AbortController
 export function readMessages(...msgs: MessageT[]): Promise<void> {
   return request.put(
     '/message_center/inner',
-    msgs.map((msg) => ({ source: msg.source, event_id: msg.event_id }))
+    msgs.map((msg) => msg.event_id)
   );
 }
 
@@ -28,19 +28,8 @@ export function readMessages(...msgs: MessageT[]): Promise<void> {
  */
 export function deleteMessages(...msgs: MessageT[]): Promise<any> {
   return request.delete('/message_center/inner', {
-    data: msgs.map((msg) => ({ source: msg.source, event_id: msg.event_id })),
+    data: msgs.map((msg) => msg.event_id),
   });
-}
-
-/**
- * 获取未读消息数量
- * @param msgs 消息列表
- */
-export function getUnreadCount() {
-  return request
-    .get<{ count: { source: string; count: number }[] }>('/message_center/inner/count')
-    .then((res) => res.data.count)
-    .catch(() => []);
 }
 
 export function getAllSigs() {
@@ -158,7 +147,7 @@ export function getAllWatch(params: ReqParamT & { gitee_user_name: string }, abo
     .then((res) => res.data);
 }
 
-export function getUnreadCountNew(giteeUserName: string) {
+export function getUnreadCount(giteeUserName?: string) {
   return request
     .get<{ count: Record<string, number> }>('/message_center/inner/count_new', { params: { gitee_user_name: giteeUserName } })
     .then((res) => res.data);
