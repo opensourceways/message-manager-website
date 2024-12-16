@@ -5,6 +5,10 @@ import AppFooter from './components/AppFooter.vue';
 import { useTheme } from './composables/useTheme';
 import { BAIDU_HM } from './data/config';
 import ContentWrapper from './components/ContentWrapper.vue';
+import { onMounted } from 'vue';
+import { request } from './shared/axios';
+import { useDocumentVisibility } from '@vueuse/core';
+import { watch } from 'vue';
 
 useTheme();
 
@@ -17,6 +21,12 @@ const initSensor = () => {
   s.appendChild(hm);
 };
 initSensor();
+
+onMounted(() => {
+  window.addEventListener('pagehide', () => {
+    request.post('/api_test');
+  });
+});
 </script>
 
 <template>

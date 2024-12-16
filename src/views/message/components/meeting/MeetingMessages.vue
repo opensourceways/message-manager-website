@@ -117,7 +117,7 @@ const summaries = computed(() => {
 
         .tag {
           @include tag-default;
-          background-color: rgb(var(--o-kleinblue-6));
+          background-color: rgb(var(--o-kleinblue-5));
         }
 
         .tag-deprecated {
