@@ -7,9 +7,6 @@ import vueJsx from '@vitejs/plugin-vue-jsx';
 import Icons from 'unplugin-icons/vite';
 import { FileSystemIconLoader } from 'unplugin-icons/loaders';
 import basicSsl from '@vitejs/plugin-basic-ssl';
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
   plugins: [
@@ -19,15 +16,10 @@ export default defineConfig({
       compiler: 'vue3',
       customCollections: {
         app: FileSystemIconLoader('./src/assets/svg-icons'),
+        forum: FileSystemIconLoader('./src/assets/forum-icons'),
       },
     }),
     basicSsl(),
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
   ],
   resolve: {
     alias: {

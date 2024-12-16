@@ -11,9 +11,7 @@ import setConfig from './setConfig';
 
 import { isBoolean, useLoading, useMessage, isNull, isUndefined } from '@opensig/opendesign';
 import type { LoadingPropsT } from '@opensig/opendesign/lib/loading/types';
-import { LOGIN_KEYS, clearUserAuth, doLogin } from '../login';
-import { useUserInfoStore } from '@/stores/user';
-import Cookies from 'js-cookie';
+import { clearUserAuth, doLogin } from '../login';
 
 interface RequestConfig<D = any> extends AxiosRequestConfig {
   data?: D;
@@ -145,12 +143,6 @@ const responseInterceptorId = request.interceptors.response.use(
     if (loadingInstance) {
       loadingInstance.toggle(false);
       loadingCount = 0;
-    }
-    if (err.config?.method === 'post' &&
-      err.config.url?.endsWith('/config/subs') &&
-      (err.response?.data as any)?.exist ||
-      (err.response?.data as any)?.newId) {
-      return Promise.resolve(err.response);
     }
     const config = err.config as InternalRequestConfig;
 
