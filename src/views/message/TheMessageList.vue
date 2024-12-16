@@ -41,6 +41,7 @@ import type { PagedResponseT } from '@/@types/types-common';
 import usePoll from '@/composables/usePoll';
 import { AxiosError } from 'axios';
 import { useTheme } from '@/composables/useTheme';
+import MeetingMessages from './components/meeting/MeetingMessages.vue';
 
 const { isDark } = useTheme();
 const userInfoStore = useUserInfoStore();
@@ -79,7 +80,7 @@ watch(documentVisibility, (state) => {
   if (state === 'hidden') {
     stop();
   } else {
-    getData();
+    getData(true);
   }
 });
 const messages = ref<MessageT[]>([]);
@@ -94,7 +95,6 @@ const getData = async (noLoading?: boolean) => {
     if (!err) {
       total.value = res.count;
       const list = res.query_info ?? [];
-      list.forEach((item) => (item.id = item.source + item.event_id));
       messages.value = list;
     } else {
       total.value = 0;
@@ -151,12 +151,13 @@ watch(
 // ----------------toggle按钮----------------
 const currentDate = dayjs();
 const toggles = reactive({
+  timeVal: 0 as number, // 时间筛选取值字段
+  readStateVal: 0 as number, // 已读状态筛选取值字段
   isRead: {
     options: [
       { value: 0, label: '全部' },
       { value: 1, label: '未读' },
     ],
-    val: 0,
   },
   time: {
     options: [
@@ -164,12 +165,18 @@ const toggles = reactive({
       { label: '近一月', value: currentDate.subtract(1, 'month').valueOf() },
       { label: '近一周', value: currentDate.subtract(7, 'day').valueOf() },
     ],
-    val: 0,
+  },
+  futureTime: {
+    options: [
+      { label: '全部', value: 0 },
+      { label: '未来一月', value: currentDate.add(1, 'month').valueOf() },
+      { label: '未来一周', value: currentDate.add(7, 'day').valueOf() },
+    ],
   },
 });
 const resetToggleVals = () => {
-  toggles.isRead.val = 0;
-  toggles.time.val = 0;
+  toggles.timeVal = 0;
+  toggles.readStateVal = 0;
 };
 
 // ------------------------tab事件------------------------
@@ -187,9 +194,9 @@ const onFilterStateChange = () => {
 
 // ------------------------菜单事件------------------------
 const defaultParams = () => ({
-  is_read: toggles.isRead.val ? false : undefined,
+  is_read: toggles.readStateVal ? false : undefined,
   ...pageInfo,
-  start_time: toggles.time.val || undefined,
+  start_time: toggles.timeVal || undefined,
 });
 const menuInfo: Record<string, { title: string; needGitee?: boolean; getFetchFn: () => (...args: any[]) => Promise<PagedResponseT<MessageT>> }[]> = {
   todo: [
@@ -332,7 +339,7 @@ const noMessageDesc = computed(() => {
 
 // ------------------------多选框事件------------------------
 const messageListRef = ref<InstanceType<typeof MessageList>>();
-const checkboxVal = ref<(string | number)[]>([]);
+const checkboxVal = ref<string[]>([]);
 
 watch(
   () => checkboxVal.value.length,
@@ -369,28 +376,19 @@ const checkAllVal = computed({
   },
 });
 
-const selectedMessages = computed(() => {
-  try {
-    const set = new Set(checkboxVal.value);
-    return messages.value.filter((item) => set.has(item.id));
-  } catch {
-    return [];
-  }
-});
-
 // ------------------------删除消息------------------------
 const confirmDialogOptions = reactive({
   title: '',
   content: '',
 });
 
-const delMessage = async (msg: MessageT) => {
+const delMessage = async (eventId: string) => {
   confirmDialogOptions.title = '删除消息';
   confirmDialogOptions.content = `是否确定删除此消息`;
   const { isCanceled } = await reveal();
   if (!isCanceled) {
     try {
-      await deleteMessages(msg);
+      await deleteMessages(eventId);
       message.success({ content: '删除成功' });
       getData();
       unreadCountStore.updateCount();
@@ -415,7 +413,7 @@ const delMultiMessages = async () => {
   const { isCanceled } = await reveal();
   if (!isCanceled) {
     try {
-      await deleteMessages(...selectedMessages.value);
+      await deleteMessages(...checkboxVal.value);
       message.success({ content: isMulti ? '批量删除成功' : '删除成功' });
       getData();
       unreadCountStore.updateCount();
@@ -428,11 +426,8 @@ const delMultiMessages = async () => {
 };
 
 // ------------------------标记已读消息------------------------
-const markReadMessage = (msg: MessageT) => {
-  if (msg.is_read) {
-    return;
-  }
-  readMessages(msg)
+const markReadMessage = (eventId: string) => {
+  readMessages(eventId)
     .then(() => {
       getData();
       unreadCountStore.updateCount();
@@ -451,7 +446,7 @@ const markReadMultiMessages = () => {
   if (checkboxVal.value.length === 0) {
     return;
   }
-  readMessages(...selectedMessages.value)
+  readMessages(...checkboxVal.value)
     .then(() => {
       getData();
       unreadCountStore.updateCount();
@@ -484,7 +479,7 @@ const markReadMultiMessages = () => {
       </OTab>
     </div>
     <div class="msg-list-content">
-      <aside>
+      <aside v-if="tabVal !== 'meeting'">
         <OMenu v-model="activeMenu" @change="onMenuChange" style="margin-right: 12px">
           <template v-for="(item, index) in currentMenuItems" :key="item.title">
             <OMenuItem v-if="index === 0" class="menu-item" :value="item.title">
@@ -501,16 +496,18 @@ const markReadMultiMessages = () => {
       <div class="msg-list-main">
         <div class="header">
           <div class="left">
-            <OCheckbox v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
+            <p v-if="tabVal === 'meeting'">会议时间</p>
+            <OCheckbox v-else v-model="checkAllVal" :indeterminate="indeterminate" style="--checkbox-label-gap: 28px" :disabled="!messages.length" :value="1">
               {{ checkboxVal.length ? `已选 ${checkboxVal.length} 条消息` : '全选' }}
             </OCheckbox>
             <template v-if="!checkboxVal.length">
-              <template v-if="tabVal !== 'todo' /*  && tabVal !== 'meeting' */">
+              <template v-if="tabVal !== 'todo' && tabVal !== 'meeting'">
                 <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-                <RadioToggle v-model="toggles.isRead.val" @change="onFilterStateChange" :options="toggles.isRead.options" />
+                <RadioToggle v-model="toggles.readStateVal" @change="onFilterStateChange" :options="toggles.isRead.options" />
               </template>
               <ODivider direction="v" style="--o-divider-label-gap: 0; height: 100%"></ODivider>
-              <RadioToggle v-model="toggles.time.val" @change="onFilterStateChange" :options="toggles.time.options" />
+              <RadioToggle v-if="tabVal === 'meeting'" v-model="toggles.timeVal" @change="onFilterStateChange" :options="toggles.futureTime.options" />
+              <RadioToggle v-else v-model="toggles.timeVal" @change="onFilterStateChange" :options="toggles.time.options" />
             </template>
           </div>
           <div class="right">
@@ -548,6 +545,7 @@ const markReadMultiMessages = () => {
             </p>
           </template>
         </div>
+        <MeetingMessages v-if="tabVal === 'meeting'" :messages="messages" />
         <!-- 消息列表 -->
         <MessageList
           v-else
@@ -698,6 +696,7 @@ const markReadMultiMessages = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  margin-top: 40px;
   height: 736px;
   color: var(--o-color-info3);
   @include text1;

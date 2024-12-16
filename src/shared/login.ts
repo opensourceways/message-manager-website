@@ -48,7 +48,7 @@ export function clearUserAuth() {
   // 清除内存中用户信息
   useUserInfoStore().$reset();
   // 清除cookie
-  Cookies.remove(LOGIN_KEYS.CSRF_TOKEN);
+  Cookies.remove(LOGIN_KEYS.CSRF_TOKEN, { domain: import.meta.env.VITE_COOKIE_DOMAIN, secure: true });
 }
 
 /**
