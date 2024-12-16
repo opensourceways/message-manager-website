@@ -14,14 +14,10 @@ import { asyncComputed, useVModel } from '@vueuse/core';
 
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
-import IconAt from '~icons/app/icon-at.svg';
-import IconHeart from '~icons/app/icon-heart.svg';
-import IconCertificate from '~icons/app/icon-certificate.svg';
-import IconEnvelope from '~icons/app/icon-envelope.svg';
-import IconReply from '~icons/app/icon-reply.svg';
-import IconLinked from '~icons/app/icon-linked.svg';
-import IconPencil from '~icons/app/icon-pencil.svg';
-import IconEmojis from '~icons/app/icon-emojis.svg';
+import IconAt from '~icons/forum/icon-at.svg';
+import IconHeart from '~icons/forum/icon-heart.svg';
+import IconEnvelope from '~icons/forum/icon-envelope.svg';
+import IconReply from '~icons/forum/icon-reply.svg';
 
 const props = defineProps({
   messages: {
@@ -36,19 +32,18 @@ const props = defineProps({
 
 const emit = defineEmits<{
   (event: 'update:checkboxes', val: (string | number)[]): void;
-  (event: 'readMessage', msg: MessageT): void;
-  (event: 'deleteMessage', msg: MessageT): void;
+  (event: 'readMessage', eventId: string): void;
+  (event: 'deleteMessage', eventId: string): void;
 }>();
 
 const iconMap = new Map([
   [1, IconAt],
-  [5, IconHeart],
-  [12, IconCertificate],
-  [6, IconEnvelope],
   [2, IconReply],
-  [11, IconLinked],
-  [4, IconPencil],
-  [25, IconEmojis],
+  [5, IconHeart],
+  [6, IconEnvelope],
+  [7, IconEnvelope],
+  [19, IconHeart],
+  [25, IconHeart],
 ]);
 const LINE_BR = /[\r\n]/g;
 const div = document.createElement('div');
@@ -87,10 +82,10 @@ const actualMessages = asyncComputed(
 
 const checkboxVal = useVModel(props, 'checkboxes', emit);
 const clearCheckboxes = () => (checkboxVal.value = []);
-const checkAll = () => (checkboxVal.value = actualMessages.value.map((item) => item.id));
+const checkAll = () => (checkboxVal.value = props.messages.map((item) => item.event_id));
 
 const jumpToLink = (msg: MessageT) => {
-  emit('readMessage', msg);
+  emit('readMessage', msg.event_id);
   windowOpen(msg.source_url);
 };
 
@@ -103,9 +98,9 @@ defineExpose({
 <template>
   <div class="the-list">
     <template v-if="!asyncComputedEvaluating">
-      <div class="message-list-item" v-for="(msg, index) in actualMessages" :key="msg.id">
+      <div class="message-list-item" v-for="(msg, index) in actualMessages" :key="msg.event_id">
         <div class="list-item-left">
-          <OCheckbox class="checkbox" :value="msg.id" v-model="checkboxVal" />
+          <OCheckbox class="checkbox" :value="msg.event_id" v-model="checkboxVal" />
           <div>
             <p class="user-info">
               <OBadge :dot="true" v-if="!msg.is_read" color="danger">
@@ -140,10 +135,10 @@ defineExpose({
           <p>{{ msg.source_group }}</p>
           <p>{{ msg.time }}</p>
           <div class="list-item-right-hover">
-            <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', { ...msg })" :disabled="msg.is_read" title="标记已读">
+            <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', msg.event_id)" :disabled="msg.is_read" title="标记已读">
               <ReadIcon />
             </OIcon>
-            <OIcon class="del-icon" @click="$emit('deleteMessage', { ...msg })" hover-color="var(--o-color-danger1)" title="删除">
+            <OIcon class="del-icon" @click="$emit('deleteMessage', msg.event_id)" hover-color="var(--o-color-danger1)" title="删除">
               <DeleteIcon />
             </OIcon>
           </div>

@@ -7,9 +7,27 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AppButton: typeof import('./src/components/AppButton.vue')['default']
+    AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    AppHeader: typeof import('./src/components/AppHeader.vue')['default']
+    AppLogin: typeof import('./src/components/AppLogin.vue')['default']
+    AppPagination: typeof import('./src/components/AppPagination.vue')['default']
+    ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     ContentWrapper: typeof import('./src/components/ContentWrapper.vue')['default']
+    DatePicker: typeof import('./src/components/DatePicker.vue')['default']
+    ExternalLink: typeof import('./src/components/ExternalLink.vue')['default']
+    FilterableSelect: typeof import('./src/components/FilterableSelect.vue')['default']
+    HeaderNav: typeof import('./src/components/HeaderNav.vue')['default']
+    HeaderTheme: typeof import('./src/components/HeaderTheme.vue')['default']
+    IconLink: typeof import('./src/components/IconLink.vue')['default']
+    RadioToggle: typeof import('./src/components/RadioToggle.vue')['default']
     ResultNotFound: typeof import('./src/components/ResultNotFound.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TagInput: typeof import('./src/components/TagInput.vue')['default']
+    TextWithTip: typeof import('./src/components/TextWithTip.vue')['default']
+    ToggleGroup: typeof import('./src/components/ToggleGroup.vue')['default']
+    WarningInput: typeof import('./src/components/WarningInput.vue')['default']
+    WordAvatar: typeof import('./src/components/WordAvatar.vue')['default']
   }
 }
