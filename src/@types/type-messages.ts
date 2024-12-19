@@ -24,12 +24,29 @@ export interface MessageT {
   is_read: boolean;
 }
 
-export interface Sig {
-  sig_name: string;
-  repos: string[];
-}
-
-export interface MySig {
-  sig: string;
-  type: string[];
+export interface MeetingSummary {
+  /** 结束时间 */
+  End: string;
+  /** 会议ID */
+  Mid: string;
+  /** 日期 */
+  Date: string;
+  /** 开始时间 */
+  Start: string;
+  /** 标题 */
+  Topic?: string;
+  /** 会议链接 */
+  JoinUrl?: string;
+  /** 发起人 */
+  Sponsor?: string;
+  /** etherpad链接 */
+  Etherpad?: string;
+  /** sig组 */
+  GroupName: string;
+  /** 会议平台 */
+  Mplatform?: string;
+  /** 详情 */
+  Agenda?: string;
+  /** 已过期 */
+  deprecated?: boolean;
 }
