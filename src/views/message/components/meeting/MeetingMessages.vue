@@ -14,6 +14,7 @@ const summaries = computed(() => {
     return props.messages.map((item) => {
       const res = JSON.parse(item.summary) as MeetingSummary;
       res.deprecated = NOW > new Date(`${res.Date}T${res.Start}:00`);
+      res.Date = res.Date.replace(/-/g, '/');
       return res;
     });
   } catch {
@@ -40,27 +41,27 @@ const summaries = computed(() => {
       </div>
       <div class="detail">
         <template v-if="summary.Agenda">
-          <span>会议详情</span>
+          <span>会议详情:</span>
           <span>{{ summary.Agenda }}</span>
         </template>
         <template v-if="summary.Sponsor">
-          <span>发起人</span>
+          <span>发起人:</span>
           <span>{{ summary.Sponsor }}</span>
         </template>
         <template v-if="summary.Mplatform">
-          <span>会议平台</span>
+          <span>会议平台:</span>
           <span>{{ summary.Mplatform }}</span>
         </template>
         <template v-if="summary.Mid">
-          <span>会议ID</span>
+          <span>会议ID:</span>
           <span>{{ summary.Mid }}</span>
         </template>
         <template v-if="summary.JoinUrl">
-          <span>会议链接</span>
+          <span>会议链接:</span>
           <a class="link" :href="summary.JoinUrl" target="_blank" rel="noreferrer noopener">{{ summary.JoinUrl }}</a>
         </template>
         <template v-if="summary.Etherpad">
-          <span>Etherpad链接</span>
+          <span>Etherpad链接:</span>
           <a class="link" :href="summary.Etherpad" target="_blank" rel="noreferrer noopener">{{ summary.Etherpad }}</a>
         </template>
       </div>
@@ -82,6 +83,7 @@ const summaries = computed(() => {
     border: 1px solid var(--o-color-control4);
     height: 294px;
     background-color: rgba(235, 241, 250, 0.4);
+    overflow: hidden;
 
     html[data-o-theme='dark'] & {
       background-color: var(--o-color-fill3);
@@ -127,7 +129,7 @@ const summaries = computed(() => {
       }
 
       .extra-info {
-        margin-top: 14px;
+        margin-top: 8px;
         display: flex;
         align-items: center;
         @include tip1;
@@ -141,8 +143,8 @@ const summaries = computed(() => {
       display: grid;
       grid-template-columns: 80px 1fr;
       column-gap: 32px;
-      row-gap: 4px;
-      padding: 16px 0;
+      row-gap: 8px;
+      margin-top: 16px;
       margin-left: 24px;
       margin-right: 24px;
 

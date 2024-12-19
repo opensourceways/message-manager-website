@@ -14,14 +14,10 @@ import { asyncComputed, useVModel } from '@vueuse/core';
 
 import DeleteIcon from '~icons/app/icon-delete.svg';
 import ReadIcon from '~icons/app/icon-read.svg';
-import IconAt from '~icons/app/icon-at.svg';
-import IconHeart from '~icons/app/icon-heart.svg';
-import IconCertificate from '~icons/app/icon-certificate.svg';
-import IconEnvelope from '~icons/app/icon-envelope.svg';
-import IconReply from '~icons/app/icon-reply.svg';
-import IconLinked from '~icons/app/icon-linked.svg';
-import IconPencil from '~icons/app/icon-pencil.svg';
-import IconEmojis from '~icons/app/icon-emojis.svg';
+import IconAt from '~icons/forum/icon-at.svg';
+import IconHeart from '~icons/forum/icon-heart.svg';
+import IconEnvelope from '~icons/forum/icon-envelope.svg';
+import IconReply from '~icons/forum/icon-reply.svg';
 
 const props = defineProps({
   messages: {
@@ -42,13 +38,12 @@ const emit = defineEmits<{
 
 const iconMap = new Map([
   [1, IconAt],
-  [5, IconHeart],
-  [12, IconCertificate],
-  [6, IconEnvelope],
   [2, IconReply],
-  [11, IconLinked],
-  [4, IconPencil],
-  [25, IconEmojis],
+  [5, IconHeart],
+  [6, IconEnvelope],
+  [7, IconEnvelope],
+  [19, IconHeart],
+  [25, IconHeart],
 ]);
 const LINE_BR = /[\r\n]/g;
 const div = document.createElement('div');
