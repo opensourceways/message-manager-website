@@ -13,7 +13,7 @@ const summaries = computed(() => {
   try {
     return props.messages.map((item) => {
       const res = JSON.parse(item.summary) as MeetingSummary;
-      res.deprecated = NOW > new Date(`${res.Date}T${res.Start}:00`);
+      res.deprecated = NOW > new Date(`${res.Date}T${res.End}:00`);
       res.Date = res.Date.replace(/-/g, '/');
       return res;
     });
