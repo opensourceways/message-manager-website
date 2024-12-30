@@ -17,6 +17,7 @@ import {
   OPENATOM,
   OPENEULER_CONTACT,
 } from '@/data/config';
+import { getYearByOffset } from '@/utils/common';
 
 import ExternalLink from '@/components/ExternalLink.vue';
 
@@ -208,7 +209,7 @@ const onExternalDialog = (href: string) => {
           <div class="footer-option-item">
             <a v-for="link in footLink" :key="link.URL" class="link" :href="link.URL" target="_blank">{{ link.NAME }}</a>
           </div>
-          <p class="copyright">{{ t('common.FOOTER.COPY_RIGHT') }}</p>
+          <p class="copyright">{{ t('common.FOOTER.COPY_RIGHT', { year: getYearByOffset() }) }}</p>
           <p class="license">
             <span>{{ t('common.FOOTER.LICENSED_1') }}</span>
             {{ t('common.FOOTER.LICENSED_2') }}
