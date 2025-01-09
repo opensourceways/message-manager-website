@@ -12,6 +12,9 @@ importers:
 
   .:
     dependencies:
+      '@opensig/open-analytics':
+        specifier: ^0.0.9
+        version: 0.0.9
       '@opensig/opendesign':
         specifier: 0.0.65
         version: 0.0.65(vue@3.3.4)
@@ -532,6 +535,9 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@opensig/open-analytics@0.0.9':
+    resolution: {integrity: sha512-D+4VWxgBc1ABsQjWEjWfBfoBQ4PQbc1lNZeEYpQXkTJLLFcj6nSa+LwcYZFXtZdGz9dzOhhbwRwXv66WFw2qJw==}
 
   '@opensig/opendesign@0.0.65':
     resolution: {integrity: sha512-/YiEwrHXZ8MSB2xSRz6fYmWKE7IqD5qsbqAgwVKpUD6gNe+ewgMGiVndhaf5fUu9r2cNzC/vbCOMxJ0O7NGjQQ==}
@@ -1946,6 +1952,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  ua-parser-js@1.0.34:
+    resolution: {integrity: sha512-K9mwJm/DaB6mRLZfw6q8IMXipcrmuT6yfhYmwhAkuh+81sChuYstYA+znlgaflUPaYUa3odxKPKGw6Vw/lANew==}
+
   ufo@1.5.3:
     resolution: {integrity: sha512-Y7HYmWaFwPUmkoQCUIAYpKqkOf+SbVj/2fJJZ4RJMCfZp0rTGwRbzQD+HghfnhKOjL9E01okqz+ncJskGYfBNw==}
 
@@ -2023,6 +2032,10 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uuid@10.0.0:
+    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    hasBin: true
 
   validator@13.12.0:
     resolution: {integrity: sha512-c1Q0mCiPlgdTVVVIJIrBuxNicYE+t/7oKeI9MWLj3fh/uq2Pxh/3eeWbVZ4OcGW1TUf53At0njHw5SMdA3tmMg==}
@@ -2117,6 +2130,9 @@ packages:
 
   vue@3.3.4:
     resolution: {integrity: sha512-VTyEYn3yvIeY1Py0WaYGZsXnz3y5UnGi62GjVEqvEGPl6nxbOrCXbVOTQWBEJUqAyTUk2uJ5JLVnYJ6ZzGbrSw==}
+
+  web-vitals@4.2.4:
+    resolution: {integrity: sha512-r4DIlprAGwJ7YM11VZp4R884m0Vmgr6EAKe3P+kO0PPj3Unqyvv59rczf6UiGcb9Z8QxZVcqKNwv/g0WNdWwsw==}
 
   webpack-sources@3.2.3:
     resolution: {integrity: sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==}
@@ -2602,6 +2618,12 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.17.1
+
+  '@opensig/open-analytics@0.0.9':
+    dependencies:
+      ua-parser-js: 1.0.34
+      uuid: 10.0.0
+      web-vitals: 4.2.4
 
   '@opensig/opendesign@0.0.65(vue@3.3.4)':
     dependencies:
@@ -4094,6 +4116,8 @@ snapshots:
 
   typescript@5.4.2: {}
 
+  ua-parser-js@1.0.34: {}
+
   ufo@1.5.3: {}
 
   undici-types@5.26.5: {}
@@ -4188,6 +4212,8 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
+  uuid@10.0.0: {}
+
   validator@13.12.0: {}
 
   vite-plugin-dts@2.3.0(@types/node@18.19.34)(rollup@3.29.4)(vite@4.5.3(@types/node@18.19.34)(sass@1.77.4)(terser@5.31.1)):
@@ -4280,6 +4306,8 @@ snapshots:
       '@vue/runtime-dom': 3.3.4
       '@vue/server-renderer': 3.3.4(vue@3.3.4)
       '@vue/shared': 3.3.4
+
+  web-vitals@4.2.4: {}
 
   webpack-sources@3.2.3: {}
 

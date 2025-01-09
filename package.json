@@ -19,6 +19,7 @@
     }
   },
   "dependencies": {
+    "@opensig/open-analytics": "^0.0.9",
     "@opensig/opendesign": "0.0.65",
     "@vueuse/core": "9.12.0",
     "axios": "1.6.7",
