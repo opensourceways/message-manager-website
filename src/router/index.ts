@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+import { enableOA, reportPerformance, reportPV } from '@/shared/analytics';
 import { scrollToTop } from '@/utils/common';
 import { doLogin, getCsrfToken, tryLogin } from '@/shared/login';
 import { useLoginStore, useUserInfoStore } from '@/stores/user';
@@ -59,6 +60,12 @@ router.beforeEach(async (to, from) => {
     userInfoStore.recipientId = recipientId;
   }
   return true;
+});
+
+router.isReady().then(() => {
+  enableOA();
+  reportPV();
+  reportPerformance();
 });
 
 export default router;

@@ -16,7 +16,6 @@ import router from './router';
 import i18n from './i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { enableOA, reportPerformance, reportPV } from './shared/analytics';
 dayjs.extend(relativeTime);
 
 const app = createApp(App);
@@ -31,7 +30,3 @@ app.use(router);
 app.use(VueDOMPurifyHTML, { ADD_ATTR: ['target'] });
 
 app.mount('#app');
-
-enableOA();
-reportPV();
-reportPerformance();
