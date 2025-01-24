@@ -64,6 +64,10 @@ const summaries = computed(() => {
           <span>Etherpad链接:</span>
           <a class="link" :href="summary.Etherpad" target="_blank" rel="noreferrer noopener">{{ summary.Etherpad }}</a>
         </template>
+        <template v-if="summary.ReplayUrl">
+          <span>回放链接:</span>
+          <a class="link" :href="summary.ReplayUrl" target="_blank" rel="noreferrer noopener">{{ summary.ReplayUrl }}</a>
+        </template>
       </div>
     </div>
   </div>

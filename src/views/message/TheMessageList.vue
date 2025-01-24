@@ -100,6 +100,7 @@ const getData = async (noLoading?: boolean) => {
       total.value = 0;
       messages.value = [];
     }
+    unreadCountStore.updateCount();
     loading.value = false;
   }
 };
@@ -111,6 +112,7 @@ const tabList: Record<string, string> = {
   watch: '我关注的',
 };
 const tabVal = ref<string>('todo');
+const showReadState = computed(() => tabVal.value !== 'todo');
 
 // ------------------------下拉框------------------------
 const options: Record<string, { label: string; val: any }[]> = {
@@ -180,10 +182,13 @@ const resetToggleVals = () => {
 };
 
 // ------------------------tab事件------------------------
-const onTabChange = async () => {
+const onTabChange = (val: string | number) => {
   resetToggleVals();
   pageInfo.page_num = 1;
   messages.value = [];
+  if (val === 'todo') {
+    toggles.readStateVal = 0;
+  }
   getData();
 };
 
@@ -391,7 +396,6 @@ const delMessage = async (eventId: string) => {
       await deleteMessages(eventId);
       message.success({ content: '删除成功' });
       getData();
-      unreadCountStore.updateCount();
     } catch (error) {
       if (error instanceof AxiosError && error.response?.data?.message) {
         message.warning(error.response.data.message);
@@ -416,7 +420,6 @@ const delMultiMessages = async () => {
       await deleteMessages(...checkboxVal.value);
       message.success({ content: isMulti ? '批量删除成功' : '删除成功' });
       getData();
-      unreadCountStore.updateCount();
     } catch (error) {
       if (error instanceof AxiosError && error.response?.data?.message) {
         message.warning(error.response.data.message);
@@ -430,7 +433,6 @@ const markReadMessage = (eventId: string) => {
   readMessages(eventId)
     .then(() => {
       getData();
-      unreadCountStore.updateCount();
     })
     .catch((error) => {
       if (error?.response?.data?.message) {
@@ -449,7 +451,6 @@ const markReadMultiMessages = () => {
   readMessages(...checkboxVal.value)
     .then(() => {
       getData();
-      unreadCountStore.updateCount();
     })
     .catch((error) => {
       if (error?.response?.data?.message) {
@@ -512,7 +513,7 @@ const markReadMultiMessages = () => {
           </div>
           <div class="right">
             <template v-if="checkboxVal.length">
-              <IconLink :label-class-names="['message-delete-read']" iconSize="24px" @click="markReadMultiMessages">
+              <IconLink v-if="showReadState" :label-class-names="['message-delete-read']" iconSize="24px" @click="markReadMultiMessages">
                 <template #prefix><IconRead /></template>
                 标记已读
               </IconLink>
@@ -554,6 +555,7 @@ const markReadMultiMessages = () => {
           @delete-message="delMessage"
           @read-message="markReadMessage"
           v-model:checkboxes="checkboxVal"
+          :show-read-state="showReadState"
         />
       </div>
     </div>

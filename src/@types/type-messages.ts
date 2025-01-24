@@ -37,6 +37,8 @@ export interface MeetingSummary {
   Topic?: string;
   /** 会议链接 */
   JoinUrl?: string;
+  /** 回放链接 */
+  ReplayUrl?: string;
   /** 发起人 */
   Sponsor?: string;
   /** etherpad链接 */

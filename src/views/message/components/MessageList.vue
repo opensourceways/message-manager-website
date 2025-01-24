@@ -28,6 +28,10 @@ const props = defineProps({
     type: Array as PropType<(string | number)[]>,
     default: () => [],
   },
+  showReadState: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const emit = defineEmits<{
@@ -62,8 +66,8 @@ const vDompurifyHtml = buildVueDompurifyHTMLDirective({
 const asyncComputedEvaluating = ref(false);
 
 const actualMessages = asyncComputed(
-  async () => {
-    return await Promise.all(
+  () =>
+    Promise.all(
       props.messages.map(async (msg) => {
         div.innerHTML = msg.summary.replace(LINE_BR, '');
         msg.summary = div.textContent!;
@@ -74,8 +78,7 @@ const actualMessages = asyncComputed(
           summary: await marked.parseInline(msg.summary),
         };
       })
-    );
-  },
+    ),
   [],
   asyncComputedEvaluating
 );
@@ -135,7 +138,13 @@ defineExpose({
           <p>{{ msg.source_group }}</p>
           <p>{{ msg.time }}</p>
           <div class="list-item-right-hover">
-            <OIcon :class="['read-icon', msg.is_read ? 'disabled' : '']" @click="$emit('readMessage', msg.event_id)" :disabled="msg.is_read" title="标记已读">
+            <OIcon
+              v-if="showReadState"
+              :class="['read-icon', msg.is_read ? 'disabled' : '']"
+              @click="$emit('readMessage', msg.event_id)"
+              :disabled="msg.is_read"
+              title="标记已读"
+            >
               <ReadIcon />
             </OIcon>
             <OIcon class="del-icon" @click="$emit('deleteMessage', msg.event_id)" hover-color="var(--o-color-danger1)" title="删除">
